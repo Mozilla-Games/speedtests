@@ -33,8 +33,18 @@ class NextTest(object):
         tests.sort()
         for t in tests:
             if t > current_testname:
-                raise web.redirect('%s/%s/Default.html' % (HTML_URL, t))
-        raise web.redirect('http://localhost:8111')
+                raise web.seeother('%s/%s/Default.html%s' % (HTML_URL, t, web.ctx.query))
+        print 'analyzing search query'
+        params = {}
+        if web.ctx.query:
+            for q in web.ctx.query[1:].split('&'):
+                name, equals, value = q.partition('=')
+                if equals:
+                    params[name] = value
+        if params.get('auto', False):
+            print 'seeothering to localhost'
+            raise web.seeother('http://localhost:8111')
+        raise web.seeother('%s/done.html' % HTML_URL) 
 
 
 def get_browser_id(ua):
@@ -58,8 +68,9 @@ def get_browser_id(ua):
         platform = m.group(2).replace(';', '').strip()
     elif 'chrome' in ua:
         bname = 'Chrome'
-        m = re.search('chrome/([^ ]*)', ua)
-        bver = m.group(1)
+        m = re.match('mozilla/[^ ]* \([^;]*;[^;]*;([^;]*);[^\)]*\).*chrome/([^ ]*)', ua)
+        platform = m.group(1).strip()
+        bver = m.group(2)
     elif 'safari' in ua:
         bname = 'Safari'
         m = re.search('safari/(.*)', ua)

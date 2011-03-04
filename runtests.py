@@ -12,7 +12,7 @@ import tempfile
 import threading
 import time
 
-TEST_URL = 'http://192.168.1.101:8080/nexttest/'
+TEST_URL = 'http://192.168.1.101:8080/nexttest/?auto=true'
 
 class TestsFinishedException(Exception):
     
@@ -50,7 +50,7 @@ class BrowserRunner(object):
     BROWSERS = {
         'Darwin': [
                    BrowserLauncher(('/Applications/Firefox.app/Contents/MacOS/firefox', '-private')),
-                   #BrowserLauncherRedirFile(('/Applications/Safari.app/Contents/MacOS/Safari',)),
+                   BrowserLauncherRedirFile(('/Applications/Safari.app/Contents/MacOS/Safari',)),
                    BrowserLauncher(('/Applications/Opera.app/Contents/MacOS/Opera',)),
                    BrowserLauncher(('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',)),
                    ],
