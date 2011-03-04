@@ -15,18 +15,14 @@ function reportResults(testname, results) {
     results.browser_height = window.innerHeight;
     var body = JSON.stringify({ testname: testname, results: results, ua: navigator.userAgent });
     var req = new XMLHttpRequest();
-    alert('reporting to ' + DYNAMIC_SERVER_URL + "/testresults/");
     req.open("POST", DYNAMIC_SERVER_URL + "/testresults/", true);
     req.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
     req.setRequestHeader("Content-length", body.length);
     req.setRequestHeader("Connection", "close");
-    alert('sending');
     req.send(body);
-    alert('sent');
 }
 
 function nextTest(testname) {
-    var url = DYNAMIC_SERVER_URL + "/nexttest/" + testname;
-    //console.log('loading next test at ' + url);
+    var url = DYNAMIC_SERVER_URL + "/nexttest/" + testname + "/" + document.location.search;
     window.location.assign(url);
 }
