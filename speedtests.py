@@ -1,7 +1,7 @@
 # when last page is loaded, browser will ping server
 # server kills current process, starts next
 import BaseHTTPServer
-import SimpleHTTPServer
+import ConfigParser
 import errno
 import os
 import platform
@@ -12,7 +12,15 @@ import tempfile
 import threading
 import time
 
-TEST_URL = 'http://192.168.1.101:8080/nexttest/?auto=true'
+DEFAULT_CONF_FILE = 'speedtests.conf'
+cfg = ConfigParser.ConfigParser()
+cfg.read(DEFAULT_CONF_FILE)
+try:
+    TEST_URL = cfg.get('speedtests', 'server_url').rstrip('/') + \
+               '/nexttest/?auto=true'
+except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
+    TEST_URL = 'http://brasstacks.mozilla.com/speedtests/nexttest/?auto=true'
+
 
 class TestsFinishedException(Exception):
     

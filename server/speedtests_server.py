@@ -13,7 +13,7 @@ urls = (
         '/nexttest/(.*)', 'NextTest'
         )
 
-DEFAULT_CONF_FILE = 'speedtests.conf'
+DEFAULT_CONF_FILE = 'speedtests_server.conf'
 cfg = ConfigParser.ConfigParser()
 cfg.read(DEFAULT_CONF_FILE)
 try:
@@ -34,7 +34,6 @@ class NextTest(object):
         for t in tests:
             if t > current_testname:
                 raise web.seeother('%s/%s/Default.html%s' % (HTML_URL, t, web.ctx.query))
-        print 'analyzing search query'
         params = {}
         if web.ctx.query:
             for q in web.ctx.query[1:].split('&'):
@@ -42,7 +41,6 @@ class NextTest(object):
                 if equals:
                     params[name] = value
         if params.get('auto', False):
-            print 'seeothering to localhost'
             raise web.seeother('http://localhost:8111')
         raise web.seeother('%s/done.html' % HTML_URL) 
 
