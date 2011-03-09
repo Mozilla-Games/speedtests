@@ -10,5 +10,6 @@ CREATE TABLE SpeedReading (
     avgduration INT,
     lastduration INT,
     etms INT,
-    teststart TIMESTAMP
+    teststart TIMESTAMP,
+    ip VARCHAR(15) COLLATE utf8_bin
 );

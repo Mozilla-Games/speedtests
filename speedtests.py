@@ -17,9 +17,9 @@ cfg = ConfigParser.ConfigParser()
 cfg.read(DEFAULT_CONF_FILE)
 try:
     TEST_URL = cfg.get('speedtests', 'server_url').rstrip('/') + \
-               '/nexttest/?auto=true'
+               '/start/?auto=true'
 except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
-    TEST_URL = 'http://brasstacks.mozilla.com/speedtests/nexttest/?auto=true'
+    TEST_URL = 'http://brasstacks.mozilla.com/speedtestssvr/start/?auto=true'
 
 
 class TestsFinishedException(Exception):
@@ -122,10 +122,7 @@ class BrowserRunner(object):
             if self.current_launcher.browser_exists():
                 break
 
-        if isinstance(self.current_launcher, tuple):
-            cl = self.current_launcher + (TEST_URL,)
-        else:
-            cl = self.current_launcher.cmd_line()
+        cl = self.current_launcher.cmd_line()
         print 'Launching %s...' % ' '.join(cl)
         self.proc = subprocess.Popen(cl)
         self.lock.release()
@@ -164,7 +161,7 @@ def main():
         if not br.browser_running():
             print 'browser isn\'t running!'
             br.launch_next_browser()
-        evt.wait(2)
+        evt.wait(5)
     trs.shutdown()
     server_thread.join()
     print 'Done!'

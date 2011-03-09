@@ -8,5 +8,6 @@ CREATE TABLE fishtank (
     browser_width INT,
     fps INT,
     etms INT,
-    teststart TIMESTAMP
+    teststart TIMESTAMP,
+    ip VARCHAR(15) COLLATE utf8_bin
 );

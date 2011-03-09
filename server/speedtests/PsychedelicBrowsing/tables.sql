@@ -7,5 +7,6 @@ CREATE TABLE PsychedelicBrowsing (
     browser_width INT,
     colorwheel INT,
     checkerboard INT,
-    teststart TIMESTAMP
+    teststart TIMESTAMP,
+    ip VARCHAR(15) COLLATE utf8_bin
 );
