@@ -1,0 +1,252 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<report xmlns="http://www.eclipse.org/birt/2005/design" version="3.2.22" id="1">
+    <property name="createdBy">Eclipse BIRT Designer Version 2.6.2.r262_v20110209 Build &lt;2.6.2.v20110214-1523></property>
+    <property name="units">in</property>
+    <list-property name="propertyBindings">
+        <structure>
+            <property name="name">queryText</property>
+            <property name="id">378</property>
+        </structure>
+        <structure>
+            <property name="name">queryTimeOut</property>
+            <property name="id">378</property>
+        </structure>
+    </list-property>
+    <property name="iconFile">/templates/blank_report.gif</property>
+    <property name="bidiLayoutOrientation">ltr</property>
+    <property name="imageDPI">96</property>
+    <parameters>
+        <scalar-parameter name="RP_BROWSERID" id="403">
+            <property name="valueType">static</property>
+            <property name="dataType">integer</property>
+            <property name="distinct">true</property>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="RP_BROWSERSTRING" id="432">
+            <property name="valueType">static</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+    </parameters>
+    <data-sources>
+        <oda-data-source extensionID="org.eclipse.birt.report.data.oda.jdbc" name="MySQL" id="7">
+            <list-property name="privateDriverProperties">
+                <ex-property>
+                    <name>contentBidiFormatStr</name>
+                    <value>ILYNN</value>
+                </ex-property>
+                <ex-property>
+                    <name>metadataBidiFormatStr</name>
+                    <value>ILYNN</value>
+                </ex-property>
+                <ex-property>
+                    <name>disabledMetadataBidiFormatStr</name>
+                </ex-property>
+                <ex-property>
+                    <name>disabledContentBidiFormatStr</name>
+                </ex-property>
+            </list-property>
+            <property name="odaDriverClass">com.mysql.jdbc.Driver</property>
+            <property name="odaURL">jdbc:mysql://localhost/speedtests</property>
+            <property name="odaUser">speedtests</property>
+            <encrypted-property name="odaPassword" encryptionID="base64">c3BlZWR0ZXN0cw==</encrypted-property>
+        </oda-data-source>
+    </data-sources>
+    <data-sets>
+        <oda-data-set extensionID="org.eclipse.birt.report.data.oda.jdbc.JdbcSelectDataSet" name="PsychDetails" id="378">
+            <property name="nullsOrdering">nulls lowest</property>
+            <list-property name="parameters">
+                <structure>
+                    <property name="name">param_1</property>
+                    <property name="paramName">RP_BROWSERID</property>
+                    <property name="dataType">integer</property>
+                    <property name="position">1</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+            </list-property>
+            <structure name="cachedMetaData">
+                <list-property name="resultSet">
+                    <structure>
+                        <property name="position">1</property>
+                        <property name="name">teststart</property>
+                        <property name="dataType">date-time</property>
+                    </structure>
+                    <structure>
+                        <property name="position">2</property>
+                        <property name="name">colorwheel</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">3</property>
+                        <property name="name">checkerboard</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                </list-property>
+            </structure>
+            <property name="dataSource">MySQL</property>
+            <list-property name="resultSet">
+                <structure>
+                    <property name="position">1</property>
+                    <property name="name">teststart</property>
+                    <property name="nativeName">teststart</property>
+                    <property name="dataType">date-time</property>
+                </structure>
+                <structure>
+                    <property name="position">2</property>
+                    <property name="name">colorwheel</property>
+                    <property name="nativeName">colorwheel</property>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="position">3</property>
+                    <property name="name">checkerboard</property>
+                    <property name="nativeName">checkerboard</property>
+                    <property name="dataType">integer</property>
+                </structure>
+            </list-property>
+            <xml-property name="queryText"><![CDATA[select teststart, colorwheel, checkerboard
+from PsychedelicBrowsing
+where browser_id = ?
+order by teststart ASC]]></xml-property>
+        </oda-data-set>
+    </data-sets>
+    <styles>
+        <style name="report" id="4">
+            <property name="fontFamily">sans-serif</property>
+            <property name="fontSize">10pt</property>
+        </style>
+        <style name="crosstab-cell" id="5">
+            <property name="borderBottomColor">#CCCCCC</property>
+            <property name="borderBottomStyle">solid</property>
+            <property name="borderBottomWidth">1pt</property>
+            <property name="borderLeftColor">#CCCCCC</property>
+            <property name="borderLeftStyle">solid</property>
+            <property name="borderLeftWidth">1pt</property>
+            <property name="borderRightColor">#CCCCCC</property>
+            <property name="borderRightStyle">solid</property>
+            <property name="borderRightWidth">1pt</property>
+            <property name="borderTopColor">#CCCCCC</property>
+            <property name="borderTopStyle">solid</property>
+            <property name="borderTopWidth">1pt</property>
+        </style>
+        <style name="crosstab" id="6">
+            <property name="borderBottomColor">#CCCCCC</property>
+            <property name="borderBottomStyle">solid</property>
+            <property name="borderBottomWidth">1pt</property>
+            <property name="borderLeftColor">#CCCCCC</property>
+            <property name="borderLeftStyle">solid</property>
+            <property name="borderLeftWidth">1pt</property>
+            <property name="borderRightColor">#CCCCCC</property>
+            <property name="borderRightStyle">solid</property>
+            <property name="borderRightWidth">1pt</property>
+            <property name="borderTopColor">#CCCCCC</property>
+            <property name="borderTopStyle">solid</property>
+            <property name="borderTopWidth">1pt</property>
+        </style>
+    </styles>
+    <page-setup>
+        <simple-master-page name="Simple MasterPage" id="2"/>
+    </page-setup>
+    <body>
+        <text-data id="405">
+            <property name="fontSize">12pt</property>
+            <property name="fontWeight">bold</property>
+            <property name="paddingBottom">10pt</property>
+            <expression name="valueExpr">"PsychedelicBrowsing test runs, " + params["RP_BROWSERSTRING"].value</expression>
+            <property name="contentType">html</property>
+        </text-data>
+        <table id="381">
+            <property name="width">5.822916666666667in</property>
+            <property name="dataSet">PsychDetails</property>
+            <list-property name="boundDataColumns">
+                <structure>
+                    <property name="name">teststart</property>
+                    <text-property name="displayName">teststart</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["teststart"]</expression>
+                    <property name="dataType">date-time</property>
+                </structure>
+                <structure>
+                    <property name="name">colorwheel</property>
+                    <text-property name="displayName">colorwheel</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["colorwheel"]</expression>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="name">checkerboard</property>
+                    <text-property name="displayName">checkerboard</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["checkerboard"]</expression>
+                    <property name="dataType">integer</property>
+                </structure>
+            </list-property>
+            <column id="400">
+                <property name="width">2.5104166666666665in</property>
+            </column>
+            <column id="401">
+                <property name="width">1.65625in</property>
+            </column>
+            <column id="402">
+                <property name="width">1.65625in</property>
+            </column>
+            <header>
+                <row id="382">
+                    <cell id="383">
+                        <label id="384">
+                            <text-property name="text">Test Start</text-property>
+                        </label>
+                    </cell>
+                    <cell id="385">
+                        <label id="386">
+                            <text-property name="text">Psychedelic FPS</text-property>
+                        </label>
+                    </cell>
+                    <cell id="387">
+                        <label id="388">
+                            <text-property name="text">Hallucinogenic FPS</text-property>
+                        </label>
+                    </cell>
+                </row>
+            </header>
+            <detail>
+                <row id="389">
+                    <cell id="390">
+                        <data id="391">
+                            <property name="whiteSpace">nowrap</property>
+                            <property name="resultSetColumn">teststart</property>
+                        </data>
+                    </cell>
+                    <cell id="392">
+                        <data id="393">
+                            <property name="textAlign">right</property>
+                            <property name="whiteSpace">nowrap</property>
+                            <property name="resultSetColumn">colorwheel</property>
+                        </data>
+                    </cell>
+                    <cell id="394">
+                        <data id="395">
+                            <property name="textAlign">right</property>
+                            <property name="whiteSpace">nowrap</property>
+                            <property name="resultSetColumn">checkerboard</property>
+                        </data>
+                    </cell>
+                </row>
+            </detail>
+            <footer>
+                <row id="396">
+                    <cell id="397"/>
+                    <cell id="398"/>
+                    <cell id="399"/>
+                </row>
+            </footer>
+        </table>
+    </body>
+</report>
