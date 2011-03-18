@@ -35,8 +35,6 @@ except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
 class NextTest(object):
     
     def GET(self, current_testname):
-        print 'testname: ' + current_testname
-        
         params = {}
         if web.ctx.query:
             for q in web.ctx.query[1:].split('&'):
@@ -90,6 +88,7 @@ def get_browser_id(ua):
         m = re.search('safari/(.*)', ua)
         bver = m.group(1)
     elif 'opera' in ua:
+        # opera/9.80 (macintosh; intel mac os x 10.6.6; u; en) presto/2.7.62 version/11.010.0
         bname = 'Opera'
         bver = '0.0'
     

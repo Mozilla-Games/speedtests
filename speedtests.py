@@ -55,28 +55,31 @@ class BrowserLauncherRedirFile(BrowserLauncher):
 
 class BrowserRunner(object):
 
-    BROWSERS = {
-        'Darwin': [
+    @classmethod
+    def browsers_by_os(cls, os_str):
+        if os_str == 'Darwin':
+            return [
                    BrowserLauncher(('/Applications/Firefox.app/Contents/MacOS/firefox', '-private')),
                    BrowserLauncherRedirFile(('/Applications/Safari.app/Contents/MacOS/Safari',)),
                    BrowserLauncher(('/Applications/Opera.app/Contents/MacOS/Opera',)),
                    BrowserLauncher(('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',)),
-                   ],
-        'Linux': [],
-        'Windows': [
+                   ]
+        elif os_str == 'Linux':
+            return []
+        elif os_str == 'Windows':
+            return [
                    BrowserLauncher(('\\Program Files\\Mozilla Firefox 4.0 Beta 12\\firefox.exe', '-private')),
                    BrowserLauncher(('\\Program Files\\Internet Explorer\\iexplore.exe',)),
                    BrowserLauncher(('\\Program Files\\Safari\\Safari.exe',)),
                    BrowserLauncher(('\\Program Files\\Opera\\opera.exe',)),
                    BrowserLauncher((os.path.join(os.getenv('USERPROFILE'), 'Local Settings\\Application Data\\Google\\Chrome\\Application\\chrome.exe'),)),
                    ]
-        }
 
 
     def __init__(self, evt):
         self.evt = evt
         try:
-            self.browsers = BrowserRunner.BROWSERS[platform.system()]
+            self.browsers = BrowserRunner.browsers_by_os(platform.system())
         except KeyError:
             sys.stderr.write('Unknown platform "%s".\n' % platform.system())
             sys.exit(errno.EOPNOTSUPP)
