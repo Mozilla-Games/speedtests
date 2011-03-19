@@ -2,24 +2,6 @@
 <report xmlns="http://www.eclipse.org/birt/2005/design" version="3.2.22" id="1">
     <property name="createdBy">Eclipse BIRT Designer Version 2.6.2.r262_v20110209 Build &lt;2.6.2.v20110214-1523></property>
     <property name="units">in</property>
-    <list-property name="propertyBindings">
-        <structure>
-            <property name="name">queryText</property>
-            <property name="id">407</property>
-        </structure>
-        <structure>
-            <property name="name">queryTimeOut</property>
-            <property name="id">407</property>
-        </structure>
-        <structure>
-            <property name="name">queryText</property>
-            <property name="id">408</property>
-        </structure>
-        <structure>
-            <property name="name">queryTimeOut</property>
-            <property name="id">408</property>
-        </structure>
-    </list-property>
     <method name="initialize"><![CDATA[switch (params["RP_OS"].value) {
     case "mac":
         reportContext.setPersistentGlobalVariable("os", "OS X");
@@ -46,7 +28,7 @@
             <property name="dataType">string</property>
             <property name="distinct">true</property>
             <simple-property-list name="defaultValue">
-                <value type="constant">windows</value>
+                <value type="constant">mac</value>
             </simple-property-list>
             <list-property name="selectionList">
                 <structure>
@@ -66,6 +48,20 @@
             <property name="controlType">list-box</property>
             <property name="mustMatch">true</property>
             <property name="fixedOrder">true</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="RP_IP" id="411">
+            <text-property name="promptText">IP</text-property>
+            <property name="valueType">static</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant">%</value>
+            </simple-property-list>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
             <structure name="format">
                 <property name="category">Unformatted</property>
             </structure>
@@ -110,6 +106,14 @@
                     <property name="paramName">RP_OS</property>
                     <property name="dataType">string</property>
                     <property name="position">1</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">DSP_IP</property>
+                    <property name="paramName">RP_IP</property>
+                    <property name="dataType">string</property>
+                    <property name="position">2</property>
                     <property name="isInput">true</property>
                     <property name="isOutput">false</property>
                 </structure>
@@ -283,8 +287,8 @@
             <xml-property name="queryText"><![CDATA[select *
 from PsychedelicBrowsing
 INNER JOIN speedtests.browser ON browser_id = browser.id
-WHERE browser.platform like '%' ? '%'
-order by colorwheel DESC]]></xml-property>
+WHERE browser.platform like '%' ? '%' AND
+ip like ?]]></xml-property>
         </oda-data-set>
         <oda-data-set extensionID="org.eclipse.birt.report.data.oda.jdbc.JdbcSelectDataSet" name="SpeedReading" id="402">
             <list-property name="computedColumns">
@@ -296,10 +300,18 @@ order by colorwheel DESC]]></xml-property>
             </list-property>
             <list-property name="parameters">
                 <structure>
-                    <property name="name">SR_OS</property>
+                    <property name="name">DSP_OS</property>
                     <property name="paramName">RP_OS</property>
                     <property name="dataType">string</property>
                     <property name="position">1</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">DSP_IP</property>
+                    <property name="paramName">RP_IP</property>
+                    <property name="dataType">string</property>
+                    <property name="position">2</property>
                     <property name="isInput">true</property>
                     <property name="isOutput">false</property>
                 </structure>
@@ -506,7 +518,8 @@ order by colorwheel DESC]]></xml-property>
             <xml-property name="queryText"><![CDATA[select *
 from SpeedReading
 INNER JOIN speedtests.browser ON browser_id = browser.id
-WHERE browser.platform like '%' ? '%']]></xml-property>
+WHERE browser.platform like '%' ? '%' AND
+ip like ?]]></xml-property>
             <xml-property name="designerValues"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
 <model:DesignValues xmlns:design="http://www.eclipse.org/datatools/connectivity/oda/design" xmlns:model="http://www.eclipse.org/birt/report/model/adapter/odaModel">
   <Version>2.0</Version>
@@ -767,6 +780,14 @@ WHERE browser.platform like '%' ? '%']]></xml-property>
                     <property name="isInput">true</property>
                     <property name="isOutput">false</property>
                 </structure>
+                <structure>
+                    <property name="name">DSP_IP</property>
+                    <property name="paramName">RP_IP</property>
+                    <property name="dataType">string</property>
+                    <property name="position">2</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
             </list-property>
             <structure name="cachedMetaData">
                 <list-property name="resultSet">
@@ -948,7 +969,8 @@ WHERE browser.platform like '%' ? '%']]></xml-property>
             <xml-property name="queryText"><![CDATA[select *
 from fishtank
 INNER JOIN speedtests.browser ON browser_id = browser.id
-WHERE browser.platform like '%' ? '%']]></xml-property>
+WHERE browser.platform like '%' ? '%' AND
+ip like ?]]></xml-property>
         </oda-data-set>
         <oda-data-set extensionID="org.eclipse.birt.report.data.oda.jdbc.JdbcSelectDataSet" name="SantasWorkshop" id="407">
             <list-property name="computedColumns">
@@ -964,6 +986,14 @@ WHERE browser.platform like '%' ? '%']]></xml-property>
                     <property name="paramName">RP_OS</property>
                     <property name="dataType">string</property>
                     <property name="position">1</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">DSP_IP</property>
+                    <property name="paramName">RP_IP</property>
+                    <property name="dataType">string</property>
+                    <property name="position">2</property>
                     <property name="isInput">true</property>
                     <property name="isOutput">false</property>
                 </structure>
@@ -1170,7 +1200,8 @@ WHERE browser.platform like '%' ? '%']]></xml-property>
             <xml-property name="queryText"><![CDATA[select *
 from SantasWorkshop
 INNER JOIN speedtests.browser ON browser_id = browser.id
-WHERE browser.platform like '%' ? '%']]></xml-property>
+WHERE browser.platform like '%' ? '%' AND
+ip like ?]]></xml-property>
         </oda-data-set>
         <oda-data-set extensionID="org.eclipse.birt.report.data.oda.jdbc.JdbcSelectDataSet" name="MrPotatoGun" id="408">
             <list-property name="computedColumns">
@@ -1186,6 +1217,14 @@ WHERE browser.platform like '%' ? '%']]></xml-property>
                     <property name="paramName">RP_OS</property>
                     <property name="dataType">string</property>
                     <property name="position">1</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">DSP_IP</property>
+                    <property name="paramName">RP_IP</property>
+                    <property name="dataType">string</property>
+                    <property name="position">2</property>
                     <property name="isInput">true</property>
                     <property name="isOutput">false</property>
                 </structure>
@@ -1239,7 +1278,7 @@ WHERE browser.platform like '%' ? '%']]></xml-property>
                     </structure>
                     <structure>
                         <property name="position">10</property>
-                        <property name="name">id_10</property>
+                        <property name="name">id</property>
                         <property name="dataType">integer</property>
                     </structure>
                     <structure>
@@ -1370,7 +1409,8 @@ WHERE browser.platform like '%' ? '%']]></xml-property>
             <xml-property name="queryText"><![CDATA[select *
 from MrPotatoGun
 INNER JOIN speedtests.browser ON browser_id = browser.id
-WHERE browser.platform like '%' ? '%']]></xml-property>
+WHERE browser.platform like '%' ? '%' AND
+ip like ?]]></xml-property>
         </oda-data-set>
     </data-sets>
     <styles>
@@ -2092,6 +2132,12 @@ WHERE browser.platform like '%' ? '%']]></xml-property>
                 &lt;value type=&quot;javascript&quot;>row[&quot;BrowserString&quot;] + &quot; &quot; + row[&quot;platform&quot;]&lt;/value>
             &lt;/simple-property-list>
         &lt;/structure>
+        &lt;structure>
+            &lt;property name=&quot;paramName&quot;>RP_IP&lt;/property>
+            &lt;simple-property-list name=&quot;expression&quot;>
+                &lt;value type=&quot;javascript&quot;>params[&quot;RP_IP&quot;].value&lt;/value>
+            &lt;/simple-property-list>
+        &lt;/structure>
     &lt;/list-property>
 &lt;/structure>
 </BaseUrl>
@@ -2400,6 +2446,12 @@ WHERE browser.platform like '%' ? '%']]></xml-property>
             &lt;property name=&quot;paramName&quot;>RP_BROWSERSTRING&lt;/property>
             &lt;simple-property-list name=&quot;expression&quot;>
                 &lt;value type=&quot;javascript&quot;>row[&quot;BrowserString&quot;] + &quot; &quot; + row[&quot;platform&quot;]&lt;/value>
+            &lt;/simple-property-list>
+        &lt;/structure>
+        &lt;structure>
+            &lt;property name=&quot;paramName&quot;>RP_IP&lt;/property>
+            &lt;simple-property-list name=&quot;expression&quot;>
+                &lt;value type=&quot;javascript&quot;>params[&quot;RP_IP&quot;].value&lt;/value>
             &lt;/simple-property-list>
         &lt;/structure>
     &lt;/list-property>
@@ -2908,6 +2960,12 @@ WHERE browser.platform like '%' ? '%']]></xml-property>
                             <property name="paramName">RP_BROWSERSTRING</property>
                             <simple-property-list name="expression">
                                 <value type="javascript">row["BrowserString"] + " " + row["platform"]</value>
+                            </simple-property-list>
+                        </structure>
+                        <structure>
+                            <property name="paramName">RP_IP</property>
+                            <simple-property-list name="expression">
+                                <value type="javascript">params["RP_IP"].value</value>
                             </simple-property-list>
                         </structure>
                     </list-property>
@@ -3663,6 +3721,12 @@ WHERE browser.platform like '%' ? '%']]></xml-property>
                 &lt;value type=&quot;javascript&quot;>row[&quot;BrowserString&quot;] + &quot; &quot; + row[&quot;platform&quot;]&lt;/value>
             &lt;/simple-property-list>
         &lt;/structure>
+        &lt;structure>
+            &lt;property name=&quot;paramName&quot;>RP_IP&lt;/property>
+            &lt;simple-property-list name=&quot;expression&quot;>
+                &lt;value type=&quot;javascript&quot;>params[&quot;RP_IP&quot;].value&lt;/value>
+            &lt;/simple-property-list>
+        &lt;/structure>
     &lt;/list-property>
 &lt;/structure>
 </BaseUrl>
@@ -3670,10 +3734,6 @@ WHERE browser.platform like '%' ? '%']]></xml-property>
                   <ValueParameterName></ValueParameterName>
                   <SeriesParameterName></SeriesParameterName>
                 </URLValues>
-                <PropertiesMap>
-                  <Key>MenuItem</Key>
-                  <Value>color:Black;fontSize:10pt;paddingLeft:10px;paddingRight:10px;paddingTop:2px;paddingBottom:2px</Value>
-                </PropertiesMap>
                 <PropertiesMap>
                   <Key>Menu</Key>
                   <Value>zIndex:99999;backgroundColor:#FAFFF8;width:auto;height:auto;border:1px solid #333333;filter:progid:DXImageTransform.Microsoft.Shadow(Color:#333333,Direction=120,strength=5)</Value>
@@ -3685,6 +3745,10 @@ WHERE browser.platform like '%' ? '%']]></xml-property>
                 <PropertiesMap>
                   <Key>OnMouseOver</Key>
                   <Value>backgroundColor:#245DDB;color:#FFFFFF</Value>
+                </PropertiesMap>
+                <PropertiesMap>
+                  <Key>MenuItem</Key>
+                  <Value>color:Black;fontSize:10pt;paddingLeft:10px;paddingRight:10px;paddingTop:2px;paddingBottom:2px</Value>
                 </PropertiesMap>
               </Value>
             </Action>
@@ -4168,6 +4232,12 @@ WHERE browser.platform like '%' ? '%']]></xml-property>
                             <property name="paramName">RP_BROWSERSTRING</property>
                             <simple-property-list name="expression">
                                 <value type="javascript">row["BrowserString"] + " " + row["platform"]</value>
+                            </simple-property-list>
+                        </structure>
+                        <structure>
+                            <property name="paramName">RP_IP</property>
+                            <simple-property-list name="expression">
+                                <value type="javascript">params["RP_IP"].value</value>
                             </simple-property-list>
                         </structure>
                     </list-property>
@@ -4938,9 +5008,9 @@ WHERE browser.platform like '%' ? '%']]></xml-property>
             &lt;/simple-property-list>
         &lt;/structure>
         &lt;structure>
-            &lt;property name=&quot;paramName&quot;>RP_PLATFORM&lt;/property>
+            &lt;property name=&quot;paramName&quot;>RP_IP&lt;/property>
             &lt;simple-property-list name=&quot;expression&quot;>
-                &lt;value isNull=&quot;true&quot;/>
+                &lt;value type=&quot;javascript&quot;>params[&quot;RP_IP&quot;].value&lt;/value>
             &lt;/simple-property-list>
         &lt;/structure>
     &lt;/list-property>
@@ -4950,10 +5020,6 @@ WHERE browser.platform like '%' ? '%']]></xml-property>
                   <ValueParameterName></ValueParameterName>
                   <SeriesParameterName></SeriesParameterName>
                 </URLValues>
-                <PropertiesMap>
-                  <Key>MenuItem</Key>
-                  <Value>color:Black;fontSize:10pt;paddingLeft:10px;paddingRight:10px;paddingTop:2px;paddingBottom:2px</Value>
-                </PropertiesMap>
                 <PropertiesMap>
                   <Key>Menu</Key>
                   <Value>zIndex:99999;backgroundColor:#FAFFF8;width:auto;height:auto;border:1px solid #333333;filter:progid:DXImageTransform.Microsoft.Shadow(Color:#333333,Direction=120,strength=5)</Value>
@@ -4965,6 +5031,10 @@ WHERE browser.platform like '%' ? '%']]></xml-property>
                 <PropertiesMap>
                   <Key>OnMouseOver</Key>
                   <Value>backgroundColor:#245DDB;color:#FFFFFF</Value>
+                </PropertiesMap>
+                <PropertiesMap>
+                  <Key>MenuItem</Key>
+                  <Value>color:Black;fontSize:10pt;paddingLeft:10px;paddingRight:10px;paddingTop:2px;paddingBottom:2px</Value>
                 </PropertiesMap>
               </Value>
             </Action>
@@ -5451,7 +5521,10 @@ WHERE browser.platform like '%' ? '%']]></xml-property>
                             </simple-property-list>
                         </structure>
                         <structure>
-                            <property name="paramName">RP_PLATFORM</property>
+                            <property name="paramName">RP_IP</property>
+                            <simple-property-list name="expression">
+                                <value type="javascript">params["RP_IP"].value</value>
+                            </simple-property-list>
                         </structure>
                     </list-property>
                 </structure>
@@ -6211,7 +6284,10 @@ WHERE browser.platform like '%' ? '%']]></xml-property>
             &lt;/simple-property-list>
         &lt;/structure>
         &lt;structure>
-            &lt;property name=&quot;paramName&quot;>RP_PLATFORM&lt;/property>
+            &lt;property name=&quot;paramName&quot;>RP_IP&lt;/property>
+            &lt;simple-property-list name=&quot;expression&quot;>
+                &lt;value type=&quot;javascript&quot;>params[&quot;RP_IP&quot;].value&lt;/value>
+            &lt;/simple-property-list>
         &lt;/structure>
     &lt;/list-property>
 &lt;/structure>
@@ -6220,6 +6296,10 @@ WHERE browser.platform like '%' ? '%']]></xml-property>
                   <ValueParameterName></ValueParameterName>
                   <SeriesParameterName></SeriesParameterName>
                 </URLValues>
+                <PropertiesMap>
+                  <Key>MenuItem</Key>
+                  <Value>color:Black;fontSize:10pt;paddingLeft:10px;paddingRight:10px;paddingTop:2px;paddingBottom:2px</Value>
+                </PropertiesMap>
                 <PropertiesMap>
                   <Key>Menu</Key>
                   <Value>zIndex:99999;backgroundColor:#FAFFF8;width:auto;height:auto;border:1px solid #333333;filter:progid:DXImageTransform.Microsoft.Shadow(Color:#333333,Direction=120,strength=5)</Value>
@@ -6231,10 +6311,6 @@ WHERE browser.platform like '%' ? '%']]></xml-property>
                 <PropertiesMap>
                   <Key>OnMouseOver</Key>
                   <Value>backgroundColor:#245DDB;color:#FFFFFF</Value>
-                </PropertiesMap>
-                <PropertiesMap>
-                  <Key>MenuItem</Key>
-                  <Value>color:Black;fontSize:10pt;paddingLeft:10px;paddingRight:10px;paddingTop:2px;paddingBottom:2px</Value>
                 </PropertiesMap>
               </Value>
             </Action>
@@ -6721,7 +6797,10 @@ WHERE browser.platform like '%' ? '%']]></xml-property>
                             </simple-property-list>
                         </structure>
                         <structure>
-                            <property name="paramName">RP_PLATFORM</property>
+                            <property name="paramName">RP_IP</property>
+                            <simple-property-list name="expression">
+                                <value type="javascript">params["RP_IP"].value</value>
+                            </simple-property-list>
                         </structure>
                     </list-property>
                 </structure>
@@ -7481,7 +7560,10 @@ WHERE browser.platform like '%' ? '%']]></xml-property>
             &lt;/simple-property-list>
         &lt;/structure>
         &lt;structure>
-            &lt;property name=&quot;paramName&quot;>RP_PLATFORM&lt;/property>
+            &lt;property name=&quot;paramName&quot;>RP_IP&lt;/property>
+            &lt;simple-property-list name=&quot;expression&quot;>
+                &lt;value type=&quot;javascript&quot;>params[&quot;RP_IP&quot;].value&lt;/value>
+            &lt;/simple-property-list>
         &lt;/structure>
     &lt;/list-property>
 &lt;/structure>
@@ -7991,7 +8073,10 @@ WHERE browser.platform like '%' ? '%']]></xml-property>
                             </simple-property-list>
                         </structure>
                         <structure>
-                            <property name="paramName">RP_PLATFORM</property>
+                            <property name="paramName">RP_IP</property>
+                            <simple-property-list name="expression">
+                                <value type="javascript">params["RP_IP"].value</value>
+                            </simple-property-list>
                         </structure>
                     </list-property>
                 </structure>

@@ -2,16 +2,6 @@
 <report xmlns="http://www.eclipse.org/birt/2005/design" version="3.2.22" id="1">
     <property name="createdBy">Eclipse BIRT Designer Version 2.6.2.r262_v20110209 Build &lt;2.6.2.v20110214-1523></property>
     <property name="units">in</property>
-    <list-property name="propertyBindings">
-        <structure>
-            <property name="name">queryText</property>
-            <property name="id">404</property>
-        </structure>
-        <structure>
-            <property name="name">queryTimeOut</property>
-            <property name="id">404</property>
-        </structure>
-    </list-property>
     <property name="iconFile">/templates/blank_report.gif</property>
     <property name="bidiLayoutOrientation">ltr</property>
     <property name="imageDPI">96</property>
@@ -33,6 +23,20 @@
             <property name="valueType">static</property>
             <property name="dataType">string</property>
             <property name="distinct">true</property>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="RP_IP" id="411">
+            <text-property name="promptText">IP</text-property>
+            <property name="valueType">static</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant">%</value>
+            </simple-property-list>
             <property name="paramType">simple</property>
             <property name="controlType">text-box</property>
             <structure name="format">
@@ -76,6 +80,14 @@
                     <property name="isInput">true</property>
                     <property name="isOutput">false</property>
                 </structure>
+                <structure>
+                    <property name="name">DSP_IP</property>
+                    <property name="paramName">RP_IP</property>
+                    <property name="dataType">string</property>
+                    <property name="position">2</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
             </list-property>
             <structure name="cachedMetaData">
                 <list-property name="resultSet">
@@ -108,7 +120,8 @@
             </list-property>
             <xml-property name="queryText"><![CDATA[select teststart, fps
 from MrPotatoGun
-where browser_id = ?]]></xml-property>
+where browser_id = ? AND
+ip like ?]]></xml-property>
         </oda-data-set>
     </data-sets>
     <styles>
@@ -242,6 +255,12 @@ where browser_id = ?]]></xml-property>
                                                 <property name="paramName">RP_BROWSERSTRING</property>
                                                 <simple-property-list name="expression">
                                                     <value type="javascript">params["RP_BROWSERSTRING"].value</value>
+                                                </simple-property-list>
+                                            </structure>
+                                            <structure>
+                                                <property name="paramName">RP_IP</property>
+                                                <simple-property-list name="expression">
+                                                    <value type="javascript">params["RP_IP"].value</value>
                                                 </simple-property-list>
                                             </structure>
                                         </list-property>
