@@ -85,12 +85,18 @@ def get_browser_id(ua):
         bver = m.group(2)
     elif 'safari' in ua:
         bname = 'Safari'
-        m = re.search('safari/(.*)', ua)
-        bver = m.group(1)
+        m = re.match('[^\(]*\(([^;]*);[^\)]*\).*safari/(.*)', ua)
+        platform = m.group(1)
+        bver = m.group(2)
     elif 'opera' in ua:
         # opera/9.80 (macintosh; intel mac os x 10.6.6; u; en) presto/2.7.62 version/11.010.0
+        # Opera/9.80 (X11; Linux x86_64; U; en) Presto/2.7.62 Version/11.01
         bname = 'Opera'
-        bver = '0.0'
+        m = re.match('[^\(]*\(([^;]*);[^\)]*\).*version/(.*)', ua)
+        platform = m.group(1).strip()
+        if platform == 'x11':
+            platform = 'linux'
+        bver = m.group(2).strip()
     
     wheredict = {
         'browsername': bname,
