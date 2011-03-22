@@ -120,7 +120,8 @@
             </list-property>
             <xml-property name="queryText"><![CDATA[select teststart, fps
 from fishtank
-where browser_id = ? AND
+where num_fish = 1000 AND
+browser_id = ? AND
 ip like ?]]></xml-property>
         </oda-data-set>
     </data-sets>
@@ -166,7 +167,7 @@ ip like ?]]></xml-property>
             <property name="fontSize">12pt</property>
             <property name="fontWeight">bold</property>
             <property name="paddingBottom">10pt</property>
-            <expression name="valueExpr">"FishIE test runs, " + params["RP_BROWSERSTRING"].value</expression>
+            <expression name="valueExpr">"FishIE test runs (1000 fish), " + params["RP_BROWSERSTRING"].value</expression>
             <property name="contentType">html</property>
         </text-data>
         <table id="405">

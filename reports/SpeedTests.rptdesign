@@ -969,7 +969,8 @@ ip like ?]]></xml-property>
             <xml-property name="queryText"><![CDATA[select *
 from fishtank
 INNER JOIN speedtests.browser ON browser_id = browser.id
-WHERE browser.platform like '%' ? '%' AND
+WHERE num_fish = 1000 AND
+browser.platform like '%' ? '%' AND
 ip like ?]]></xml-property>
         </oda-data-set>
         <oda-data-set extensionID="org.eclipse.birt.report.data.oda.jdbc.JdbcSelectDataSet" name="SantasWorkshop" id="407">
@@ -4377,7 +4378,7 @@ ip like ?]]></xml-property>
       <Visible>true</Visible>
       <Label>
         <Caption>
-          <Value>FishIE Median FPS</Value>
+          <Value>FishIE Median FPS (1000 fish)</Value>
           <Font>
             <Size>16.0</Size>
             <Bold>true</Bold>

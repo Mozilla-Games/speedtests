@@ -178,7 +178,8 @@
             <xml-property name="queryText"><![CDATA[select etms, fps, browsername, browserversion
 from fishtank
 INNER JOIN speedtests.browser ON browser_id = browser.id
-where browser_id = ? and
+where num_fish = 1000 and
+browser_id = ? and
 teststart = ? and
 ip like ?]]></xml-property>
         </oda-data-set>
@@ -229,7 +230,7 @@ ip like ?]]></xml-property>
             <property name="fontSize">12pt</property>
             <property name="fontWeight">bold</property>
             <property name="paddingBottom">10pt</property>
-            <expression name="valueExpr">"FishIE test run starting at " + params["RP_TESTRUNSTART"].value + ", " + params["RP_BROWSERSTRING"].value</expression>
+            <expression name="valueExpr">"FishIE test run (1000 fish) starting at " + params["RP_TESTRUNSTART"].value + ", " + params["RP_BROWSERSTRING"].value</expression>
             <property name="contentType">html</property>
         </text-data>
         <extended-item extensionName="Chart" id="443">
