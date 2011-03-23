@@ -54,7 +54,7 @@ class BrowserLauncher(object):
     def copy_profile(self):
         if not self.browser_exists():
             return
-        profile_archive = 'profile_%s_%s.zip' % (self.browser_name, self.os_name)
+        profile_archive = os.path.join('profiles', self.browser_name, '%s.zip' % self.os_name)
         if not os.path.exists(profile_archive):
             return
         if os.path.exists(self.profile_path):
@@ -111,7 +111,7 @@ class BrowserLauncher(object):
 class BrowserLauncherRedirFile(BrowserLauncher):
     
     def __init__(self, os_name, browser_name, profile_path, cmd, args_tuple=()):
-        super(BrowserLauncherRedirFile, self).__init__(self, os_name, browser_name, profile_path, cmd, args_tuple)
+        super(BrowserLauncherRedirFile, self).__init__(os_name, browser_name, profile_path, cmd, args_tuple)
         self.redir_file = None
     
     def cmd_line(self, url=TEST_URL):
@@ -126,12 +126,20 @@ class BrowserRunner(object):
     @classmethod
     def browsers_by_os(cls, os_str):
         if os_str == 'Darwin':
+            from Carbon import Folder, Folders
+            lib_path = Folder.FSFindFolder(Folders.kUserDomain,
+                                           Folders.kDomainLibraryFolderType,
+                                           Folders.kDontCreateFolder).FSRefMakePath()
+            app_supp_path = Folder.FSFindFolder(Folders.kUserDomain,
+                                                Folders.kApplicationSupportFolderType,
+                                                Folders.kDontCreateFolder).FSRefMakePath()
+
             os_name = 'osx'
             return [
-                   BrowserLauncher(os_name, 'firefox', '/Applications/Firefox.app/Contents/MacOS/firefox'),
-                   BrowserLauncherRedirFile(os_name, 'safari', '/Applications/Safari.app/Contents/MacOS/Safari'),
-                   BrowserLauncher(os_name, 'opera', '/Applications/Opera.app/Contents/MacOS/Opera'),
-                   BrowserLauncher(os_name, 'chrome', '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome')
+                   BrowserLauncher(os_name, 'firefox', os.path.join(app_supp_path, 'Firefox'), '/Applications/Firefox.app/Contents/MacOS/firefox'),
+                   BrowserLauncherRedirFile(os_name, 'safari', os.path.join(lib_path, 'Safari'), '/Applications/Safari.app/Contents/MacOS/Safari'),
+                   BrowserLauncher(os_name, 'opera', os.path.join(app_supp_path, 'Opera'), '/Applications/Opera.app/Contents/MacOS/Opera'),
+                   BrowserLauncher(os_name, 'chrome', os.path.join(app_supp_path, 'Google', 'Chrome'), '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome')
                    ]
         elif os_str == 'Linux':
             os_name = 'linux'
