@@ -58,7 +58,7 @@ class NextTest(object):
             # Redirect to the local server to start the next browser.
             # We can't use localhost here because IE has issues connecting to the server via
             # localhost.
-            raise web.seeother('http://%s:8111/' % params['ip'])
+            raise web.seeother('http://%s:%s/' % (params['ip'], params['port']))
         raise web.seeother('%s/done/' % SERVER_URL) 
 
 

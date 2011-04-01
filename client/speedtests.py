@@ -1,5 +1,6 @@
 import BaseHTTPServer
 import ConfigParser
+import datetime
 import errno
 import os
 import platform
@@ -19,6 +20,12 @@ import ie_reg
 DEFAULT_CONF_FILE = 'speedtests.conf'
 cfg = ConfigParser.ConfigParser()
 cfg.read(DEFAULT_CONF_FILE)
+
+try:
+    LOCAL_PORT = cfg.getint('speedtests', 'local_port')
+except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
+    LOCAL_PORT = 8111
+
 try:
     TEST_URL = cfg.get('speedtests', 'server_url').rstrip('/') + \
                '/start/?auto=true'
@@ -34,7 +41,7 @@ if TEST_URL.find('?') == -1:
     TEST_URL += '?'
 else:
     TEST_URL += '&'
-TEST_URL += 'ip=%s' % local_ip
+TEST_URL += 'ip=%s&port=%d' % (local_ip, LOCAL_PORT)
 
 
 class BrowserController(object):
@@ -277,6 +284,7 @@ class BrowserRunner(object):
         self.current_launcher = None
         self.proc = None
         self.lock = threading.Lock()
+        self.browser_launch_time = None
     
     def archive_current_profiles(self, browsername):
         for b in self.browsers:
@@ -295,6 +303,8 @@ class BrowserRunner(object):
         self.lock.acquire()
         if self.current_launcher:
             self.current_launcher.terminate()
+            print 'Test running time: %s' % (datetime.datetime.now() -
+                                             self.browser_launch_time)
 
         while True:
             try:
@@ -306,6 +316,7 @@ class BrowserRunner(object):
             if self.current_launcher.browser_exists():
                 break
 
+        self.browser_launch_time = datetime.datetime.now()
         self.proc = self.current_launcher.launch()
         self.lock.release()
 
@@ -347,7 +358,7 @@ def main():
         br.archive_current_profiles(browser)
         sys.exit(0)
             
-    trs = TestRunnerHTTPServer(('', 8111), TestRunnerRequestHandler, br)
+    trs = TestRunnerHTTPServer(('', LOCAL_PORT), TestRunnerRequestHandler, br)
     server_thread = threading.Thread(target=trs.serve_forever)
     server_thread.start()
     br.launch_next_browser()
