@@ -36,11 +36,6 @@ else:
     TEST_URL += '&'
 TEST_URL += 'ip=%s' % local_ip
 
-class TestsFinishedException(Exception):
-    
-    def __str__(self):
-        return 'Browser SpeedTests finished!'
-
 
 class BrowserLauncher(object):
     
@@ -290,15 +285,19 @@ class BrowserRunner(object):
         self.lock.release()
 
 
-br = None
+class TestRunnerHTTPServer(BaseHTTPServer.HTTPServer):
+    
+    def __init__(self, server_address, RequestHandlerClass, browser_runner):
+        BaseHTTPServer.HTTPServer.__init__(self, server_address, RequestHandlerClass)
+        self.browser_runner = browser_runner
 
 
-class TestRunner(BaseHTTPServer.BaseHTTPRequestHandler):
+class TestRunnerRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     
     def do_GET(self):
+        # Indicates that the tests on the current browser have finished.
         print 'got pingback'
-        global br
-        br.launch_next_browser()
+        self.server.browser_runner.launch_next_browser()
         text = '<html><body>Done tests; launching next browser...</body></html>'
         try:
             self.send_response(200)
@@ -312,10 +311,9 @@ class TestRunner(BaseHTTPServer.BaseHTTPRequestHandler):
 
 
 def main():
-    global br
     evt = threading.Event()
     br = BrowserRunner(evt)
-    trs = BaseHTTPServer.HTTPServer(('', 8111), TestRunner)
+    trs = TestRunnerHTTPServer(('', 8111), TestRunnerRequestHandler, br)
     server_thread = threading.Thread(target=trs.serve_forever)
     server_thread.start()
     br.launch_next_browser()
