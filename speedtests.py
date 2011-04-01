@@ -96,8 +96,8 @@ class BrowserLauncher(object):
             if not p['previous_profile']:
                 continue
             shutil.rmtree(p['path'])
-            shutil.move(self.previous_profile, self.profile_path)
-            os.rmdir(os.path.dirname(self.previous_profile))
+            shutil.move(p['previous_profile'], p['path'])
+            os.rmdir(os.path.dirname(p['previous_profile']))
 
     def launch(self):
         self.copy_profiles()
