@@ -116,7 +116,7 @@ class BrowserLauncher(object):
                 self.proc.wait()  # or poll and error out if still running?
                 self.proc = None
             print 'process is dead'
-        #self.clean_up()
+        self.clean_up()
 
 
 class IELauncher(BrowserLauncher):
