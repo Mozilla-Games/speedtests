@@ -42,10 +42,10 @@ class NextTest(object):
                 if equals:
                     params[name] = value
                     
-        # The start page is new and launches the tests in a new window with a set size.
-        # For anyone going straight to /nexttest/, we'll redirect them to the start page.
-        # The start page will include the search string 'runtests=true' to actually
-        # load the next test. 
+        # The start page is new and launches the tests in a new window with a
+        # set size.  For anyone going straight to /nexttest/, we'll redirect
+        # them to the start page.  The start page will include the search
+        # string 'runtests=true' to actually load the next test. 
         if not params.get('runtests', False):
             raise web.seeother('%s/start/' % SERVER_URL)
 
@@ -55,7 +55,10 @@ class NextTest(object):
             if t > current_testname:
                 raise web.seeother('%s/%s/Default.html%s' % (HTML_URL, t, web.ctx.query))
         if params.get('auto', False):
-            raise web.seeother('http://localhost:8111')
+            # Redirect to the local server to start the next browser.
+            # We can't use localhost here because IE has issues connecting to the server via
+            # localhost.
+            raise web.seeother('http://%s:8111/' % params['ip'])
         raise web.seeother('%s/done/' % SERVER_URL) 
 
 
@@ -68,7 +71,8 @@ def get_browser_id(ua):
     
     if 'firefox' in ua:
         bname = 'Firefox'
-        m = re.match('[^\(]*\((.*) rv:([^\)]*)\) gecko/([^ ]+) firefox/(.*)', ua)
+        m = re.match('[^\(]*\((.*) rv:([^\)]*)\) gecko/([^ ]+) firefox/(.*)',
+                     ua)
         platform = m.group(1).replace(';', '').strip()
         geckover = m.group(2)
         buildid = m.group(3)
@@ -89,8 +93,6 @@ def get_browser_id(ua):
         platform = m.group(1)
         bver = m.group(2)
     elif 'opera' in ua:
-        # opera/9.80 (macintosh; intel mac os x 10.6.6; u; en) presto/2.7.62 version/11.010.0
-        # Opera/9.80 (X11; Linux x86_64; U; en) Presto/2.7.62 Version/11.01
         bname = 'Opera'
         m = re.match('[^\(]*\(([^;]*);[^\)]*\).*version/(.*)', ua)
         platform = m.group(1).strip()
@@ -141,7 +143,8 @@ class DoneTests(object):
         return done(SERVER_URL, HTML_URL)
 
 
-db = web.database(dbn='mysql', db='speedtests', user='speedtests', pw='speedtests')
+db = web.database(dbn='mysql', db='speedtests', user='speedtests',
+                  pw='speedtests')
 app = web.application(urls, globals())
 
 if __name__ == '__main__':

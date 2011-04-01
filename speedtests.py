@@ -1,5 +1,3 @@
-# when last page is loaded, browser will ping server
-# server kills current process, starts next
 import BaseHTTPServer
 import ConfigParser
 import errno
@@ -12,7 +10,11 @@ import sys
 import tempfile
 import threading
 import time
+import _winreg
 import zipfile
+
+import ie_reg
+
 
 DEFAULT_CONF_FILE = 'speedtests.conf'
 cfg = ConfigParser.ConfigParser()
@@ -23,6 +25,16 @@ try:
 except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
     TEST_URL = 'http://brasstacks.mozilla.com/speedtestssvr/start/?auto=true'
 
+# We can also find out the address like this, supposedly more reliable:
+#s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+#s.connect((<TEST_HOST>, 80))
+#local_ip = s.getsockname()
+local_ip = socket.gethostbyname(socket.gethostname())
+if TEST_URL.find('?') == -1:
+    TEST_URL += '?'
+else:
+    TEST_URL += '&'
+TEST_URL += 'ip=%s' % local_ip
 
 class TestsFinishedException(Exception):
     
@@ -32,14 +44,13 @@ class TestsFinishedException(Exception):
 
 class BrowserLauncher(object):
     
-    def __init__(self, os_name, browser_name, profile_path, cmd, args_tuple=()):
+    def __init__(self, os_name, browser_name, profiles, cmd, args_tuple=()):
         self.os_name = os_name
         self.browser_name = browser_name
-        self.profile_path = profile_path
+        self.profiles = profiles
         self.cmd = cmd
         self.args_tuple = args_tuple
         self.proc = None
-        self.previous_profile = ''
         try:
             self.cmd = cfg.get(os_name, browser_name)
         except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
@@ -51,22 +62,23 @@ class BrowserLauncher(object):
     def browser_exists(self):
         return os.path.exists(self.cmd)
     
-    def copy_profile(self):
-        if not self.browser_exists():
+    def copy_profiles(self):
+        if not self.browser_exists() or not self.profiles:
             return
-        profile_archive = os.path.join('profiles', self.browser_name, '%s.zip' % self.os_name)
-        if not os.path.exists(profile_archive):
-            return
-        if os.path.exists(self.profile_path):
-            t = tempfile.mkdtemp()
-            shutil.move(self.profile_path, t)
-            self.previous_profile = os.path.join(t, os.path.basename(self.profile_path))
-        try:
-            os.mkdir(self.profile_path)
-        except OSError:
-            pass
-        profile_zip = zipfile.ZipFile(profile_archive)
-        profile_zip.extractall(self.profile_path)
+        for p in self.profiles:
+            profile_archive = os.path.join('profiles', self.browser_name, p['archive'])
+            if not os.path.exists(profile_archive):
+                return
+            if os.path.exists(p['path']):
+                t = tempfile.mkdtemp()
+                shutil.move(p['path'], t)
+                self.previous_profile = os.path.join(t, os.path.basename(p['path']))
+            try:
+                os.mkdir(p['path'])
+            except OSError:
+                pass
+            profile_zip = zipfile.ZipFile(profile_archive)
+            profile_zip.extractall(p['path'])
     
     def clean_up(self):
         if not self.previous_profile:
@@ -76,7 +88,7 @@ class BrowserLauncher(object):
         os.rmdir(os.path.dirname(self.previous_profile))
 
     def launch(self):
-        self.copy_profile()
+        self.copy_profiles()
         cl = self.cmd_line()
         print 'Launching %s...' % ' '.join(cl)
         self.proc = subprocess.Popen(cl)
@@ -104,10 +116,60 @@ class BrowserLauncher(object):
                 self.proc.wait()  # or poll and error out if still running?
                 self.proc = None
             print 'process is dead'
-        self.clean_up()
+        #self.clean_up()
 
 
+class IELauncher(BrowserLauncher):
 
+    def __init__(self, os_name, browser_name, cmd, args_tuple=()):
+        super(IELauncher, self).__init__(os_name, browser_name, None, cmd, args_tuple)
+        self.reg_backup = []
+        self.key = _winreg.HKEY_CURRENT_USER
+        self.subkey = 'Software\\Microsoft\\Internet Explorer\\Main'
+        
+    def backup_reg(self):
+        hdl = _winreg.OpenKey(self.key, self.subkey)
+        count = 0
+        while True:
+            try:
+                self.reg_backup.append(_winreg.EnumValue(hdl, count))
+            except WindowsError:
+                break
+            count += 1
+        _winreg.CloseKey(hdl)
+
+    def setup_reg(self):
+        self.load_reg(ie_reg.registry_vals)
+        new_win_path = 'Software\\Microsoft\\Internet Explorer\\New Windows'
+        new_win_allow_path = new_win_path + '\\Allow'
+        try:
+            hdl = _winreg.OpenKey(self.key, new_win_allow_path, 0, _winreg.KEY_WRITE)
+        except WindowsError:
+            _winreg.CreateKey(self.key, new_win_allow_path)
+            hdl = _winreg.OpenKey(self.key, new_win_allow_path, 0, _winreg.KEY_WRITE)
+        _winreg.SetValueEx(hdl, 'brasstacks.mozilla.com', 0, 3, None)
+        _winreg.CloseKey(hdl)
+        
+    def restore_reg(self):
+        self.load_reg(self.reg_backup)
+    
+    def load_reg(self, keyvals):
+        hdl = _winreg.OpenKey(self.key, self.subkey, 0, _winreg.KEY_WRITE)
+        for i in keyvals:
+            #print 'setting %s' % str(i)
+            _winreg.SetValueEx(hdl, i[0], 0, i[2], i[1])
+        _winreg.CloseKey(hdl)
+
+    def terminate(self):
+        super(IELauncher, self).terminate()
+        self.restore_reg()
+
+    def launch(self):
+        self.backup_reg()
+        self.setup_reg()
+        super(IELauncher, self).launch()
+        
+            
 class BrowserLauncherRedirFile(BrowserLauncher):
     
     def __init__(self, os_name, browser_name, profile_path, cmd, args_tuple=()):
@@ -150,12 +212,26 @@ class BrowserRunner(object):
                    ]
         elif os_str == 'Windows':
             os_name = 'windows'
+            user_profile = os.getenv('USERPROFILE')
+            app_data = os.getenv('APPDATA')
+            local_app_data = os.getenv('LOCALAPPDATA')
+            program_files = os.getenv('PROGRAMFILES')
             return [
-                   BrowserLauncher(os_name, 'firefox', '\\Program Files\\Mozilla Firefox 4.0 Beta 12\\firefox.exe'),
-                   BrowserLauncher(os_name, 'internet explorer', '\\Program Files\\Internet Explorer\\iexplore.exe'),
-                   BrowserLauncher(os_name, 'safari', '\\Program Files\\Safari\\Safari.exe'),
-                   BrowserLauncher(os_name, 'opera', '\\Program Files\\Opera\\opera.exe'),
-                   BrowserLauncher(os_name, 'chrome', os.path.join(os.getenv('USERPROFILE'), 'Local Settings\\Application Data\\Google\\Chrome\\Application\\chrome.exe'))
+                   BrowserLauncher(os_name, 'firefox',
+                                   [{'path': os.path.join(app_data, 'Mozilla\\Firefox'), 'archive': 'windows.zip'}],
+                                   os.path.join(program_files, 'Mozilla Firefox\\firefox.exe')),
+                   IELauncher(os_name, 'internet explorer', os.path.join(program_files, 'Internet Explorer\\iexplore.exe')),
+                   BrowserLauncher(os_name, 'safari',
+                                   [{'path': os.path.join(local_app_data, 'Apple Computer\\Safari'), 'archive': 'windows\\local.zip'},
+                                    {'path': os.path.join(app_data, 'Apple Computer\\Safari'), 'archive': 'windows\\roaming.zip'}],
+                                    os.path.join(program_files, 'Safari\\Safari.exe')),
+                   BrowserLauncher(os_name, 'opera',
+                                   [{'path': os.path.join(local_app_data, 'Opera\\Opera'), 'archive': 'windows\\local.zip'},
+                                    {'path': os.path.join(app_data, 'Opera\\Opera'), 'archive': 'windows\\roaming.zip'}],
+                                   os.path.join(program_files, 'Opera\\opera.exe')),
+                   BrowserLauncher(os_name, 'chrome',
+                                   [{'path': os.path.join(local_app_data, 'Google\\Chrome\\User Data'), 'archive': 'windows.zip'}],
+                                   os.path.join(user_profile, 'Local Settings\\Application Data\\Google\\Chrome\\Application\\chrome.exe'))
                    ]
 
     def __init__(self, evt):

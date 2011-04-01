@@ -1,4 +1,4 @@
-DYNAMIC_SERVER_URL = "http://" + window.location.hostname + ":8080";
+DYNAMIC_SERVER_URL = "http://" + window.location.hostname;
 
 var SpeedTests = function() {
 
@@ -46,7 +46,8 @@ var SpeedTests = function() {
         return;
       }
       loadingNextTest = true;
-      var body = JSON.stringify({ testname: testname, results: all_results, ua: navigator.userAgent });
+      var body = JSON.stringify({ testname: testname, results: all_results,
+                                  ua: navigator.userAgent });
       var req = new XMLHttpRequest();
       req.open("POST", DYNAMIC_SERVER_URL + "/testresults/", false);
       req.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
@@ -54,7 +55,8 @@ var SpeedTests = function() {
       req.setRequestHeader("Connection", "close");
       req.send(body);
 
-      var url = DYNAMIC_SERVER_URL + "/nexttest/" + testname + "/" + document.location.search;
+      var url = DYNAMIC_SERVER_URL + "/nexttest/" + testname + "/" +
+                document.location.search;
       window.location.assign(url);
     }
   };
