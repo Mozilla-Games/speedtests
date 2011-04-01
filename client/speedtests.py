@@ -37,7 +37,7 @@ else:
 TEST_URL += 'ip=%s' % local_ip
 
 
-class BrowserLauncher(object):
+class BrowserController(object):
     
     def __init__(self, os_name, browser_name, profiles, cmd, args_tuple=()):
         self.os_name = os_name
@@ -63,12 +63,30 @@ class BrowserLauncher(object):
     def browser_exists(self):
         return os.path.exists(self.cmd)
     
+    def get_profile_archive_path(self, profile):
+        archive = profile.get('archive', '%s.zip' % self.os_name)
+        return os.path.join('profiles', self.browser_name, archive)
+    
+    def archive_current_profiles(self):
+        if not self.browser_exists() or not self.profiles:
+            return
+        for p in self.profiles:
+            if not os.path.exists(p['path']):
+                continue
+            profile_archive = self.get_profile_archive_path(p)
+            profile_zip = zipfile.ZipFile(profile_archive, 'w')
+            for (dirpath, dirnames, filenames) in os.walk(p['path']):
+                for f in filenames:
+                    filepath = os.path.join(dirpath, f)
+                    arcpath = filepath[len(p['path']):]
+                    profile_zip.write(filepath, arcpath)
+            profile_zip.close()
+    
     def copy_profiles(self):
         if not self.browser_exists() or not self.profiles:
             return
         for p in self.profiles:
-            archive = p.get('archive', '%s.zip' % self.os_name)
-            profile_archive = os.path.join('profiles', self.browser_name, archive)
+            profile_archive = self.get_profile_archive_path(p)
             if not os.path.exists(profile_archive):
                 return
             if os.path.exists(p['path']):
@@ -81,7 +99,7 @@ class BrowserLauncher(object):
                 os.mkdir(p['path'])
             except OSError:
                 pass
-            profile_zip = zipfile.ZipFile(profile_archive)
+            profile_zip = zipfile.ZipFile(profile_archive, 'r')
             profile_zip.extractall(p['path'])
     
     def clean_up(self):
@@ -126,10 +144,10 @@ class BrowserLauncher(object):
         self.clean_up()
 
 
-class IELauncher(BrowserLauncher):
+class IEController(BrowserController):
 
     def __init__(self, os_name, browser_name, cmd, args_tuple=()):
-        super(IELauncher, self).__init__(os_name, browser_name, [], cmd, args_tuple)
+        super(IEController, self).__init__(os_name, browser_name, [], cmd, args_tuple)
         self.reg_backup = []
         self.key = _winreg.HKEY_CURRENT_USER
         self.subkey = 'Software\\Microsoft\\Internet Explorer\\Main'
@@ -168,26 +186,26 @@ class IELauncher(BrowserLauncher):
         _winreg.CloseKey(hdl)
 
     def terminate(self):
-        super(IELauncher, self).terminate()
+        super(IEController, self).terminate()
         self.restore_reg()
 
     def launch(self):
         self.backup_reg()
         self.setup_reg()
-        super(IELauncher, self).launch()
+        super(IEController, self).launch()
         
             
-class BrowserLauncherRedirFile(BrowserLauncher):
+class BrowserControllerRedirFile(BrowserController):
     
     def __init__(self, os_name, browser_name, profile_path, cmd, args_tuple=()):
-        super(BrowserLauncherRedirFile, self).__init__(os_name, browser_name, profile_path, cmd, args_tuple)
+        super(BrowserControllerRedirFile, self).__init__(os_name, browser_name, profile_path, cmd, args_tuple)
         self.redir_file = None
     
     def cmd_line(self, url=TEST_URL):
         self.redir_file = tempfile.NamedTemporaryFile(suffix='.html')
         self.redir_file.write('<html><head><meta HTTP-EQUIV="REFRESH" content="0; url=%s"></head></html>\n' % url)
         self.redir_file.flush()
-        return super(BrowserLauncherRedirFile, self).cmd_line(self.redir_file.name)
+        return super(BrowserControllerRedirFile, self).cmd_line(self.redir_file.name)
         
 
 class BrowserRunner(object):
@@ -205,23 +223,23 @@ class BrowserRunner(object):
 
             os_name = 'osx'
             return [
-                   BrowserLauncher(os_name, 'firefox', os.path.join(app_supp_path, 'Firefox'),
+                   BrowserController(os_name, 'firefox', os.path.join(app_supp_path, 'Firefox'),
                                    '/Applications/Firefox.app/Contents/MacOS/firefox'),
-                   BrowserLauncherRedirFile(os_name, 'safari', os.path.join(lib_path, 'Safari'),
+                   BrowserControllerRedirFile(os_name, 'safari', os.path.join(lib_path, 'Safari'),
                                             '/Applications/Safari.app/Contents/MacOS/Safari'),
-                   BrowserLauncher(os_name, 'opera', os.path.join(app_supp_path, 'Opera'),
+                   BrowserController(os_name, 'opera', os.path.join(app_supp_path, 'Opera'),
                                    '/Applications/Opera.app/Contents/MacOS/Opera'),
-                   BrowserLauncher(os_name, 'chrome', os.path.join(app_supp_path, 'Google', 'Chrome'),
+                   BrowserController(os_name, 'chrome', os.path.join(app_supp_path, 'Google', 'Chrome'),
                                    '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome')
                    ]
         elif os_str == 'Linux':
             os_name = 'linux'
             return [
-                   BrowserLauncher(os_name, 'firefox', os.path.join(os.getenv('HOME'), '.mozilla', 'firefox'),
+                   BrowserController(os_name, 'firefox', os.path.join(os.getenv('HOME'), '.mozilla', 'firefox'),
                                    '/usr/bin/firefox'),
-                   BrowserLauncher(os_name, 'opera', os.path.join(os.getenv('HOME'), '.opera'),
+                   BrowserController(os_name, 'opera', os.path.join(os.getenv('HOME'), '.opera'),
                                    '/usr/bin/opera'),
-                   BrowserLauncher(os_name, 'chrome', os.path.join(os.getenv('HOME'), '.config', 'google-chrome'),
+                   BrowserController(os_name, 'chrome', os.path.join(os.getenv('HOME'), '.config', 'google-chrome'),
                                    '/usr/bin/google-chrome')
                    ]
         elif os_str == 'Windows':
@@ -231,19 +249,19 @@ class BrowserRunner(object):
             local_app_data = os.getenv('LOCALAPPDATA')
             program_files = os.getenv('PROGRAMFILES')
             return [
-                   BrowserLauncher(os_name, 'firefox',
+                   BrowserController(os_name, 'firefox',
                                    [{'path': os.path.join(app_data, 'Mozilla\\Firefox'), 'archive': 'windows.zip'}],
                                    os.path.join(program_files, 'Mozilla Firefox\\firefox.exe')),
-                   IELauncher(os_name, 'internet explorer', os.path.join(program_files, 'Internet Explorer\\iexplore.exe')),
-                   BrowserLauncher(os_name, 'safari',
+                   IEController(os_name, 'internet explorer', os.path.join(program_files, 'Internet Explorer\\iexplore.exe')),
+                   BrowserController(os_name, 'safari',
                                    [{'path': os.path.join(local_app_data, 'Apple Computer\\Safari'), 'archive': 'windows\\local.zip'},
                                     {'path': os.path.join(app_data, 'Apple Computer\\Safari'), 'archive': 'windows\\roaming.zip'}],
                                     os.path.join(program_files, 'Safari\\Safari.exe')),
-                   BrowserLauncher(os_name, 'opera',
+                   BrowserController(os_name, 'opera',
                                    [{'path': os.path.join(local_app_data, 'Opera\\Opera'), 'archive': 'windows\\local.zip'},
                                     {'path': os.path.join(app_data, 'Opera\\Opera'), 'archive': 'windows\\roaming.zip'}],
                                    os.path.join(program_files, 'Opera\\opera.exe')),
-                   BrowserLauncher(os_name, 'chrome',
+                   BrowserController(os_name, 'chrome',
                                    [{'path': os.path.join(local_app_data, 'Google\\Chrome\\User Data'), 'archive': 'windows.zip'}],
                                    os.path.join(user_profile, 'Local Settings\\Application Data\\Google\\Chrome\\Application\\chrome.exe'))
                    ]
@@ -259,6 +277,13 @@ class BrowserRunner(object):
         self.current_launcher = None
         self.proc = None
         self.lock = threading.Lock()
+    
+    def archive_current_profiles(self, browsername):
+        for b in self.browsers:
+            if b.browser_name == browsername:
+                b.archive_current_profiles()
+                return
+        print 'Unknown browser "%s".' % browsername
     
     def browser_running(self):
         self.lock.acquire()
@@ -313,6 +338,15 @@ class TestRunnerRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 def main():
     evt = threading.Event()
     br = BrowserRunner(evt)
+    if len(sys.argv) > 1 and sys.argv[1] == 'archive':
+        try:
+            browser = sys.argv[2]
+        except IndexError:
+            print 'Specify a browser.'
+            sys.exit(errno.EINVAL)
+        br.archive_current_profiles(browser)
+        sys.exit(0)
+            
     trs = TestRunnerHTTPServer(('', 8111), TestRunnerRequestHandler, br)
     server_thread = threading.Thread(target=trs.serve_forever)
     server_thread.start()
