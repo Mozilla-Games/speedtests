@@ -47,7 +47,13 @@ class BrowserLauncher(object):
     def __init__(self, os_name, browser_name, profiles, cmd, args_tuple=()):
         self.os_name = os_name
         self.browser_name = browser_name
-        self.profiles = profiles
+        self.profiles = []
+        if type(profiles) != list:
+            profiles = [profiles]
+        for p in profiles:
+            if type(p) == str:
+                self.profiles.append({'path': p})
+            self.profiles.append(p)
         self.cmd = cmd
         self.args_tuple = args_tuple
         self.proc = None
@@ -66,13 +72,16 @@ class BrowserLauncher(object):
         if not self.browser_exists() or not self.profiles:
             return
         for p in self.profiles:
-            profile_archive = os.path.join('profiles', self.browser_name, p['archive'])
+            archive = p.get('archive', '%s.zip' % self.os_name)
+            profile_archive = os.path.join('profiles', self.browser_name, archive)
             if not os.path.exists(profile_archive):
                 return
             if os.path.exists(p['path']):
                 t = tempfile.mkdtemp()
                 shutil.move(p['path'], t)
-                self.previous_profile = os.path.join(t, os.path.basename(p['path']))
+                p['previous_profile'] = os.path.join(t, os.path.basename(p['path']))
+            else:
+                p['previous_profile'] = ''
             try:
                 os.mkdir(p['path'])
             except OSError:
@@ -81,11 +90,14 @@ class BrowserLauncher(object):
             profile_zip.extractall(p['path'])
     
     def clean_up(self):
-        if not self.previous_profile:
+        if not self.profiles:
             return
-        shutil.rmtree(self.profile_path)
-        shutil.move(self.previous_profile, self.profile_path)
-        os.rmdir(os.path.dirname(self.previous_profile))
+        for p in self.profiles:
+            if not p['previous_profile']:
+                continue
+            shutil.rmtree(p['path'])
+            shutil.move(self.previous_profile, self.profile_path)
+            os.rmdir(os.path.dirname(self.previous_profile))
 
     def launch(self):
         self.copy_profiles()
@@ -122,7 +134,7 @@ class BrowserLauncher(object):
 class IELauncher(BrowserLauncher):
 
     def __init__(self, os_name, browser_name, cmd, args_tuple=()):
-        super(IELauncher, self).__init__(os_name, browser_name, None, cmd, args_tuple)
+        super(IELauncher, self).__init__(os_name, browser_name, [], cmd, args_tuple)
         self.reg_backup = []
         self.key = _winreg.HKEY_CURRENT_USER
         self.subkey = 'Software\\Microsoft\\Internet Explorer\\Main'
@@ -198,17 +210,24 @@ class BrowserRunner(object):
 
             os_name = 'osx'
             return [
-                   BrowserLauncher(os_name, 'firefox', os.path.join(app_supp_path, 'Firefox'), '/Applications/Firefox.app/Contents/MacOS/firefox'),
-                   BrowserLauncherRedirFile(os_name, 'safari', os.path.join(lib_path, 'Safari'), '/Applications/Safari.app/Contents/MacOS/Safari'),
-                   BrowserLauncher(os_name, 'opera', os.path.join(app_supp_path, 'Opera'), '/Applications/Opera.app/Contents/MacOS/Opera'),
-                   BrowserLauncher(os_name, 'chrome', os.path.join(app_supp_path, 'Google', 'Chrome'), '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome')
+                   BrowserLauncher(os_name, 'firefox', os.path.join(app_supp_path, 'Firefox'),
+                                   '/Applications/Firefox.app/Contents/MacOS/firefox'),
+                   BrowserLauncherRedirFile(os_name, 'safari', os.path.join(lib_path, 'Safari'),
+                                            '/Applications/Safari.app/Contents/MacOS/Safari'),
+                   BrowserLauncher(os_name, 'opera', os.path.join(app_supp_path, 'Opera'),
+                                   '/Applications/Opera.app/Contents/MacOS/Opera'),
+                   BrowserLauncher(os_name, 'chrome', os.path.join(app_supp_path, 'Google', 'Chrome'),
+                                   '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome')
                    ]
         elif os_str == 'Linux':
             os_name = 'linux'
             return [
-                   BrowserLauncher(os_name, 'firefox', os.path.join(os.getenv('HOME'), '.mozilla', 'firefox'), '/usr/bin/firefox'),
-                   BrowserLauncher(os_name, 'opera', os.path.join(os.getenv('HOME'), '.opera'), '/usr/bin/opera'),
-                   BrowserLauncher(os_name, 'chrome', os.path.join(os.getenv('HOME'), '.config', 'google-chrome'), '/usr/bin/google-chrome')
+                   BrowserLauncher(os_name, 'firefox', os.path.join(os.getenv('HOME'), '.mozilla', 'firefox'),
+                                   '/usr/bin/firefox'),
+                   BrowserLauncher(os_name, 'opera', os.path.join(os.getenv('HOME'), '.opera'),
+                                   '/usr/bin/opera'),
+                   BrowserLauncher(os_name, 'chrome', os.path.join(os.getenv('HOME'), '.config', 'google-chrome'),
+                                   '/usr/bin/google-chrome')
                    ]
         elif os_str == 'Windows':
             os_name = 'windows'
