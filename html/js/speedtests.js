@@ -24,6 +24,36 @@ var SpeedTests = function() {
     all_results.push(results);
   };
 
+  var crossDomainPost = function NetUtils_crossDomainPost(url, values, callback) {
+    if (!arguments.callee.c)
+      arguments.callee.c = 1;
+    var iframeName = "iframe" + arguments.callee.c++;
+    var iframe = $("<iframe></iframe>").hide().attr("name", iframeName).appendTo("body");
+    var form = $("<form></form>").hide().attr({ action: url, method: "post", target: iframeName }).appendTo("body");
+    for (var i in values) {
+      $("<input type='hidden'>").attr({ name: i, value: values[i]}).appendTo(form);
+    }
+    form.get(0).submit();
+    form.remove();
+    iframe.get(0).onload = function crossDomainIframeLoaded() {
+      callback();
+      setTimeout(function () { iframe.remove(); }, 0);
+    }
+  };
+
+  var getSearchParams = function() {
+    var params = document.location.search.slice(1).split("&");
+    var args = new Object();
+    for (p in params) {
+      var l = params[p].split("=").map(function(x)
+          { return decodeURIComponent(x); });
+      if (l.length != 2)
+        continue;
+      args[l[0]] = l[1];
+    }
+    return args;
+  };
+  
   return {
     init: function() {
       startTime = new Date();
@@ -46,6 +76,7 @@ var SpeedTests = function() {
         return;
       }
       loadingNextTest = true;
+      var searchParams = getSearchParams();
       var body = JSON.stringify({ testname: testname, results: all_results,
                                   ua: navigator.userAgent });
       var req = new XMLHttpRequest();
@@ -55,9 +86,12 @@ var SpeedTests = function() {
       req.setRequestHeader("Connection", "close");
       req.send(body);
 
-      var url = DYNAMIC_SERVER_URL + "/nexttest/" + testname + "/" +
-                document.location.search;
-      window.location.assign(url);
+      var local_url = 'http://' + searchParams.ip + ':' + searchParams.port + '/';
+      crossDomainPost(local_url, {body: body}, function () {
+        var url = DYNAMIC_SERVER_URL + "/nexttest/" + testname + "/" +
+                  document.location.search;
+        window.location.assign(url);
+      });
     }
   };
 }();

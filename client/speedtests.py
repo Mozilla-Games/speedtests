@@ -1,7 +1,10 @@
 import BaseHTTPServer
+import cgi
+import collections
 import ConfigParser
 import datetime
 import errno
+import json
 import os
 import platform
 import shutil
@@ -281,7 +284,7 @@ class BrowserRunner(object):
             sys.stderr.write('Unknown platform "%s".\n' % platform.system())
             sys.exit(errno.EOPNOTSUPP)
         self.browser_iter = iter(self.browsers)
-        self.current_launcher = None
+        self.current_controller = None
         self.proc = None
         self.lock = threading.Lock()
         self.browser_launch_time = None
@@ -295,29 +298,35 @@ class BrowserRunner(object):
     
     def browser_running(self):
         self.lock.acquire()
-        running = self.current_launcher.running()
+        running = self.current_controller.running()
         self.lock.release()
         return running
 
+    def browser_name(self):
+        self.lock.acquire()
+        browser_name = self.current_controller.browser_name
+        self.lock.release()
+        return browser_name
+
     def launch_next_browser(self):
         self.lock.acquire()
-        if self.current_launcher:
-            self.current_launcher.terminate()
+        if self.current_controller:
+            self.current_controller.terminate()
             print 'Test running time: %s' % (datetime.datetime.now() -
                                              self.browser_launch_time)
 
         while True:
             try:
-                self.current_launcher = self.browser_iter.next()
+                self.current_controller = self.browser_iter.next()
             except StopIteration:
                 self.evt.set()
                 self.lock.release()
                 return
-            if self.current_launcher.browser_exists():
+            if self.current_controller.browser_exists():
                 break
 
         self.browser_launch_time = datetime.datetime.now()
-        self.proc = self.current_launcher.launch()
+        self.proc = self.current_controller.launch()
         self.lock.release()
 
 
@@ -326,6 +335,7 @@ class TestRunnerHTTPServer(BaseHTTPServer.HTTPServer):
     def __init__(self, server_address, RequestHandlerClass, browser_runner):
         BaseHTTPServer.HTTPServer.__init__(self, server_address, RequestHandlerClass)
         self.browser_runner = browser_runner
+        self.results = collections.defaultdict(lambda: collections.defaultdict(list))
 
 
 class TestRunnerRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
@@ -344,6 +354,32 @@ class TestRunnerRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         except socket.error:
             # Browser was probably closed before we could send the response
             pass
+
+    def do_POST(self):
+        # Parse the form data posted
+        form = cgi.FieldStorage(
+            fp=self.rfile, 
+            headers=self.headers,
+            environ={'REQUEST_METHOD':'POST',
+                     'CONTENT_TYPE':self.headers['Content-Type'],
+                     })
+
+        # record results
+        web_data = json.loads(form['body'].value)
+        testname = web_data['testname']
+        self.server.results[self.server.browser_runner.browser_name()][testname].append(web_data['results'])
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write('<html></html>')
+
+    def read_data(self):
+        data = ''
+        while True:
+            buf = self.rfile.read()
+            if buf == '':
+                break
+            data += buf
+        return data
 
 
 def main():
@@ -370,6 +406,9 @@ def main():
     trs.shutdown()
     server_thread.join()
     print 'Done!'
+    print 'Test results:'
+    print ''
+    print dict(trs.results)
 
 
 if __name__ == '__main__':
