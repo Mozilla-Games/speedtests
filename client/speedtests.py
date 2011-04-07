@@ -14,11 +14,13 @@ import sys
 import tempfile
 import threading
 import time
-import _winreg
 import zipfile
 
-import ie_reg
+if platform.system() == 'Windows':
+    import _winreg
+    import ie_reg
 
+import results
 
 DEFAULT_CONF_FILE = 'speedtests.conf'
 cfg = ConfigParser.ConfigParser()
@@ -58,7 +60,8 @@ class BrowserController(object):
         for p in profiles:
             if type(p) == str:
                 self.profiles.append({'path': p})
-            self.profiles.append(p)
+            else:
+                self.profiles.append(p)
         self.cmd = cmd
         self.args_tuple = args_tuple
         self.proc = None
@@ -66,6 +69,7 @@ class BrowserController(object):
             self.cmd = cfg.get(os_name, browser_name)
         except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
             pass
+        print 'profiles: %s' % self.profiles
 
     def cmd_line(self, url=TEST_URL):
         return (self.cmd,) + self.args_tuple + (url,)
@@ -406,9 +410,10 @@ def main():
     trs.shutdown()
     server_thread.join()
     print 'Done!'
-    print 'Test results:'
-    print ''
-    print dict(trs.results)
+    #report = results.SpeedTestReport(trs.results)
+    #print 'Test results:'
+    #print ''
+    #print report.report()
 
 
 if __name__ == '__main__':

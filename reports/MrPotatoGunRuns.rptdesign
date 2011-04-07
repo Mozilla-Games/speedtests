@@ -163,131 +163,156 @@ ip like ?]]></xml-property>
     </page-setup>
     <body>
         <text-data id="431">
-            <property name="fontSize">12pt</property>
+            <property name="fontSize">14pt</property>
             <property name="fontWeight">bold</property>
+            <property name="color">#9E0000</property>
             <property name="paddingBottom">10pt</property>
+            <property name="textAlign">center</property>
             <expression name="valueExpr">"MrPotatoGun test runs, " + params["RP_BROWSERSTRING"].value</expression>
             <property name="contentType">html</property>
         </text-data>
-        <table id="433">
-            <property name="width">4.166666666666667in</property>
-            <property name="dataSet">MrPotatoGunDetails</property>
-            <list-property name="boundDataColumns">
-                <structure>
-                    <property name="name">teststart</property>
-                    <text-property name="displayName">teststart</text-property>
-                    <expression name="expression" type="javascript">dataSetRow["teststart"]</expression>
-                    <property name="dataType">date-time</property>
-                </structure>
-                <structure>
-                    <property name="name">fps</property>
-                    <text-property name="displayName">fps</text-property>
-                    <expression name="expression" type="javascript">dataSetRow["fps"]</expression>
-                    <property name="dataType">integer</property>
-                </structure>
-                <structure>
-                    <property name="name">Aggregation</property>
-                    <property name="dataType">integer</property>
-                    <simple-property-list name="aggregateOn">
-                        <value>TestStartGroup</value>
-                    </simple-property-list>
-                    <property name="aggregateFunction">MEDIAN</property>
-                    <list-property name="arguments">
-                        <structure>
-                            <property name="name">Expression</property>
-                            <expression name="value" type="javascript">row["fps"]</expression>
-                        </structure>
-                    </list-property>
-                </structure>
-            </list-property>
-            <column id="447">
-                <property name="width">2.5104166666666665in</property>
-            </column>
-            <column id="448">
-                <property name="width">1.65625in</property>
-            </column>
-            <header>
-                <row id="434">
-                    <cell id="435">
-                        <label id="436">
-                            <text-property name="text">teststart</text-property>
-                        </label>
-                    </cell>
-                    <cell id="437">
-                        <label id="438">
-                            <text-property name="text">fps</text-property>
-                        </label>
-                    </cell>
-                </row>
-            </header>
-            <group id="452">
-                <property name="groupName">TestStartGroup</property>
-                <expression name="keyExpr" type="javascript">row["teststart"]</expression>
-                <structure name="toc">
-                    <expression name="expressionValue" type="javascript">row["teststart"]</expression>
-                </structure>
-                <property name="hideDetail">false</property>
-                <header>
-                    <row id="453">
-                        <cell id="454">
-                            <data id="459">
-                                <property name="resultSetColumn">teststart</property>
-                                <list-property name="action">
+        <grid id="461">
+            <column id="462"/>
+            <row id="463">
+                <cell id="464">
+                    <property name="textAlign">center</property>
+                    <table id="433">
+                        <property name="width">4.166666666666667in</property>
+                        <property name="dataSet">MrPotatoGunDetails</property>
+                        <list-property name="boundDataColumns">
+                            <structure>
+                                <property name="name">teststart</property>
+                                <text-property name="displayName">teststart</text-property>
+                                <expression name="expression" type="javascript">dataSetRow["teststart"]</expression>
+                                <property name="dataType">date-time</property>
+                            </structure>
+                            <structure>
+                                <property name="name">fps</property>
+                                <text-property name="displayName">fps</text-property>
+                                <expression name="expression" type="javascript">dataSetRow["fps"]</expression>
+                                <property name="dataType">integer</property>
+                            </structure>
+                            <structure>
+                                <property name="name">Aggregation</property>
+                                <property name="dataType">integer</property>
+                                <simple-property-list name="aggregateOn">
+                                    <value>TestStartGroup</value>
+                                </simple-property-list>
+                                <property name="aggregateFunction">MEDIAN</property>
+                                <list-property name="arguments">
                                     <structure>
-                                        <property name="linkType">drill-through</property>
-                                        <property name="reportName">MrPotatoGunRunDetails.rptdesign</property>
-                                        <property name="targetWindow">_blank</property>
-                                        <property name="targetFileType">report-design</property>
-                                        <list-property name="paramBindings">
-                                            <structure>
-                                                <property name="paramName">RP_BROWSERID</property>
-                                                <simple-property-list name="expression">
-                                                    <value type="javascript">params["RP_BROWSERID"].value</value>
-                                                </simple-property-list>
-                                            </structure>
-                                            <structure>
-                                                <property name="paramName">RP_TESTRUNSTART</property>
-                                                <simple-property-list name="expression">
-                                                    <value type="javascript">row["teststart"]</value>
-                                                </simple-property-list>
-                                            </structure>
-                                            <structure>
-                                                <property name="paramName">RP_BROWSERSTRING</property>
-                                                <simple-property-list name="expression">
-                                                    <value type="javascript">params["RP_BROWSERSTRING"].value</value>
-                                                </simple-property-list>
-                                            </structure>
-                                            <structure>
-                                                <property name="paramName">RP_IP</property>
-                                                <simple-property-list name="expression">
-                                                    <value type="javascript">params["RP_IP"].value</value>
-                                                </simple-property-list>
-                                            </structure>
-                                        </list-property>
+                                        <property name="name">Expression</property>
+                                        <expression name="value" type="javascript">row["fps"]</expression>
                                     </structure>
                                 </list-property>
-                            </data>
-                        </cell>
-                        <cell id="455">
-                            <data id="460">
-                                <property name="resultSetColumn">Aggregation</property>
-                            </data>
-                        </cell>
-                    </row>
-                </header>
-                <footer>
-                    <row id="456">
-                        <cell id="457"/>
-                        <cell id="458"/>
-                    </row>
-                </footer>
-            </group>
-            <footer>
-                <row id="444">
-                    <cell id="445"/>
-                    <cell id="446"/>
-                </row>
-            </footer>
-        </table>
+                            </structure>
+                        </list-property>
+                        <method name="onCreate"><![CDATA[groupNum=0;]]></method>
+                        <column id="447">
+                            <property name="width">2.5104166666666665in</property>
+                        </column>
+                        <column id="448">
+                            <property name="width">1.65625in</property>
+                        </column>
+                        <header>
+                            <row id="434">
+                                <property name="backgroundColor">red</property>
+                                <property name="fontFamily">sans-serif</property>
+                                <property name="fontSize">12pt</property>
+                                <property name="fontWeight">bold</property>
+                                <property name="color">white</property>
+                                <cell id="435">
+                                    <label id="436">
+                                        <text-property name="text">teststart</text-property>
+                                    </label>
+                                </cell>
+                                <cell id="437">
+                                    <label id="438">
+                                        <text-property name="text">fps</text-property>
+                                    </label>
+                                </cell>
+                            </row>
+                        </header>
+                        <group id="452">
+                            <property name="groupName">TestStartGroup</property>
+                            <expression name="keyExpr" type="javascript">row["teststart"]</expression>
+                            <structure name="toc">
+                                <expression name="expressionValue" type="javascript">row["teststart"]</expression>
+                            </structure>
+                            <property name="hideDetail">false</property>
+                            <header>
+                                <row id="453">
+                                    <method name="onCreate"><![CDATA[groupNum++;]]></method>
+                                    <property name="fontSize">10pt</property>
+                                    <list-property name="highlightRules">
+                                        <structure>
+                                            <property name="operator">eq</property>
+                                            <property name="backgroundColor">#C0C0C0</property>
+                                            <property name="fontSize">10pt</property>
+                                            <expression name="testExpr" type="javascript">groupNum % 2</expression>
+                                            <simple-property-list name="value1">
+                                                <value type="javascript">0</value>
+                                            </simple-property-list>
+                                        </structure>
+                                    </list-property>
+                                    <cell id="454">
+                                        <data id="459">
+                                            <property name="textAlign">center</property>
+                                            <property name="resultSetColumn">teststart</property>
+                                            <list-property name="action">
+                                                <structure>
+                                                    <property name="linkType">drill-through</property>
+                                                    <property name="reportName">MrPotatoGunRunDetails.rptdesign</property>
+                                                    <property name="targetWindow">_blank</property>
+                                                    <property name="targetFileType">report-design</property>
+                                                    <list-property name="paramBindings">
+                                                        <structure>
+                                                            <property name="paramName">RP_BROWSERID</property>
+                                                            <simple-property-list name="expression">
+                                                                <value type="javascript">params["RP_BROWSERID"].value</value>
+                                                            </simple-property-list>
+                                                        </structure>
+                                                        <structure>
+                                                            <property name="paramName">RP_TESTRUNSTART</property>
+                                                            <simple-property-list name="expression">
+                                                                <value type="javascript">row["teststart"]</value>
+                                                            </simple-property-list>
+                                                        </structure>
+                                                        <structure>
+                                                            <property name="paramName">RP_BROWSERSTRING</property>
+                                                            <simple-property-list name="expression">
+                                                                <value type="javascript">params["RP_BROWSERSTRING"].value</value>
+                                                            </simple-property-list>
+                                                        </structure>
+                                                        <structure>
+                                                            <property name="paramName">RP_IP</property>
+                                                            <simple-property-list name="expression">
+                                                                <value type="javascript">params["RP_IP"].value</value>
+                                                            </simple-property-list>
+                                                        </structure>
+                                                    </list-property>
+                                                </structure>
+                                            </list-property>
+                                        </data>
+                                    </cell>
+                                    <cell id="455">
+                                        <data id="460">
+                                            <property name="textAlign">center</property>
+                                            <property name="resultSetColumn">Aggregation</property>
+                                        </data>
+                                    </cell>
+                                </row>
+                            </header>
+                        </group>
+                        <footer>
+                            <row id="444">
+                                <cell id="445"/>
+                                <cell id="446"/>
+                            </row>
+                        </footer>
+                    </table>
+                </cell>
+            </row>
+        </grid>
     </body>
 </report>

@@ -24,22 +24,22 @@ var SpeedTests = function() {
     all_results.push(results);
   };
 
-  var crossDomainPost = function NetUtils_crossDomainPost(url, values, callback) {
-    if (!arguments.callee.c)
-      arguments.callee.c = 1;
-    var iframeName = "iframe" + arguments.callee.c++;
-    var iframe = $("<iframe></iframe>").hide().attr("name", iframeName).appendTo("body");
-    var form = $("<form></form>").hide().attr({ action: url, method: "post", target: iframeName }).appendTo("body");
-    for (var i in values) {
-      $("<input type='hidden'>").attr({ name: i, value: values[i]}).appendTo(form);
-    }
-    form.get(0).submit();
-    form.remove();
-    iframe.get(0).onload = function crossDomainIframeLoaded() {
-      callback();
-      setTimeout(function () { iframe.remove(); }, 0);
-    }
-  };
+//  var crossDomainPost = function NetUtils_crossDomainPost(url, values, callback) {
+//    if (!arguments.callee.c)
+//      arguments.callee.c = 1;
+//    var iframeName = "iframe" + arguments.callee.c++;
+//    var iframe = $("<iframe></iframe>").hide().attr("name", iframeName).appendTo("body");
+//    var form = $("<form></form>").hide().attr({ action: url, method: "post", target: iframeName }).appendTo("body");
+//    for (var i in values) {
+//      $("<input type='hidden'>").attr({ name: i, value: values[i]}).appendTo(form);
+//    }
+//    form.get(0).submit();
+//    form.remove();
+//    iframe.get(0).onload = function crossDomainIframeLoaded() {
+//      callback();
+//      setTimeout(function () { iframe.remove(); }, 0);
+//    }
+//  };
 
   var getSearchParams = function() {
     var params = document.location.search.slice(1).split("&");
@@ -87,11 +87,14 @@ var SpeedTests = function() {
       req.send(body);
 
       var local_url = 'http://' + searchParams.ip + ':' + searchParams.port + '/';
-      crossDomainPost(local_url, {body: body}, function () {
-        var url = DYNAMIC_SERVER_URL + "/nexttest/" + testname + "/" +
-                  document.location.search;
-        window.location.assign(url);
-      });
+      var url = DYNAMIC_SERVER_URL + "/nexttest/" + testname + "/" +
+                document.location.search;
+      window.location.assign(url);
+//      crossDomainPost(local_url, {body: body}, function () {
+//        var url = DYNAMIC_SERVER_URL + "/nexttest/" + testname + "/" +
+//                  document.location.search;
+//        window.location.assign(url);
+//      });
     }
   };
 }();
