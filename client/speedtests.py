@@ -65,11 +65,11 @@ class BrowserController(object):
         self.cmd = cmd
         self.args_tuple = args_tuple
         self.proc = None
+        self.launch_time = None
         try:
             self.cmd = cfg.get(os_name, browser_name)
         except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
             pass
-        print 'profiles: %s' % self.profiles
 
     def cmd_line(self, url=TEST_URL):
         return (self.cmd,) + self.args_tuple + (url,)
@@ -130,6 +130,7 @@ class BrowserController(object):
         self.copy_profiles()
         cl = self.cmd_line()
         print 'Launching %s...' % ' '.join(cl)
+        self.launch_time = datetime.datetime.now()
         self.proc = subprocess.Popen(cl)
 
     def running(self):
@@ -137,6 +138,9 @@ class BrowserController(object):
         if running != None:
             self.proc = None
         return running == None
+	
+    def execution_time(self):
+        return datetime.datetime.now() - self.launch_time
 
     def terminate(self):
         if self.proc:
@@ -291,7 +295,6 @@ class BrowserRunner(object):
         self.current_controller = None
         self.proc = None
         self.lock = threading.Lock()
-        self.browser_launch_time = None
     
     def archive_current_profiles(self, browsername):
         for b in self.browsers:
@@ -305,6 +308,12 @@ class BrowserRunner(object):
         running = self.current_controller.running()
         self.lock.release()
         return running
+    
+    def execution_time(self):
+        self.lock.acquire()
+        t = self.current_controller.execution_time()
+        self.lock.release()
+        return t
 
     def browser_name(self):
         self.lock.acquire()
@@ -316,8 +325,7 @@ class BrowserRunner(object):
         self.lock.acquire()
         if self.current_controller:
             self.current_controller.terminate()
-            print 'Test running time: %s' % (datetime.datetime.now() -
-                                             self.browser_launch_time)
+            print 'Test running time: %s' % self.current_controller.execution_time()
 
         while True:
             try:
@@ -329,7 +337,6 @@ class BrowserRunner(object):
             if self.current_controller.browser_exists():
                 break
 
-        self.browser_launch_time = datetime.datetime.now()
         self.proc = self.current_controller.launch()
         self.lock.release()
 
@@ -386,6 +393,8 @@ class TestRunnerRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         return data
 
 
+MAX_TEST_TIME = datetime.timedelta(seconds=60*10)
+        
 def main():
     evt = threading.Event()
     br = BrowserRunner(evt)
@@ -403,7 +412,11 @@ def main():
     server_thread.start()
     br.launch_next_browser()
     while not evt.is_set():
-        if not br.browser_running():
+        if br.browser_running():
+            if br.execution_time() > MAX_TEST_TIME:
+                print 'test has taken too long; starting next browser'
+                br.launch_next_browser()
+        else:
             print 'browser isn\'t running!'
             br.launch_next_browser()
         evt.wait(5)
