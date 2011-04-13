@@ -5650,7 +5650,7 @@ ip like ?]]></xml-property>
       <Type>Linear</Type>
       <Title>
         <Caption>
-          <Value>Y-Axis Title</Value>
+          <Value>FPS</Value>
           <Font>
             <Size>14.0</Size>
             <Bold>true</Bold>
@@ -5683,7 +5683,7 @@ ip like ?]]></xml-property>
           <Bottom>0.0</Bottom>
           <Right>3.0</Right>
         </Insets>
-        <Visible>false</Visible>
+        <Visible>true</Visible>
       </Title>
       <TitlePosition>Left</TitlePosition>
       <SeriesDefinitions>
@@ -6926,7 +6926,7 @@ ip like ?]]></xml-property>
       <Type>Linear</Type>
       <Title>
         <Caption>
-          <Value>Y-Axis Title</Value>
+          <Value>FPS</Value>
           <Font>
             <Size>14.0</Size>
             <Bold>true</Bold>
@@ -6959,7 +6959,7 @@ ip like ?]]></xml-property>
           <Bottom>0.0</Bottom>
           <Right>3.0</Right>
         </Insets>
-        <Visible>false</Visible>
+        <Visible>true</Visible>
       </Title>
       <TitlePosition>Left</TitlePosition>
       <SeriesDefinitions>
@@ -8202,7 +8202,7 @@ ip like ?]]></xml-property>
       <Type>Linear</Type>
       <Title>
         <Caption>
-          <Value>Y-Axis Title</Value>
+          <Value>FPS</Value>
           <Font>
             <Size>14.0</Size>
             <Bold>true</Bold>
@@ -8235,7 +8235,7 @@ ip like ?]]></xml-property>
           <Bottom>0.0</Bottom>
           <Right>3.0</Right>
         </Insets>
-        <Visible>false</Visible>
+        <Visible>true</Visible>
       </Title>
       <TitlePosition>Left</TitlePosition>
       <SeriesDefinitions>
