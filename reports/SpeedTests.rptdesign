@@ -28,7 +28,7 @@
             <property name="dataType">string</property>
             <property name="distinct">true</property>
             <simple-property-list name="defaultValue">
-                <value type="constant">linux</value>
+                <value type="constant">windows</value>
             </simple-property-list>
             <list-property name="selectionList">
                 <structure>
