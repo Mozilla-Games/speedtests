@@ -548,7 +548,7 @@ ip like ?]]></xml-property>
         </Color>
         <Visible>false</Visible>
       </Outline>
-      <Visible>true</Visible>
+      <Visible>false</Visible>
       <Label>
         <Caption>
           <Value>FPS over test duration</Value>

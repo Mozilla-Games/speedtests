@@ -315,7 +315,7 @@ params["RP_BROWSERSTRING"].value</expression>
         </Color>
         <Visible>false</Visible>
       </Outline>
-      <Visible>true</Visible>
+      <Visible>false</Visible>
       <Label>
         <Caption>
           <Value>FPS over test duration</Value>
