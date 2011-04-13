@@ -173,7 +173,7 @@ ip like ?]]></xml-property>
             <property name="fontWeight">bold</property>
             <property name="fontStyle">normal</property>
             <property name="fontVariant">normal</property>
-            <property name="color">#9E0000</property>
+            <property name="color">black</property>
             <property name="textLineThrough">none</property>
             <property name="textOverline">none</property>
             <property name="textUnderline">none</property>
