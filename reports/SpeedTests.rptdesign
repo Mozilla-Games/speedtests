@@ -28,7 +28,7 @@
             <property name="dataType">string</property>
             <property name="distinct">true</property>
             <simple-property-list name="defaultValue">
-                <value type="constant">mac</value>
+                <value type="constant">linux</value>
             </simple-property-list>
             <list-property name="selectionList">
                 <structure>
@@ -1496,8 +1496,7 @@ ip like ?]]></xml-property>
       <Visible>true</Visible>
       <Label>
         <Caption>
-          <Value>Psychedelic Browsing Results
-(bigger is better)</Value>
+          <Value>Psychedelic Browsing Results</Value>
           <Font>
             <Size>16.0</Size>
             <Bold>true</Bold>
@@ -2144,10 +2143,6 @@ ip like ?]]></xml-property>
                   <SeriesParameterName></SeriesParameterName>
                 </URLValues>
                 <PropertiesMap>
-                  <Key>MenuItem</Key>
-                  <Value>color:Black;fontSize:10pt;paddingLeft:10px;paddingRight:10px;paddingTop:2px;paddingBottom:2px</Value>
-                </PropertiesMap>
-                <PropertiesMap>
                   <Key>Menu</Key>
                   <Value>zIndex:99999;backgroundColor:#FAFFF8;width:auto;height:auto;border:1px solid #333333;filter:progid:DXImageTransform.Microsoft.Shadow(Color:#333333,Direction=120,strength=5)</Value>
                 </PropertiesMap>
@@ -2158,6 +2153,10 @@ ip like ?]]></xml-property>
                 <PropertiesMap>
                   <Key>OnMouseOver</Key>
                   <Value>backgroundColor:#245DDB;color:#FFFFFF</Value>
+                </PropertiesMap>
+                <PropertiesMap>
+                  <Key>MenuItem</Key>
+                  <Value>color:Black;fontSize:10pt;paddingLeft:10px;paddingRight:10px;paddingTop:2px;paddingBottom:2px</Value>
                 </PropertiesMap>
               </Value>
             </Action>
@@ -2773,8 +2772,7 @@ ip like ?]]></xml-property>
       <Visible>true</Visible>
       <Label>
         <Caption>
-          <Value>Hallucinogenic Browsing Results
-(bigger is better)</Value>
+          <Value>Hallucinogenic Browsing Results</Value>
           <Font>
             <Size>16.0</Size>
             <Bold>true</Bold>
@@ -3421,10 +3419,6 @@ ip like ?]]></xml-property>
                   <SeriesParameterName></SeriesParameterName>
                 </URLValues>
                 <PropertiesMap>
-                  <Key>MenuItem</Key>
-                  <Value>color:Black;fontSize:10pt;paddingLeft:10px;paddingRight:10px;paddingTop:2px;paddingBottom:2px</Value>
-                </PropertiesMap>
-                <PropertiesMap>
                   <Key>Menu</Key>
                   <Value>zIndex:99999;backgroundColor:#FAFFF8;width:auto;height:auto;border:1px solid #333333;filter:progid:DXImageTransform.Microsoft.Shadow(Color:#333333,Direction=120,strength=5)</Value>
                 </PropertiesMap>
@@ -3435,6 +3429,10 @@ ip like ?]]></xml-property>
                 <PropertiesMap>
                   <Key>OnMouseOver</Key>
                   <Value>backgroundColor:#245DDB;color:#FFFFFF</Value>
+                </PropertiesMap>
+                <PropertiesMap>
+                  <Key>MenuItem</Key>
+                  <Value>color:Black;fontSize:10pt;paddingLeft:10px;paddingRight:10px;paddingTop:2px;paddingBottom:2px</Value>
                 </PropertiesMap>
               </Value>
             </Action>
@@ -4050,8 +4048,7 @@ ip like ?]]></xml-property>
       <Visible>true</Visible>
       <Label>
         <Caption>
-          <Value>Speed Reading Median FPS
-(bigger is better)</Value>
+          <Value>Speed Reading Median FPS</Value>
           <Font>
             <Size>16.0</Size>
             <Bold>true</Bold>
@@ -5337,8 +5334,7 @@ ip like ?]]></xml-property>
       <Visible>true</Visible>
       <Label>
         <Caption>
-          <Value>FishIE Median FPS (1000 fish)
-(bigger is better)</Value>
+          <Value>FishIE Median FPS (1000 fish)</Value>
           <Font>
             <Size>16.0</Size>
             <Bold>true</Bold>
@@ -6614,8 +6610,7 @@ ip like ?]]></xml-property>
       <Visible>true</Visible>
       <Label>
         <Caption>
-          <Value>MrPotatoGun Median FPS
-(bigger is better)</Value>
+          <Value>MrPotatoGun Median FPS</Value>
           <Font>
             <Size>16.0</Size>
             <Bold>true</Bold>
@@ -7891,8 +7886,7 @@ ip like ?]]></xml-property>
       <Visible>true</Visible>
       <Label>
         <Caption>
-          <Value>SantasWorkshop Median FPS
-(bigger is better)</Value>
+          <Value>SantasWorkshop Median FPS</Value>
           <Font>
             <Size>16.0</Size>
             <Bold>true</Bold>

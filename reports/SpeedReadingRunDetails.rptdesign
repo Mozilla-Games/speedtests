@@ -823,7 +823,7 @@ ip like ?]]></xml-property>
     <Type>Linear</Type>
     <Title>
       <Caption>
-        <Value>X-Axis Title</Value>
+        <Value>Time in Seconds</Value>
         <Font>
           <Size>14.0</Size>
           <Bold>true</Bold>
@@ -855,14 +855,14 @@ ip like ?]]></xml-property>
         <Bottom>0.0</Bottom>
         <Right>3.0</Right>
       </Insets>
-      <Visible>false</Visible>
+      <Visible>true</Visible>
     </Title>
     <TitlePosition>Below</TitlePosition>
     <AssociatedAxes>
       <Type>Linear</Type>
       <Title>
         <Caption>
-          <Value>Y-Axis Title</Value>
+          <Value>FPS</Value>
           <Font>
             <Size>14.0</Size>
             <Bold>true</Bold>
@@ -895,7 +895,7 @@ ip like ?]]></xml-property>
           <Bottom>0.0</Bottom>
           <Right>3.0</Right>
         </Insets>
-        <Visible>false</Visible>
+        <Visible>true</Visible>
       </Title>
       <TitlePosition>Left</TitlePosition>
       <SeriesDefinitions>
@@ -1560,6 +1560,12 @@ ip like ?]]></xml-property>
       </Insets>
       <Visible>true</Visible>
     </Label>
+    <FormatSpecifier xsi:type="attribute:NumberFormatSpecifier">
+      <Prefix></Prefix>
+      <Suffix></Suffix>
+      <Multiplier>0.0010</Multiplier>
+      <FractionDigits>1</FractionDigits>
+    </FormatSpecifier>
     <LabelPosition>Below</LabelPosition>
     <MajorGrid>
       <LineAttributes>
@@ -1663,13 +1669,14 @@ ip like ?]]></xml-property>
             </list-property>
         </extended-item>
         <table id="406">
+            <property name="marginTop">25pt</property>
             <property name="dataSet">SpeedReadingDetails</property>
             <list-property name="boundDataColumns">
                 <structure>
                     <property name="name">etms</property>
                     <text-property name="displayName">etms</text-property>
-                    <expression name="expression" type="javascript">dataSetRow["etms"]</expression>
-                    <property name="dataType">integer</property>
+                    <expression name="expression" type="javascript">dataSetRow["etms"]/1000</expression>
+                    <property name="dataType">float</property>
                 </structure>
                 <structure>
                     <property name="name">fps</property>
@@ -1703,9 +1710,12 @@ ip like ?]]></xml-property>
             <column id="439"/>
             <header>
                 <row id="407">
+                    <property name="backgroundColor">red</property>
+                    <property name="fontSize">12pt</property>
+                    <property name="color">white</property>
                     <cell id="408">
                         <label id="409">
-                            <text-property name="text">Elapsed Time (ms)</text-property>
+                            <text-property name="text">Elapsed Time (s)</text-property>
                         </label>
                     </cell>
                     <cell id="410">
@@ -1732,36 +1742,53 @@ ip like ?]]></xml-property>
             </header>
             <detail>
                 <row id="418">
+                    <list-property name="highlightRules">
+                        <structure>
+                            <property name="operator">eq</property>
+                            <property name="backgroundColor">#C0C0C0</property>
+                            <property name="fontSize">10pt</property>
+                            <expression name="testExpr" type="javascript">row[0] % 2</expression>
+                            <simple-property-list name="value1">
+                                <value type="javascript">0</value>
+                            </simple-property-list>
+                        </structure>
+                    </list-property>
                     <cell id="419">
+                        <property name="textAlign">center</property>
                         <data id="420">
+                            <structure name="numberFormat">
+                                <property name="category">Custom</property>
+                                <property name="pattern">#0.0</property>
+                            </structure>
                             <property name="whiteSpace">nowrap</property>
                             <property name="resultSetColumn">etms</property>
                         </data>
                     </cell>
                     <cell id="421">
                         <data id="422">
-                            <property name="textAlign">right</property>
+                            <property name="textAlign">center</property>
                             <property name="whiteSpace">nowrap</property>
                             <property name="resultSetColumn">fps</property>
                         </data>
                     </cell>
                     <cell id="423">
                         <data id="424">
-                            <property name="textAlign">right</property>
+                            <property name="textAlign">center</property>
                             <property name="whiteSpace">nowrap</property>
                             <property name="resultSetColumn">totaldraws</property>
                         </data>
                     </cell>
                     <cell id="425">
                         <data id="426">
-                            <property name="textAlign">right</property>
+                            <property name="textAlign">center</property>
                             <property name="whiteSpace">nowrap</property>
                             <property name="resultSetColumn">avgduration</property>
                         </data>
                     </cell>
                     <cell id="427">
                         <data id="428">
-                            <property name="textAlign">right</property>
+                            <property name="marginTop">auto</property>
+                            <property name="textAlign">center</property>
                             <property name="whiteSpace">nowrap</property>
                             <property name="resultSetColumn">lastduration</property>
                         </data>

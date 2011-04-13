@@ -20,6 +20,7 @@ if platform.system() == 'Windows':
     import _winreg
     import ie_reg
 
+import fxinstall
 import results
 
 DEFAULT_CONF_FILE = 'speedtests.conf'
@@ -162,6 +163,24 @@ class BrowserController(object):
         self.clean_up()
 
 
+class LatestFxBrowserController(BrowserController):
+    
+    def __init__(self, os_name, browser_name, profiles, cmd, args_tuple=()):
+        self.downloaded = False
+        if os_name == 'windows':
+            user_profile = os.getenv('USERPROFILE')
+            fxins = fxinstall.FirefoxInstaller(user_profile)
+            shutil.rmtree(os.path.join(user_profile, 'firefox'), ignore_errors=True)
+            print 'Getting firefox nightly...'
+            if fxins.get_install():
+                self.downloaded = True
+                cmd = os.path.join(user_profile, 'firefox', 'firefox.exe')
+        super(LatestFxBrowserController, self).__init__(os_name, browser_name, [], cmd, args_tuple)
+
+    def browser_exists(self):
+        return self.downloaded
+
+
 class IEController(BrowserController):
 
     def __init__(self, os_name, browser_name, cmd, args_tuple=()):
@@ -268,6 +287,9 @@ class BrowserRunner(object):
             program_files = os.getenv('PROGRAMFILES')
             return [
                    BrowserController(os_name, 'firefox',
+                                   [{'path': os.path.join(app_data, 'Mozilla\\Firefox'), 'archive': 'windows.zip'}],
+                                   os.path.join(program_files, 'Mozilla Firefox\\firefox.exe')),
+                   LatestFxBrowserController(os_name, 'firefox',
                                    [{'path': os.path.join(app_data, 'Mozilla\\Firefox'), 'archive': 'windows.zip'}],
                                    os.path.join(program_files, 'Mozilla Firefox\\firefox.exe')),
                    IEController(os_name, 'internet explorer', os.path.join(program_files, 'Internet Explorer\\iexplore.exe')),

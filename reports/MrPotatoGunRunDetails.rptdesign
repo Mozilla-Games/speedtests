@@ -314,7 +314,7 @@ params["RP_BROWSERSTRING"].value</expression>
         </Color>
         <Visible>false</Visible>
       </Outline>
-      <Visible>false</Visible>
+      <Visible>true</Visible>
       <Label>
         <Caption>
           <Value>FPS over test duration</Value>
@@ -1329,7 +1329,7 @@ params["RP_BROWSERSTRING"].value</expression>
     <FormatSpecifier xsi:type="attribute:NumberFormatSpecifier">
       <Prefix></Prefix>
       <Suffix></Suffix>
-      <Multiplier>0.001</Multiplier>
+      <Multiplier>0.0010</Multiplier>
       <FractionDigits>1</FractionDigits>
     </FormatSpecifier>
     <LabelPosition>Below</LabelPosition>
@@ -1477,7 +1477,7 @@ params["RP_BROWSERSTRING"].value</expression>
                                 <cell id="424">
                                     <label id="425">
                                         <property name="textAlign">right</property>
-                                        <text-property name="text">Elapsed Time</text-property>
+                                        <text-property name="text">Elapsed Time (s)</text-property>
                                     </label>
                                 </cell>
                                 <cell id="446"/>

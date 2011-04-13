@@ -286,6 +286,16 @@ ip like ?]]></xml-property>
                             <header>
                                 <row id="422">
                                     <method name="onCreate"><![CDATA[groupNum++;]]></method>
+                                    <list-property name="highlightRules">
+                                        <structure>
+                                            <property name="operator">eq</property>
+                                            <property name="backgroundColor">#C0C0C0</property>
+                                            <expression name="testExpr" type="javascript">groupNum % 2</expression>
+                                            <simple-property-list name="value1">
+                                                <value type="javascript">0</value>
+                                            </simple-property-list>
+                                        </structure>
+                                    </list-property>
                                     <cell id="423">
                                         <data id="428">
                                             <property name="resultSetColumn">teststart</property>
