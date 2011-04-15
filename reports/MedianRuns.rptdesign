@@ -1497,6 +1497,7 @@ ip like ?]]></xml-property>
             </list-property>
         </extended-item>
         <grid id="461">
+            <property name="marginTop">25pt</property>
             <column id="462"/>
             <row id="463">
                 <cell id="464">
@@ -1572,7 +1573,7 @@ ip like ?]]></xml-property>
                                 </cell>
                                 <cell id="468">
                                     <label id="472">
-                                        <text-property name="text">browserdesc</text-property>
+                                        <text-property name="text">Browser</text-property>
                                     </label>
                                 </cell>
                             </row>
