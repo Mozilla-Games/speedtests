@@ -1010,11 +1010,14 @@ ip like ?]]></xml-property>
             <Action>
               <Type>Show_Tooltip</Type>
               <Value xsi:type="attribute:TooltipValue">
-                <Text>valueData</Text>
+                <Text>valueSeriesName + &quot;: &quot; + valueData</Text>
                 <Delay>200</Delay>
               </Value>
             </Action>
           </Triggers>
+          <Cursor>
+            <Type>Auto</Type>
+          </Cursor>
           <Markers>
             <Type>Circle</Type>
             <Size>2</Size>
