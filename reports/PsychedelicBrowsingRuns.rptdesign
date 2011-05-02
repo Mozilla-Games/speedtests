@@ -353,7 +353,7 @@ ip like ?]]></xml-property>
             <property name="showIfBlank">false</property>
             <property name="canShrink">false</property>
             <property name="overflow">hidden</property>
-            <expression name="valueExpr">params["RP_TEST"] + " test runs, " + params["RP_BROWSERSTRING"].value</expression>
+            <expression name="valueExpr">"PsychedelicBrowsing test runs, " + params["RP_BROWSERSTRING"].value</expression>
             <property name="contentType">html</property>
         </text-data>
         <extended-item extensionName="Chart" id="467">
