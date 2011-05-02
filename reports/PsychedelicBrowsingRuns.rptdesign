@@ -113,7 +113,7 @@
                 </ex-property>
             </list-property>
             <property name="odaDriverClass">com.mysql.jdbc.Driver</property>
-            <property name="odaURL">jdbc:mysql://brasstacks/speedtests</property>
+            <property name="odaURL">jdbc:mysql://localhost/speedtests</property>
             <property name="odaUser">speedtests</property>
             <encrypted-property name="odaPassword" encryptionID="base64">c3BlZWR0ZXN0cw==</encrypted-property>
         </oda-data-source>
