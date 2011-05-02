@@ -39,6 +39,36 @@
                 <property name="category">Unformatted</property>
             </structure>
         </scalar-parameter>
+        <scalar-parameter name="RP_OS" id="137">
+            <text-property name="promptText">Platform</text-property>
+            <property name="valueType">static</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant">windows</value>
+            </simple-property-list>
+            <list-property name="selectionList">
+                <structure>
+                    <property name="value">windows</property>
+                    <property name="label">Windows</property>
+                </structure>
+                <structure>
+                    <property name="value">linux</property>
+                    <property name="label">Linux</property>
+                </structure>
+                <structure>
+                    <property name="value">mac</property>
+                    <property name="label">OS X</property>
+                </structure>
+            </list-property>
+            <property name="paramType">simple</property>
+            <property name="controlType">list-box</property>
+            <property name="mustMatch">true</property>
+            <property name="fixedOrder">true</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
         <scalar-parameter name="RP_BROWSERID" id="403">
             <property name="valueType">static</property>
             <property name="dataType">string</property>
@@ -79,7 +109,48 @@
                 <property name="category">Unformatted</property>
             </structure>
         </scalar-parameter>
+        <scalar-parameter name="RP_BROWSERSTRINGORIG" id="478">
+            <property name="valueType">static</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="javascript">''</value>
+            </simple-property-list>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
         <scalar-parameter name="RP_IP" id="445">
+            <property name="valueType">static</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant">%</value>
+            </simple-property-list>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="RP_BROWSERNAME" id="465">
+            <property name="hidden">true</property>
+            <property name="valueType">static</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant">%</value>
+            </simple-property-list>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="RP_BROWSERVERSION" id="466">
+            <property name="hidden">true</property>
             <property name="valueType">static</property>
             <property name="dataType">string</property>
             <property name="distinct">true</property>
@@ -1592,5 +1663,56 @@ params["RP_BROWSERSTRING"].value</expression>
                 </cell>
             </row>
         </grid>
+        <label id="477">
+            <property name="marginTop">10pt</property>
+            <property name="textAlign">right</property>
+            <text-property name="text">&lt;&lt; Back...</text-property>
+            <list-property name="action">
+                <structure>
+                    <property name="linkType">drill-through</property>
+                    <property name="reportName">MedianRuns.rptdesign</property>
+                    <property name="targetWindow">_blank</property>
+                    <property name="targetFileType">report-design</property>
+                    <list-property name="paramBindings">
+                        <structure>
+                            <property name="paramName">RP_TEST</property>
+                            <simple-property-list name="expression">
+                                <value type="javascript">params["RP_TEST"].value</value>
+                            </simple-property-list>
+                        </structure>
+                        <structure>
+                            <property name="paramName">RP_BROWSERSTRING</property>
+                            <simple-property-list name="expression">
+                                <value type="javascript">params["RP_BROWSERSTRINGORIG"].value</value>
+                            </simple-property-list>
+                        </structure>
+                        <structure>
+                            <property name="paramName">RP_OS</property>
+                            <simple-property-list name="expression">
+                                <value type="javascript">params["RP_OS"].value</value>
+                            </simple-property-list>
+                        </structure>
+                        <structure>
+                            <property name="paramName">RP_IP</property>
+                            <simple-property-list name="expression">
+                                <value type="javascript">params["RP_IP"].value</value>
+                            </simple-property-list>
+                        </structure>
+                        <structure>
+                            <property name="paramName">RP_BROWSERNAME</property>
+                            <simple-property-list name="expression">
+                                <value type="javascript">params["RP_BROWSERNAME"].value</value>
+                            </simple-property-list>
+                        </structure>
+                        <structure>
+                            <property name="paramName">RP_BROWSERVERSION</property>
+                            <simple-property-list name="expression">
+                                <value type="javascript">params["RP_BROWSERVERSION"].value</value>
+                            </simple-property-list>
+                        </structure>
+                    </list-property>
+                </structure>
+            </list-property>
+        </label>
     </body>
 </report>

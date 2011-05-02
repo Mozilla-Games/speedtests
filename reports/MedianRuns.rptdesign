@@ -90,7 +90,7 @@
             <property name="dataType">string</property>
             <property name="distinct">true</property>
             <simple-property-list name="defaultValue">
-                <value type="constant">%</value>
+                <value type="constant">63.245.220.240</value>
             </simple-property-list>
             <property name="paramType">simple</property>
             <property name="controlType">text-box</property>
@@ -1699,6 +1699,30 @@ ip like ?]]></xml-property>
                                                             <property name="paramName">RP_TEST</property>
                                                             <simple-property-list name="expression">
                                                                 <value type="javascript">params["RP_TEST"].value</value>
+                                                            </simple-property-list>
+                                                        </structure>
+                                                        <structure>
+                                                            <property name="paramName">RP_OS</property>
+                                                            <simple-property-list name="expression">
+                                                                <value type="javascript">params["RP_OS"].value</value>
+                                                            </simple-property-list>
+                                                        </structure>
+                                                        <structure>
+                                                            <property name="paramName">RP_BROWSERNAME</property>
+                                                            <simple-property-list name="expression">
+                                                                <value type="javascript">params["RP_BROWSERNAME"].value</value>
+                                                            </simple-property-list>
+                                                        </structure>
+                                                        <structure>
+                                                            <property name="paramName">RP_BROWSERVERSION</property>
+                                                            <simple-property-list name="expression">
+                                                                <value type="javascript">params["RP_BROWSERVERSION"].value</value>
+                                                            </simple-property-list>
+                                                        </structure>
+                                                        <structure>
+                                                            <property name="paramName">RP_BROWSERSTRINGORIG</property>
+                                                            <simple-property-list name="expression">
+                                                                <value type="javascript">params["RP_BROWSERSTRING"].value</value>
                                                             </simple-property-list>
                                                         </structure>
                                                     </list-property>
