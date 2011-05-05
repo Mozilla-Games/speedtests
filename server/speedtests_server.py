@@ -84,7 +84,7 @@ def get_browser_id(ua):
         platform = m.group(2).replace(';', '').strip()
     elif 'chrome' in ua:
         bname = 'Chrome'
-        m = re.match('mozilla/[^ ]* \([^;]*;[^;]*;([^;]*);[^\)]*\).*chrome/([^ ]*)', ua)
+        m = re.match('mozilla/[^ ]* \(([^\)]*)\).*chrome/([^ ]*)', ua)
         platform = m.group(1).strip()
         bver = m.group(2)
     elif 'safari' in ua:
