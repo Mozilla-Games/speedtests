@@ -1374,7 +1374,8 @@ ip like ?]]></xml-property>
       </Series>
       <Grouping>
         <Enabled>true</Enabled>
-        <GroupingUnit>Days</GroupingUnit>
+        <GroupingUnit>Hours</GroupingUnit>
+        <GroupingInterval>6.0</GroupingInterval>
         <GroupType>DateTime</GroupType>
         <AggregateExpression>Median</AggregateExpression>
       </Grouping>
@@ -1394,6 +1395,7 @@ ip like ?]]></xml-property>
         <Value></Value>
         <Font>
           <Alignment/>
+          <Rotation>45.0</Rotation>
         </Font>
       </Caption>
       <Background xsi:type="attribute:ColorDefinition">
@@ -1420,6 +1422,10 @@ ip like ?]]></xml-property>
       </Insets>
       <Visible>true</Visible>
     </Label>
+    <FormatSpecifier xsi:type="attribute:DateFormatSpecifier">
+      <Type>Short</Type>
+      <Detail>Date_Time</Detail>
+    </FormatSpecifier>
     <LabelPosition>Below</LabelPosition>
     <MajorGrid>
       <LineAttributes>
@@ -1473,6 +1479,7 @@ ip like ?]]></xml-property>
     </MinorGrid>
     <Scale>
       <MinorGridsPerUnit>5</MinorGridsPerUnit>
+      <ShowOutside>false</ShowOutside>
     </Scale>
     <Origin>
       <Type>Min</Type>
@@ -2555,7 +2562,8 @@ ip like ?]]></xml-property>
       </Series>
       <Grouping>
         <Enabled>true</Enabled>
-        <GroupingUnit>Days</GroupingUnit>
+        <GroupingUnit>Hours</GroupingUnit>
+        <GroupingInterval>6.0</GroupingInterval>
         <GroupType>DateTime</GroupType>
         <AggregateExpression>Median</AggregateExpression>
       </Grouping>
@@ -2575,6 +2583,7 @@ ip like ?]]></xml-property>
         <Value></Value>
         <Font>
           <Alignment/>
+          <Rotation>45.0</Rotation>
         </Font>
       </Caption>
       <Background xsi:type="attribute:ColorDefinition">
@@ -2601,6 +2610,10 @@ ip like ?]]></xml-property>
       </Insets>
       <Visible>true</Visible>
     </Label>
+    <FormatSpecifier xsi:type="attribute:DateFormatSpecifier">
+      <Type>Short</Type>
+      <Detail>Date_Time</Detail>
+    </FormatSpecifier>
     <LabelPosition>Below</LabelPosition>
     <MajorGrid>
       <LineAttributes>
