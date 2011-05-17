@@ -77,8 +77,16 @@ var SpeedTests = function() {
       }
       loadingNextTest = true;
       var searchParams = getSearchParams();
-      var body = JSON.stringify({ testname: testname, results: all_results,
-                                  ua: navigator.userAgent });
+      var results = {
+          testname: testname,
+          ip: searchParams.ip,
+          results: all_results,
+          ua: navigator.userAgent
+      };
+      if (searchParams.test !== undefined) {
+          results.test = true;
+      }
+      var body = JSON.stringify(results);
       var req = new XMLHttpRequest();
       req.open("POST", DYNAMIC_SERVER_URL + "/testresults/", false);
       req.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
@@ -86,10 +94,10 @@ var SpeedTests = function() {
       req.setRequestHeader("Connection", "close");
       req.send(body);
 
-      var local_url = 'http://' + searchParams.ip + ':' + searchParams.port + '/';
       var url = DYNAMIC_SERVER_URL + "/nexttest/" + testname + "/" +
                 document.location.search;
       window.location.assign(url);
+//      var local_url = 'http://' + searchParams.ip + ':' + searchParams.port + '/';
 //      crossDomainPost(local_url, {body: body}, function () {
 //        var url = DYNAMIC_SERVER_URL + "/nexttest/" + testname + "/" +
 //                  document.location.search;

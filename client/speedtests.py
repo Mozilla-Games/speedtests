@@ -21,33 +21,49 @@ if platform.system() == 'Windows':
     import ie_reg
 
 import fxinstall
-import results
+#import results
 
-DEFAULT_CONF_FILE = 'speedtests.conf'
-cfg = ConfigParser.ConfigParser()
-cfg.read(DEFAULT_CONF_FILE)
+class Config(object):
+    DEFAULT_CONF_FILE = 'speedtests.conf'
+    
+    def __init__(self):
+        self.cfg = None
+        self.local_port = 8111
+        self.test_url = 'http://brasstacks.mozilla.com/speedtestssvr/start/?auto=true'
+        self.cfg = None
 
-try:
-    LOCAL_PORT = cfg.getint('speedtests', 'local_port')
-except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
-    LOCAL_PORT = 8111
+    def read(self, testmode=False, conf_file=None):
+        if not conf_file:
+            conf_file = Config.DEFAULT_CONF_FILE
+        self.cfg = ConfigParser.ConfigParser()
+        self.cfg.read(conf_file)
+        
+        try:
+            self.local_port = self.cfg.getint('speedtests', 'local_port')
+        except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
+            pass
+        
+        try:
+            self.test_url = self.cfg.get('speedtests', 'server_url').rstrip('/') + \
+                                    '/start/?auto=true'
+        except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
+            pass
 
-try:
-    TEST_URL = cfg.get('speedtests', 'server_url').rstrip('/') + \
-               '/start/?auto=true'
-except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
-    TEST_URL = 'http://brasstacks.mozilla.com/speedtestssvr/start/?auto=true'
+        # We can also find out the address like this, supposedly more reliable:
+        #s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        #s.connect((<TEST_HOST>, 80))
+        #local_ip = s.getsockname()
+        local_ip = socket.gethostbyname(socket.gethostname())
+        if self.test_url.find('?') == -1:
+            self.test_url += '?'
+        else:
+            self.test_url += '&'
+        self.test_url += 'ip=%s&port=%d' % (local_ip, self.local_port)
+        if testmode:
+            self.test_url += '&test=true'
 
-# We can also find out the address like this, supposedly more reliable:
-#s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-#s.connect((<TEST_HOST>, 80))
-#local_ip = s.getsockname()
-local_ip = socket.gethostbyname(socket.gethostname())
-if TEST_URL.find('?') == -1:
-    TEST_URL += '?'
-else:
-    TEST_URL += '&'
-TEST_URL += 'ip=%s&port=%d' % (local_ip, LOCAL_PORT)
+
+config = Config()
 
 
 class BrowserController(object):
@@ -68,11 +84,11 @@ class BrowserController(object):
         self.proc = None
         self.launch_time = None
         try:
-            self.cmd = cfg.get(os_name, browser_name)
+            self.cmd = config.cfg.get(os_name, browser_name)
         except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
             pass
 
-    def cmd_line(self, url=TEST_URL):
+    def cmd_line(self, url):
         return (self.cmd,) + self.args_tuple + (url,)
 
     def browser_exists(self):
@@ -127,9 +143,11 @@ class BrowserController(object):
             shutil.move(p['previous_profile'], p['path'])
             os.rmdir(os.path.dirname(p['previous_profile']))
 
-    def launch(self):
+    def launch(self, url=None):
         self.copy_profiles()
-        cl = self.cmd_line()
+        if not url:
+            url = config.test_url
+        cl = self.cmd_line(url)
         print 'Launching %s...' % ' '.join(cl)
         self.launch_time = datetime.datetime.now()
         self.proc = subprocess.Popen(cl)
@@ -146,7 +164,10 @@ class BrowserController(object):
     def terminate(self):
         if self.proc:
             print 'terminating process'
-            self.proc.terminate()
+            try:
+                self.proc.terminate()
+            except:  #FIXME
+                pass
             for i in range(0, 5):
                 print 'polling'
                 if self.proc.poll() != None:
@@ -155,7 +176,10 @@ class BrowserController(object):
                 time.sleep(2)
             if self.proc:
                 print 'killing process'
-                self.proc.kill()
+                try:
+                    self.proc.kill()
+                except:
+                    pass
                 print 'waiting for process to die'
                 self.proc.wait()  # or poll and error out if still running?
                 self.proc = None
@@ -165,23 +189,28 @@ class BrowserController(object):
 
 class LatestFxBrowserController(BrowserController):
     
-    def __init__(self, os_name, browser_name, profiles, cmd, args_tuple=()):
-        self.downloaded = False
-        if os_name == 'windows':
+    """ Specialization to download latest nightly before launching. """
+    
+    INSTALL_SUBDIR = 'speedtests_firefox_nightly'
+    
+    def launch(self):
+        if self.os_name == 'windows':
             user_profile = os.getenv('USERPROFILE')
             fxins = fxinstall.FirefoxInstaller(user_profile)
-            shutil.rmtree(os.path.join(user_profile, 'firefox'), ignore_errors=True)
+            shutil.rmtree(os.path.join(user_profile, LatestFxBrowserController.INSTALL_SUBDIR), ignore_errors=True)
             print 'Getting firefox nightly...'
             if fxins.get_install():
-                self.downloaded = True
-                cmd = os.path.join(user_profile, 'firefox', 'firefox.exe')
-        super(LatestFxBrowserController, self).__init__(os_name, browser_name, [], cmd, args_tuple)
-
-    def browser_exists(self):
-        return self.downloaded
+                cmd = os.path.join(user_profile, LatestFxBrowserController.INSTALL_SUBDIR, 'firefox.exe')
+                super(LatestFxBrowserController, self).launch()
+            else:
+                print 'Failed to get firefox nightly.'
+        else:
+            print 'Nightly not yet supported on OSs other than Windows.'
 
 
 class IEController(BrowserController):
+
+    """ Specialization to deal with IE's registry settings. """
 
     def __init__(self, os_name, browser_name, cmd, args_tuple=()):
         super(IEController, self).__init__(os_name, browser_name, [], cmd, args_tuple)
@@ -238,7 +267,7 @@ class BrowserControllerRedirFile(BrowserController):
         super(BrowserControllerRedirFile, self).__init__(os_name, browser_name, profile_path, cmd, args_tuple)
         self.redir_file = None
     
-    def cmd_line(self, url=TEST_URL):
+    def cmd_line(self, url):
         self.redir_file = tempfile.NamedTemporaryFile(suffix='.html')
         self.redir_file.write('<html><head><meta HTTP-EQUIV="REFRESH" content="0; url=%s"></head></html>\n' % url)
         self.redir_file.flush()
@@ -289,7 +318,7 @@ class BrowserRunner(object):
                    BrowserController(os_name, 'firefox',
                                    [{'path': os.path.join(app_data, 'Mozilla\\Firefox'), 'archive': 'windows.zip'}],
                                    os.path.join(program_files, 'Mozilla Firefox\\firefox.exe')),
-                   LatestFxBrowserController(os_name, 'firefox',
+                   LatestFxBrowserController(os_name, 'nightly',
                                    [{'path': os.path.join(app_data, 'Mozilla\\Firefox'), 'archive': 'windows.zip'}],
                                    os.path.join(program_files, 'Mozilla Firefox\\firefox.exe')),
                    IEController(os_name, 'internet explorer', os.path.join(program_files, 'Internet Explorer\\iexplore.exe')),
@@ -306,25 +335,55 @@ class BrowserRunner(object):
                                    os.path.join(user_profile, 'Local Settings\\Application Data\\Google\\Chrome\\Application\\chrome.exe'))
                    ]
 
-    def __init__(self, evt):
+    class BrowserControllerIter(object):
+        
+        def __init__(self, controllers, browser_names=[]):
+            self.controllers = controllers
+            self.browser_names = browser_names
+            self.iter = iter(self.controllers)
+        
+        def __iter__(self):
+            return self
+        
+        def next(self):
+            while True:
+                try:
+                    n = self.iter.next()
+                except StopIteration:
+                    raise
+                if not self.browser_names or n.browser_name in self.browser_names:
+                    return n
+                   
+    def __init__(self, evt, browser_names, testmode=False):
         self.evt = evt
+        self.testmode = testmode
         try:
             self.browsers = BrowserRunner.browsers_by_os(platform.system())
         except KeyError:
             sys.stderr.write('Unknown platform "%s".\n' % platform.system())
             sys.exit(errno.EOPNOTSUPP)
-        self.browser_iter = iter(self.browsers)
+        self.browser_iter = BrowserRunner.BrowserControllerIter(self.browsers, browser_names)
         self.current_controller = None
         self.proc = None
         self.lock = threading.Lock()
-    
-    def archive_current_profiles(self, browsername):
+
+    def find_browser(self, browsername):
         for b in self.browsers:
             if b.browser_name == browsername:
-                b.archive_current_profiles()
-                return
+                return b
         print 'Unknown browser "%s".' % browsername
-    
+        return None
+        
+    def archive_current_profiles(self, browsername):
+        b = self.find_browser(browsername)
+        if b:
+            b.archive_current_profiles()
+
+    def launch(self, browsername, url):
+        b = self.find_browser(browsername)
+        if b:
+            b.launch(url)
+            
     def browser_running(self):
         self.lock.acquire()
         running = self.current_controller.running()
@@ -418,18 +477,33 @@ class TestRunnerRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 MAX_TEST_TIME = datetime.timedelta(seconds=60*10)
         
 def main():
-    evt = threading.Event()
-    br = BrowserRunner(evt)
-    if len(sys.argv) > 1 and sys.argv[1] == 'archive':
+    from optparse import OptionParser
+    parser = OptionParser()
+    parser.add_option('-t', '--test', dest='testmode', action='store_true')
+    (options, args) = parser.parse_args()
+    config.read(options.testmode)
+    
+    def get_browser_arg():
         try:
-            browser = sys.argv[2]
+            browser = args[1]
         except IndexError:
             print 'Specify a browser.'
             sys.exit(errno.EINVAL)
-        br.archive_current_profiles(browser)
+        return browser
+    
+    evt = threading.Event()
+    if len(args) >= 1 and args[0] == 'archive':
+        browser = get_browser_arg()
+        BrowserRunner(evt).archive_current_profiles(browser)
         sys.exit(0)
-            
-    trs = TestRunnerHTTPServer(('', LOCAL_PORT), TestRunnerRequestHandler, br)
+    elif len(args) >= 1 and args[0] == 'load':
+        browser = get_browser_arg()
+        BrowserRunner(evt).launch(browser, 'http://google.ca')
+        sys.exit(0)
+    
+    # start tests in specified browsers.  if none given, run all.
+    br = BrowserRunner(evt, args)
+    trs = TestRunnerHTTPServer(('', config.local_port), TestRunnerRequestHandler, br)
     server_thread = threading.Thread(target=trs.serve_forever)
     server_thread.start()
     br.launch_next_browser()

@@ -32,16 +32,20 @@ except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
     SERVER_URL = 'http://192.168.1.101/speedtestssvr'
 
 
+def query_params():
+    params = {}
+    if web.ctx.query:
+        for q in web.ctx.query[1:].split('&'):
+            name, equals, value = q.partition('=')
+            if equals:
+                params[name] = value
+    return params
+                    
+
 class NextTest(object):
     
     def GET(self, current_testname):
-        params = {}
-        if web.ctx.query:
-            for q in web.ctx.query[1:].split('&'):
-                name, equals, value = q.partition('=')
-                if equals:
-                    params[name] = value
-                    
+        params = query_params()
         # The start page is new and launches the tests in a new window with a
         # set size.  For anyone going straight to /nexttest/, we'll redirect
         # them to the start page.  The start page will include the search
@@ -53,7 +57,11 @@ class NextTest(object):
         tests.sort()
         for t in tests:
             if t > current_testname:
-                raise web.seeother('%s/%s/Default.html%s' % (HTML_URL, t, web.ctx.query))
+                if params.get('test', False):
+                    testpage = web.template.frender('templates/test.html')
+                    return testpage(t, HTML_URL)
+                else:
+                    raise web.seeother('%s/%s/Default.html%s' % (HTML_URL, t, web.ctx.query))
         if params.get('auto', False):
             # Redirect to the local server to start the next browser.
             # We can't use localhost here because IE has issues connecting to the server via
@@ -118,11 +126,12 @@ class TestResults(object):
     
     def POST(self):
         web_data = json.loads(web.data())
+        machine_ip = web_data['ip']
         testname = web_data['testname']
         browser_id = get_browser_id(web_data['ua'])
         for results in web_data['results']:
             results['browser_id'] = browser_id
-    	    results['ip'] = web.ctx.ip
+    	    results['ip'] = machine_ip
             cols = {}
             for k, v in results.iteritems():
                 cols[k.encode('ascii')] = v
