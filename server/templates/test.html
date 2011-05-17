@@ -1,0 +1,23 @@
+$def with (testname, htmlurl)
+<html>
+<head>
+  <meta http-equiv="Content-type" content="text/html; charset=utf-8"/>
+  <title>TEST $testname</title>
+</head>
+<body>
+<div id="main">
+<p>TEST $testname</p>
+</div>
+
+<script type="text/javascript" src="$htmlurl/js/jquery.min.js"></script>
+<script type="text/javascript" src="$htmlurl/js/speedtests.js"></script>
+<script>
+$$(document).ready(function() {
+    window.setTimeout(function() {
+        $$("#main").append("<p>TEST Submitting results and loading next test...</p>");
+        SpeedTests.nextTest("$testname");
+    }, 2000);
+});
+</script>
+</body>
+</html>
