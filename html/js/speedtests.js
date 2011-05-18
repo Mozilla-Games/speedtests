@@ -1,4 +1,4 @@
-DYNAMIC_SERVER_URL = "http://" + window.location.hostname;
+DYNAMIC_SERVER_URL = "http://" + window.location.hostname + '/speedtestssvr';
 
 var SpeedTests = function() {
 
@@ -44,12 +44,13 @@ var SpeedTests = function() {
   var getSearchParams = function() {
     var params = document.location.search.slice(1).split("&");
     var args = new Object();
-    for (p in params) {
-      var l = params[p].split("=").map(function(x)
-          { return decodeURIComponent(x); });
-      if (l.length != 2)
+    var l;
+    for (var i = 0; i < params.length; i++) {
+      l = params[i].split("=");
+      if (l.length != 2) {
         continue;
-      args[l[0]] = l[1];
+      }
+      args[decodeURIComponent(l[0])] = decodeURIComponent(l[1]);
     }
     return args;
   };

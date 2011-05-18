@@ -2866,9 +2866,9 @@ ip like ?]]></xml-property>
                                         </data>
                                     </cell>
                                     <cell id="455">
-                                        <data id="526">
+                                        <data id="533">
                                             <property name="whiteSpace">nowrap</property>
-                                            <property name="resultSetColumn">checkerboard</property>
+                                            <property name="resultSetColumn">colorwheel</property>
                                         </data>
                                     </cell>
                                     <cell id="528">

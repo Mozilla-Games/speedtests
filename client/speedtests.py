@@ -88,6 +88,9 @@ class BrowserController(object):
         except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
             pass
 
+    def init_browser(self):
+        pass
+            
     def cmd_line(self, url):
         return (self.cmd,) + self.args_tuple + (url,)
 
@@ -192,18 +195,24 @@ class LatestFxBrowserController(BrowserController):
     """ Specialization to download latest nightly before launching. """
     
     INSTALL_SUBDIR = 'speedtests_firefox_nightly'
-    
-    def launch(self):
+
+    def __init__(self, os_name, browser_name, profiles):
+        cmd = os.path.join(os.getenv('USERPROFILE'), LatestFxBrowserController.INSTALL_SUBDIR, 'firefox', 'firefox.exe')
+        super(LatestFxBrowserController, self).__init__(os_name, browser_name, profiles, cmd)
+
+    def init_browser(self):
         if self.os_name == 'windows':
             user_profile = os.getenv('USERPROFILE')
-            fxins = fxinstall.FirefoxInstaller(user_profile)
-            shutil.rmtree(os.path.join(user_profile, LatestFxBrowserController.INSTALL_SUBDIR), ignore_errors=True)
+            install_path = os.path.join(user_profile, LatestFxBrowserController.INSTALL_SUBDIR)
+            shutil.rmtree(install_path, ignore_errors=True)
+            fxins = fxinstall.FirefoxInstaller(install_path)
             print 'Getting firefox nightly...'
-            if fxins.get_install():
-                cmd = os.path.join(user_profile, LatestFxBrowserController.INSTALL_SUBDIR, 'firefox.exe')
-                super(LatestFxBrowserController, self).launch()
-            else:
+            if not fxins.get_install():
                 print 'Failed to get firefox nightly.'
+        
+    def launch(self):
+        if self.os_name == 'windows':
+            super(LatestFxBrowserController, self).launch()
         else:
             print 'Nightly not yet supported on OSs other than Windows.'
 
@@ -319,8 +328,7 @@ class BrowserRunner(object):
                                    [{'path': os.path.join(app_data, 'Mozilla\\Firefox'), 'archive': 'windows.zip'}],
                                    os.path.join(program_files, 'Mozilla Firefox\\firefox.exe')),
                    LatestFxBrowserController(os_name, 'nightly',
-                                   [{'path': os.path.join(app_data, 'Mozilla\\Firefox'), 'archive': 'windows.zip'}],
-                                   os.path.join(program_files, 'Mozilla Firefox\\firefox.exe')),
+                                   [{'path': os.path.join(app_data, 'Mozilla\\Firefox'), 'archive': 'windows.zip'}]),
                    IEController(os_name, 'internet explorer', os.path.join(program_files, 'Internet Explorer\\iexplore.exe')),
                    BrowserController(os_name, 'safari',
                                    [{'path': os.path.join(local_app_data, 'Apple Computer\\Safari'), 'archive': 'windows\\local.zip'},
@@ -354,7 +362,7 @@ class BrowserRunner(object):
                 if not self.browser_names or n.browser_name in self.browser_names:
                     return n
                    
-    def __init__(self, evt, browser_names, testmode=False):
+    def __init__(self, evt, browser_names=[], testmode=False):
         self.evt = evt
         self.testmode = testmode
         try:
@@ -415,9 +423,11 @@ class BrowserRunner(object):
                 self.evt.set()
                 self.lock.release()
                 return
+            self.current_controller.init_browser()
             if self.current_controller.browser_exists():
                 break
 
+        print 'launching %s' % self.current_controller.browser_name
         self.proc = self.current_controller.launch()
         self.lock.release()
 
