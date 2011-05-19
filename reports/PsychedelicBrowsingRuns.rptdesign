@@ -508,6 +508,9 @@ ip like ?]]></xml-property>
         <Visible>false</Visible>
       </Outline>
       <Visible>true</Visible>
+      <Cursor>
+        <Type>Auto</Type>
+      </Cursor>
       <ClientArea>
         <Outline>
           <Style>Solid</Style>
@@ -581,6 +584,7 @@ ip like ?]]></xml-property>
         <Visible>false</Visible>
       </Title>
       <TitlePosition>Above</TitlePosition>
+      <ShowValue>false</ShowValue>
     </Children>
     <Bounds>
       <Left>0.0</Left>
@@ -627,7 +631,9 @@ ip like ?]]></xml-property>
       <SeriesDefinitionIndex>0</SeriesDefinitionIndex>
     </OrthogonalSampleData>
   </SampleData>
-  <Interactivity/>
+  <Interactivity>
+    <LegendBehavior>HighlightSerie</LegendBehavior>
+  </Interactivity>
   <EmptyMessage>
     <Caption>
       <Value>This chart contains no data.</Value>
@@ -1815,7 +1821,9 @@ ip like ?]]></xml-property>
       <SeriesDefinitionIndex>0</SeriesDefinitionIndex>
     </OrthogonalSampleData>
   </SampleData>
-  <Interactivity/>
+  <Interactivity>
+    <LegendBehavior>HighlightSerie</LegendBehavior>
+  </Interactivity>
   <EmptyMessage>
     <Caption>
       <Value>This chart contains no data.</Value>
