@@ -662,7 +662,7 @@ ip like ?]]></xml-property>
     </OrthogonalSampleData>
   </SampleData>
   <Interactivity>
-    <LegendBehavior>HighlightSerie</LegendBehavior>
+    <LegendBehavior>ToggleSerieVisibility</LegendBehavior>
   </Interactivity>
   <EmptyMessage>
     <Caption>
