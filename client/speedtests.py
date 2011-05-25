@@ -210,9 +210,9 @@ class LatestFxBrowserController(BrowserController):
             if not fxins.get_install():
                 print 'Failed to get firefox nightly.'
         
-    def launch(self):
+    def launch(self, url=None):
         if self.os_name == 'windows':
-            super(LatestFxBrowserController, self).launch()
+            super(LatestFxBrowserController, self).launch(url)
         else:
             print 'Nightly not yet supported on OSs other than Windows.'
 
