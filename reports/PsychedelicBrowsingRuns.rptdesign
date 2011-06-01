@@ -51,13 +51,13 @@
             </structure>
         </scalar-parameter>
         <scalar-parameter name="RP_IP" id="411">
-            <property name="hidden">true</property>
+            <property name="hidden">false</property>
             <text-property name="promptText">IP</text-property>
             <property name="valueType">static</property>
             <property name="dataType">string</property>
             <property name="distinct">true</property>
             <simple-property-list name="defaultValue">
-                <value type="constant">%</value>
+                <value type="constant">10.250.4.115</value>
             </simple-property-list>
             <property name="paramType">simple</property>
             <property name="controlType">text-box</property>
@@ -353,7 +353,7 @@ ip like ?]]></xml-property>
             <property name="showIfBlank">false</property>
             <property name="canShrink">false</property>
             <property name="overflow">hidden</property>
-            <expression name="valueExpr">"PsychedelicBrowsing test runs, " + params["RP_BROWSERSTRING"].value</expression>
+            <expression name="valueExpr">"PsychedelicBrowsing test runs, " + params["RP_BROWSERSTRING"].value + '&lt;br/>measured in RPM (higher is better)'</expression>
             <property name="contentType">html</property>
         </text-data>
         <extended-item extensionName="Chart" id="467">
@@ -710,7 +710,7 @@ ip like ?]]></xml-property>
       <Type>Linear</Type>
       <Title>
         <Caption>
-          <Value>Y-Axis Title</Value>
+          <Value>RPM</Value>
           <Font>
             <Size>14.0</Size>
             <Bold>true</Bold>
@@ -743,7 +743,7 @@ ip like ?]]></xml-property>
           <Bottom>0.0</Bottom>
           <Right>3.0</Right>
         </Insets>
-        <Visible>false</Visible>
+        <Visible>true</Visible>
       </Title>
       <TitlePosition>Left</TitlePosition>
       <SeriesDefinitions>
@@ -1900,7 +1900,7 @@ ip like ?]]></xml-property>
       <Type>Linear</Type>
       <Title>
         <Caption>
-          <Value>Y-Axis Title</Value>
+          <Value>RPM</Value>
           <Font>
             <Size>14.0</Size>
             <Bold>true</Bold>
@@ -1933,7 +1933,7 @@ ip like ?]]></xml-property>
           <Bottom>0.0</Bottom>
           <Right>3.0</Right>
         </Insets>
-        <Visible>false</Visible>
+        <Visible>true</Visible>
       </Title>
       <TitlePosition>Left</TitlePosition>
       <SeriesDefinitions>
