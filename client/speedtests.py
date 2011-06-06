@@ -118,14 +118,18 @@ class BrowserController(object):
     
     def copy_profiles(self):
         if not self.browser_exists() or not self.profiles:
-            return
+            return False
         for p in self.profiles:
             profile_archive = self.get_profile_archive_path(p)
             if not os.path.exists(profile_archive):
                 return
             if os.path.exists(p['path']):
                 t = tempfile.mkdtemp()
-                shutil.move(p['path'], t)
+                try:
+                    shutil.move(p['path'], t)
+                except (IOError, OSError):
+                    print 'Failed to copy profile: %s' % sys.exc_info()[1]
+                    return False
                 p['previous_profile'] = os.path.join(t, os.path.basename(p['path']))
             else:
                 p['previous_profile'] = ''
@@ -135,6 +139,7 @@ class BrowserController(object):
                 pass
             profile_zip = zipfile.ZipFile(profile_archive, 'r')
             profile_zip.extractall(p['path'])
+        return True
     
     def clean_up(self):
         if not self.profiles:
@@ -142,18 +147,24 @@ class BrowserController(object):
         for p in self.profiles:
             if not p['previous_profile']:
                 continue
-            shutil.rmtree(p['path'])
-            shutil.move(p['previous_profile'], p['path'])
-            os.rmdir(os.path.dirname(p['previous_profile']))
+            try:
+                shutil.rmtree(p['path'])
+                shutil.move(p['previous_profile'], p['path'])
+                os.rmdir(os.path.dirname(p['previous_profile']))
+            except (IOError, OSError):
+                print 'Failed to restore profile: %s' % sys.exc_info()[1]
+                pass
 
     def launch(self, url=None):
-        self.copy_profiles()
+        if not self.copy_profiles():
+            return False
         if not url:
             url = config.test_url
         cl = self.cmd_line(url)
         print 'Launching %s...' % ' '.join(cl)
         self.launch_time = datetime.datetime.now()
         self.proc = subprocess.Popen(cl)
+        return True
 
     def running(self):
         running = self.proc and self.proc.poll()
@@ -212,9 +223,10 @@ class LatestFxBrowserController(BrowserController):
         
     def launch(self, url=None):
         if self.os_name == 'windows':
-            super(LatestFxBrowserController, self).launch(url)
-        else:
-            print 'Nightly not yet supported on OSs other than Windows.'
+            return super(LatestFxBrowserController, self).launch(url)
+			
+        print 'Nightly not yet supported on OSs other than Windows.'
+        return False
 
 
 class IEController(BrowserController):
@@ -372,7 +384,6 @@ class BrowserRunner(object):
             sys.exit(errno.EOPNOTSUPP)
         self.browser_iter = BrowserRunner.BrowserControllerIter(self.browsers, browser_names)
         self.current_controller = None
-        self.proc = None
         self.lock = threading.Lock()
 
     def find_browser(self, browsername):
@@ -425,10 +436,11 @@ class BrowserRunner(object):
                 return
             self.current_controller.init_browser()
             if self.current_controller.browser_exists():
-                break
-
-        print 'launching %s' % self.current_controller.browser_name
-        self.proc = self.current_controller.launch()
+                print 'launching %s' % self.current_controller.browser_name
+                if self.current_controller.launch():
+                    break
+                else:
+                    print 'failed to launch browser.'
         self.lock.release()
 
 
