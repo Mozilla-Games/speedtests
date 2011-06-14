@@ -117,7 +117,7 @@ class BrowserController(object):
             profile_zip.close()
     
     def copy_profiles(self):
-        if not self.browser_exists() or not self.profiles:
+        if not self.browser_exists():
             return False
         for p in self.profiles:
             profile_archive = self.get_profile_archive_path(p)
@@ -157,6 +157,7 @@ class BrowserController(object):
 
     def launch(self, url=None):
         if not self.copy_profiles():
+            print 'failed to copy profiles'
             return False
         if not url:
             url = config.test_url
@@ -279,7 +280,7 @@ class IEController(BrowserController):
     def launch(self):
         self.backup_reg()
         self.setup_reg()
-        super(IEController, self).launch()
+        return super(IEController, self).launch()
         
             
 class BrowserControllerRedirFile(BrowserController):
