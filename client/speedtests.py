@@ -32,7 +32,7 @@ class Config(object):
         self.test_url = 'http://brasstacks.mozilla.com/speedtestssvr/start/?auto=true'
         self.cfg = None
 
-    def read(self, testmode=False, conf_file=None):
+    def read(self, testmode=False, noresults=False, conf_file=None):
         if not conf_file:
             conf_file = Config.DEFAULT_CONF_FILE
         self.cfg = ConfigParser.ConfigParser()
@@ -61,6 +61,8 @@ class Config(object):
         self.test_url += 'ip=%s&port=%d' % (local_ip, self.local_port)
         if testmode:
             self.test_url += '&test=true'
+        if noresults:
+            self.test_url += '&noresults=true'
 
 
 config = Config()
@@ -375,9 +377,8 @@ class BrowserRunner(object):
                 if not self.browser_names or n.browser_name in self.browser_names:
                     return n
                    
-    def __init__(self, evt, browser_names=[], testmode=False):
+    def __init__(self, evt, browser_names=[]):
         self.evt = evt
-        self.testmode = testmode
         try:
             self.browsers = BrowserRunner.browsers_by_os(platform.system())
         except KeyError:
@@ -503,8 +504,9 @@ def main():
     from optparse import OptionParser
     parser = OptionParser()
     parser.add_option('-t', '--test', dest='testmode', action='store_true')
+    parser.add_option('-n', '--noresults', dest='noresults', action='store_true')
     (options, args) = parser.parse_args()
-    config.read(options.testmode)
+    config.read(options.testmode, options.noresults)
     
     def get_browser_arg():
         try:

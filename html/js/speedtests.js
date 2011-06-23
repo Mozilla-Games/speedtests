@@ -78,22 +78,24 @@ var SpeedTests = function() {
       }
       loadingNextTest = true;
       var searchParams = getSearchParams();
-      var results = {
+      if (searchParams.noresults === undefined) {
+        var results = {
           testname: testname,
           ip: searchParams.ip,
           results: all_results,
           ua: navigator.userAgent
-      };
-      if (searchParams.test !== undefined) {
+        };
+        if (searchParams.test !== undefined) {
           results.test = true;
+        }
+        var body = JSON.stringify(results);
+        var req = new XMLHttpRequest();
+        req.open("POST", DYNAMIC_SERVER_URL + "/testresults/", false);
+        req.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+        req.setRequestHeader("Content-length", body.length);
+        req.setRequestHeader("Connection", "close");
+        req.send(body);
       }
-      var body = JSON.stringify(results);
-      var req = new XMLHttpRequest();
-      req.open("POST", DYNAMIC_SERVER_URL + "/testresults/", false);
-      req.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-      req.setRequestHeader("Content-length", body.length);
-      req.setRequestHeader("Connection", "close");
-      req.send(body);
 
       var url = DYNAMIC_SERVER_URL + "/nexttest/" + testname + "/" +
                 document.location.search;
