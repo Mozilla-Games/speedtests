@@ -5,15 +5,9 @@ import os
 import re
 import web
 import speedtests
+import urllib2
 
 TESTS_DIR = 'speedtests'
-
-urls = (
-        '/testresults/', 'TestResults',
-        '/nexttest/(.*)', 'NextTest',
-        '/start/', 'StartTests',
-        '/done/', 'DoneTests'
-        )
 
 DEFAULT_CONF_FILE = 'speedtests_server.conf'
 cfg = ConfigParser.ConfigParser()
@@ -30,6 +24,22 @@ try:
     SERVER_URL = cfg.get('speedtests', 'server_url')
 except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
     SERVER_URL = 'http://192.168.1.101/speedtestssvr'
+try:
+    PROXY_TO = cfg.get('speedtests', 'proxy')
+except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
+    PROXY_TO = None
+try:
+    RESULTS_ONLY = cfg.get('speedtests', 'results only')
+except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
+    RESULTS_ONLY = False
+
+urls = ['/testresults/', 'TestResults']
+if not RESULTS_ONLY:
+    urls.extend([
+        '/nexttest/(.*)', 'NextTest',
+        '/start/', 'StartTests',
+        '/done/', 'DoneTests'
+        ])
 
 
 def query_params():
@@ -125,6 +135,9 @@ def get_browser_id(ua):
 class TestResults(object):
     
     def POST(self):
+        if PROXY_TO:
+            urllib2.urlopen(PROXY_TO, web.data())
+            return
         web_data = json.loads(web.data())
         machine_ip = web_data['ip']
         testname = web_data['testname']
