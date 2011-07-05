@@ -2876,12 +2876,14 @@ ip like ?]]></xml-property>
                                     </cell>
                                     <cell id="455">
                                         <data id="533">
+                                            <property name="textAlign">center</property>
                                             <property name="whiteSpace">nowrap</property>
                                             <property name="resultSetColumn">colorwheel</property>
                                         </data>
                                     </cell>
                                     <cell id="528">
                                         <data id="532">
+                                            <property name="textAlign">center</property>
                                             <property name="whiteSpace">nowrap</property>
                                             <property name="resultSetColumn">checkerboard</property>
                                         </data>

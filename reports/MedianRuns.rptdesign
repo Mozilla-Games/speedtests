@@ -1039,6 +1039,103 @@ ip like ?]]></xml-property>
               </Value>
             </Action>
           </Triggers>
+          <Triggers>
+            <Condition>onclick</Condition>
+            <Action>
+              <Type>URL_Redirect</Type>
+              <Value xsi:type="attribute:MultiURLValues">
+                <URLValues>
+                  <Label>
+                    <Caption>
+                      <Value>TestRunDetails</Value>
+                    </Caption>
+                  </Label>
+                  <BaseUrl>&lt;structure>
+    &lt;property name=&quot;linkType&quot;>drill-through&lt;/property>
+    &lt;property name=&quot;reportName&quot;>TestRunDetails.rptdesign&lt;/property>
+    &lt;property name=&quot;targetWindow&quot;>_blank&lt;/property>
+    &lt;property name=&quot;targetFileType&quot;>report-design&lt;/property>
+    &lt;list-property name=&quot;paramBindings&quot;>
+        &lt;structure>
+            &lt;property name=&quot;paramName&quot;>RP_TEST&lt;/property>
+            &lt;simple-property-list name=&quot;expression&quot;>
+                &lt;value type=&quot;javascript&quot;>params[&quot;RP_TEST&quot;].value&lt;/value>
+            &lt;/simple-property-list>
+        &lt;/structure>
+        &lt;structure>
+            &lt;property name=&quot;paramName&quot;>RP_OS&lt;/property>
+            &lt;simple-property-list name=&quot;expression&quot;>
+                &lt;value type=&quot;javascript&quot;>params[&quot;RP_OS&quot;].value&lt;/value>
+            &lt;/simple-property-list>
+        &lt;/structure>
+        &lt;structure>
+            &lt;property name=&quot;paramName&quot;>RP_BROWSERID&lt;/property>
+            &lt;simple-property-list name=&quot;expression&quot;>
+                &lt;value type=&quot;javascript&quot;>row[&quot;browser_id&quot;]&lt;/value>
+            &lt;/simple-property-list>
+        &lt;/structure>
+        &lt;structure>
+            &lt;property name=&quot;paramName&quot;>RP_TESTRUNSTART&lt;/property>
+            &lt;simple-property-list name=&quot;expression&quot;>
+                &lt;value type=&quot;javascript&quot;>row[&quot;teststart&quot;]&lt;/value>
+            &lt;/simple-property-list>
+        &lt;/structure>
+        &lt;structure>
+            &lt;property name=&quot;paramName&quot;>RP_BROWSERSTRING&lt;/property>
+            &lt;simple-property-list name=&quot;expression&quot;>
+                &lt;value type=&quot;javascript&quot;>row[&quot;browserdesc&quot;]&lt;/value>
+            &lt;/simple-property-list>
+        &lt;/structure>
+        &lt;structure>
+            &lt;property name=&quot;paramName&quot;>RP_BROWSERSTRINGORIG&lt;/property>
+            &lt;simple-property-list name=&quot;expression&quot;>
+                &lt;value type=&quot;javascript&quot;>params[&quot;RP_BROWSERSTRING&quot;].value&lt;/value>
+            &lt;/simple-property-list>
+        &lt;/structure>
+        &lt;structure>
+            &lt;property name=&quot;paramName&quot;>RP_IP&lt;/property>
+            &lt;simple-property-list name=&quot;expression&quot;>
+                &lt;value type=&quot;javascript&quot;>params[&quot;RP_IP&quot;].value&lt;/value>
+            &lt;/simple-property-list>
+        &lt;/structure>
+        &lt;structure>
+            &lt;property name=&quot;paramName&quot;>RP_BROWSERNAME&lt;/property>
+            &lt;simple-property-list name=&quot;expression&quot;>
+                &lt;value type=&quot;javascript&quot;>params[&quot;RP_BROWSERNAME&quot;].value&lt;/value>
+            &lt;/simple-property-list>
+        &lt;/structure>
+        &lt;structure>
+            &lt;property name=&quot;paramName&quot;>RP_BROWSERVERSION&lt;/property>
+            &lt;simple-property-list name=&quot;expression&quot;>
+                &lt;value type=&quot;javascript&quot;>params[&quot;RP_BROWSERVERSION&quot;].value&lt;/value>
+            &lt;/simple-property-list>
+        &lt;/structure>
+    &lt;/list-property>
+&lt;/structure>
+</BaseUrl>
+                  <BaseParameterName></BaseParameterName>
+                  <ValueParameterName></ValueParameterName>
+                  <SeriesParameterName></SeriesParameterName>
+                </URLValues>
+                <PropertiesMap>
+                  <Key>Menu</Key>
+                  <Value>zIndex:99999;backgroundColor:#FAFFF8;width:auto;height:auto;border:1px solid #333333;filter:progid:DXImageTransform.Microsoft.Shadow(Color:#333333,Direction=120,strength=5)</Value>
+                </PropertiesMap>
+                <PropertiesMap>
+                  <Key>MenuItem</Key>
+                  <Value>color:Black;fontSize:10pt;paddingLeft:10px;paddingRight:10px;paddingTop:2px;paddingBottom:2px</Value>
+                </PropertiesMap>
+                <PropertiesMap>
+                  <Key>OnMouseOut</Key>
+                  <Value>backgroundColor:#FAFFF8;color:#000000</Value>
+                </PropertiesMap>
+                <PropertiesMap>
+                  <Key>OnMouseOver</Key>
+                  <Value>backgroundColor:#245DDB;color:#FFFFFF</Value>
+                </PropertiesMap>
+              </Value>
+            </Action>
+          </Triggers>
           <Cursor>
             <Type>Auto</Type>
           </Cursor>
@@ -1534,6 +1631,70 @@ ip like ?]]></xml-property>
 </model:ChartWithAxes>
 ]]></xml-property>
             <property name="outputFormat">SVG</property>
+            <list-property name="action">
+                <structure>
+                    <property name="targetWindow">_blank</property>
+                    <property name="linkType">drill-through</property>
+                    <property name="targetFileType">report-design</property>
+                    <property name="reportName">TestRunDetails.rptdesign</property>
+                    <list-property name="paramBindings">
+                        <structure>
+                            <property name="paramName">RP_TEST</property>
+                            <simple-property-list name="expression">
+                                <value type="javascript">params["RP_TEST"].value</value>
+                            </simple-property-list>
+                        </structure>
+                        <structure>
+                            <property name="paramName">RP_OS</property>
+                            <simple-property-list name="expression">
+                                <value type="javascript">params["RP_OS"].value</value>
+                            </simple-property-list>
+                        </structure>
+                        <structure>
+                            <property name="paramName">RP_BROWSERID</property>
+                            <simple-property-list name="expression">
+                                <value type="javascript">row["browser_id"]</value>
+                            </simple-property-list>
+                        </structure>
+                        <structure>
+                            <property name="paramName">RP_TESTRUNSTART</property>
+                            <simple-property-list name="expression">
+                                <value type="javascript">row["teststart"]</value>
+                            </simple-property-list>
+                        </structure>
+                        <structure>
+                            <property name="paramName">RP_BROWSERSTRING</property>
+                            <simple-property-list name="expression">
+                                <value type="javascript">row["browserdesc"]</value>
+                            </simple-property-list>
+                        </structure>
+                        <structure>
+                            <property name="paramName">RP_BROWSERSTRINGORIG</property>
+                            <simple-property-list name="expression">
+                                <value type="javascript">params["RP_BROWSERSTRING"].value</value>
+                            </simple-property-list>
+                        </structure>
+                        <structure>
+                            <property name="paramName">RP_IP</property>
+                            <simple-property-list name="expression">
+                                <value type="javascript">params["RP_IP"].value</value>
+                            </simple-property-list>
+                        </structure>
+                        <structure>
+                            <property name="paramName">RP_BROWSERNAME</property>
+                            <simple-property-list name="expression">
+                                <value type="javascript">params["RP_BROWSERNAME"].value</value>
+                            </simple-property-list>
+                        </structure>
+                        <structure>
+                            <property name="paramName">RP_BROWSERVERSION</property>
+                            <simple-property-list name="expression">
+                                <value type="javascript">params["RP_BROWSERVERSION"].value</value>
+                            </simple-property-list>
+                        </structure>
+                    </list-property>
+                </structure>
+            </list-property>
             <property name="inheritColumns">true</property>
             <property name="dataSet">TestRunDetails</property>
             <property name="height">600px</property>
