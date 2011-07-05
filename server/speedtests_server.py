@@ -136,7 +136,13 @@ class TestResults(object):
     
     def POST(self):
         if PROXY_TO:
-            urllib2.urlopen(PROXY_TO, web.data())
+            headers = {
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                'Accept-Encoding': 'gzip, deflate'
+            }
+            request = urllib2.Request(PROXY_TO, web.data(), headers)
+            response = urllib2.urlopen(request, timeout=120).read()
             return
         web_data = json.loads(web.data())
         machine_ip = web_data['ip']
