@@ -107,8 +107,13 @@ def get_browser_id(ua):
         bver = m.group(2)
     elif 'safari' in ua:
         bname = 'Safari'
-        m = re.match('[^\(]*\(([^;]*);[^\)]*\).*safari/(.*)', ua)
+        m = re.match('[^\(]*\(([^\)]*)\).*safari/(.*)', ua)
         platform = m.group(1)
+        # 64-bit builds have an extra part separated by a semicolon.
+        # Strip it off here rather than making the re much more complicated.
+        delim = platform.find(';')
+        if delim != -1:
+            platform = platform[:delim]
         bver = m.group(2)
     elif 'opera' in ua:
         bname = 'Opera'
