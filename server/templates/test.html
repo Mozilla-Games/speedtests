@@ -1,4 +1,4 @@
-$def with (testname, htmlurl)
+$def with (testname)
 <html>
 <head>
   <meta http-equiv="Content-type" content="text/html; charset=utf-8"/>
@@ -9,9 +9,9 @@ $def with (testname, htmlurl)
 <p>TEST $testname</p>
 </div>
 
-<script type="text/javascript" src="$htmlurl/js/jquery.min.js"></script>
-<script type="text/javascript" src="$htmlurl/js/json2.js"></script>
-<script type="text/javascript" src="$htmlurl/js/speedtests.js"></script>
+<script type="text/javascript" src="../../js/jquery.min.js"></script>
+<script type="text/javascript" src="../../js/json2.js"></script>
+<script type="text/javascript" src="../../js/speedtests.js"></script>
 <script>
 $$(document).ready(function() {
     window.setTimeout(function() {

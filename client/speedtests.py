@@ -14,6 +14,7 @@ import sys
 import tempfile
 import threading
 import time
+import urllib2
 import zipfile
 
 if platform.system() == 'Windows':
@@ -21,7 +22,7 @@ if platform.system() == 'Windows':
     import ie_reg
 
 import fxinstall
-#import results
+import results
 
 class Config(object):
     DEFAULT_CONF_FILE = 'speedtests.conf'
@@ -29,10 +30,21 @@ class Config(object):
     def __init__(self):
         self.cfg = None
         self.local_port = 8111
-        self.test_url = 'http://brasstacks.mozilla.com/speedtestssvr/start/?auto=true'
+        self.server_html_url = 'http://brasstacks.mozilla.com/speedtests'
+        self.server_api_url = 'http://brasstacks.mozilla.com/speedtests/api'
         self.cfg = None
+        self.local_test_base_path = '/speedtests'
+
+    @property
+    def local_test_base_url(self):
+        # IE has issues loading pages from localhost, so we'll use the
+        # external IP.
+        return 'http://%s:%d%s' % (self.local_ip, self.local_port,
+                                   self.local_test_base_path)
 
     def read(self, testmode=False, noresults=False, conf_file=None):
+        self.testmode = testmode
+        self.noresults = noresults
         if not conf_file:
             conf_file = Config.DEFAULT_CONF_FILE
         self.cfg = ConfigParser.ConfigParser()
@@ -44,25 +56,25 @@ class Config(object):
             pass
         
         try:
-            self.test_url = self.cfg.get('speedtests', 'server_url').rstrip('/') + \
-                                    '/start/?auto=true'
+            self.server_html_url = self.cfg.get('speedtests', 'test_base_url').rstrip('/')
         except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
             pass
+
+        try:
+            self.server_api_url = self.cfg.get('speedtests', 'server_url').rstrip('/')
+        except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
+            pass            
+
+        try:
+            self.server_results_url = self.cfg.get('speedtests', 'server_results_url').rstrip('/')
+        except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
+            self.server_results_url = self.server_api_url + '/testresults/'
 
         # We can also find out the address like this, supposedly more reliable:
         #s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         #s.connect((<TEST_HOST>, 80))
         #local_ip = s.getsockname()
-        local_ip = socket.gethostbyname(socket.gethostname())
-        if self.test_url.find('?') == -1:
-            self.test_url += '?'
-        else:
-            self.test_url += '&'
-        self.test_url += 'ip=%s&port=%d' % (local_ip, self.local_port)
-        if testmode:
-            self.test_url += '&test=true'
-        if noresults:
-            self.test_url += '&noresults=true'
+        self.local_ip = socket.gethostbyname(socket.gethostname())
 
 
 config = Config()
@@ -89,6 +101,20 @@ class BrowserController(object):
             self.cmd = config.cfg.get(os_name, browser_name)
         except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
             pass
+
+    def set_test_urls(self, tests):
+        self.test_url_iter = iter(tests)
+        self.current_test_url = None
+
+    def next_test(self):
+        try:
+            self.current_test_url = self.test_url_iter.next()
+        except StopIteration:
+            return False
+        if self.running():
+            self.terminate()
+        self.launch(self.current_test_url)
+        return True
 
     def init_browser(self):
         pass
@@ -117,7 +143,22 @@ class BrowserController(object):
                     arcpath = filepath[len(p['path']):]
                     profile_zip.write(filepath, arcpath)
             profile_zip.close()
-    
+
+    def retry_file_op(self, func, args):
+        success = False
+        attempts = 0
+        while attempts < 3:
+            attempts += 1
+            try:
+                func(*args)
+            except (IOError, OSError):
+                pass
+            else:
+                success = True
+                break
+            time.sleep(2)
+        return success
+
     def copy_profiles(self):
         if not self.browser_exists():
             return False
@@ -127,10 +168,11 @@ class BrowserController(object):
                 return
             if os.path.exists(p['path']):
                 t = tempfile.mkdtemp()
-                try:
-                    shutil.move(p['path'], t)
-                except (IOError, OSError):
-                    print 'Failed to copy profile: %s' % sys.exc_info()[1]
+                def f(path, tmp):
+                    shutil.rmtree(tmp)
+                    shutil.move(path, tmp)
+                if not self.retry_file_op(f, [p['path'], t]):
+                    print 'Failed to copy profile 3 times; giving up.'
                     return False
                 p['previous_profile'] = os.path.join(t, os.path.basename(p['path']))
             else:
@@ -149,17 +191,17 @@ class BrowserController(object):
         for p in self.profiles:
             if not p['previous_profile']:
                 continue
-            try:
+            def f(p):
                 shutil.rmtree(p['path'])
                 shutil.move(p['previous_profile'], p['path'])
                 os.rmdir(os.path.dirname(p['previous_profile']))
-            except (IOError, OSError):
-                print 'Failed to restore profile: %s' % sys.exc_info()[1]
-                pass
+
+            if not self.retry_file_op(f, [p]):
+                print 'Failed to restore profile 3 times; giving up.'
 
     def launch(self, url=None):
         if not self.copy_profiles():
-            print 'failed to copy profiles'
+            print 'Failed to copy profiles'
             return False
         if not url:
             url = config.test_url
@@ -170,7 +212,9 @@ class BrowserController(object):
         return True
 
     def running(self):
-        running = self.proc and self.proc.poll()
+        if not self.proc:
+            return False
+        running = self.proc.poll()
         if running != None:
             self.proc = None
         return running == None
@@ -180,27 +224,28 @@ class BrowserController(object):
 
     def terminate(self):
         if self.proc:
-            print 'terminating process'
+            print 'Terminating process...'
             try:
                 self.proc.terminate()
             except:  #FIXME
                 pass
             for i in range(0, 5):
-                print 'polling'
+                print 'Polling...'
                 if self.proc.poll() != None:
                     self.proc = None
                     break
                 time.sleep(2)
             if self.proc:
-                print 'killing process'
+                print 'Killing process...'
                 try:
                     self.proc.kill()
                 except:
                     pass
-                print 'waiting for process to die'
+                print 'Waiting for process to die...'
                 self.proc.wait()  # or poll and error out if still running?
                 self.proc = None
-            print 'process is dead'
+            print 'Process is dead.'
+            time.sleep(5)
         self.clean_up()
 
 
@@ -279,10 +324,10 @@ class IEController(BrowserController):
         super(IEController, self).terminate()
         self.restore_reg()
 
-    def launch(self):
+    def launch(self, url=None):
         self.backup_reg()
         self.setup_reg()
-        return super(IEController, self).launch()
+        return BrowserController.launch(self, url)
         
             
 class BrowserControllerRedirFile(BrowserController):
@@ -377,8 +422,9 @@ class BrowserRunner(object):
                 if not self.browser_names or n.browser_name in self.browser_names:
                     return n
                    
-    def __init__(self, evt, browser_names=[]):
+    def __init__(self, evt, browser_names=[], test_urls=[]):
         self.evt = evt
+        self.test_urls = test_urls
         try:
             self.browsers = BrowserRunner.browsers_by_os(platform.system())
         except KeyError:
@@ -423,12 +469,19 @@ class BrowserRunner(object):
         self.lock.release()
         return browser_name
 
+    def next_test(self):
+        self.lock.acquire()
+        need_to_launch = not self.current_controller or not self.current_controller.next_test()
+        self.lock.release()
+        if need_to_launch:
+            self.launch_next_browser()
+
     def launch_next_browser(self):
         self.lock.acquire()
         if self.current_controller:
+            print 'Closing browser...'
             self.current_controller.terminate()
-            print 'Test running time: %s' % self.current_controller.execution_time()
-
+            print '%s test running time: %s' % (self.current_controller.browser_name, self.current_controller.execution_time())
         while True:
             try:
                 self.current_controller = self.browser_iter.next()
@@ -436,13 +489,14 @@ class BrowserRunner(object):
                 self.evt.set()
                 self.lock.release()
                 return
+            self.current_controller.set_test_urls(self.test_urls)
             self.current_controller.init_browser()
             if self.current_controller.browser_exists():
-                print 'launching %s' % self.current_controller.browser_name
-                if self.current_controller.launch():
+                print 'Launching %s...' % self.current_controller.browser_name
+                if self.current_controller.next_test():
                     break
                 else:
-                    print 'failed to launch browser.'
+                    print 'Failed to launch browser.'
         self.lock.release()
 
 
@@ -452,50 +506,54 @@ class TestRunnerHTTPServer(BaseHTTPServer.HTTPServer):
         BaseHTTPServer.HTTPServer.__init__(self, server_address, RequestHandlerClass)
         self.browser_runner = browser_runner
         self.results = collections.defaultdict(lambda: collections.defaultdict(list))
-
+    
+    def standard_web_data(self):
+        return {'ip': config.local_ip}
+        
 
 class TestRunnerRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     
     def do_GET(self):
-        # Indicates that the tests on the current browser have finished.
-        print 'got pingback'
-        self.server.browser_runner.launch_next_browser()
-        text = '<html><body>Done tests; launching next browser...</body></html>'
-        try:
-            self.send_response(200)
-            self.send_header('Content-type', 'text/html')
-            self.send_header('Content-Length', str(len(text)))
-            self.end_headers()
-            self.wfile.write(text)
-        except socket.error:
-            # Browser was probably closed before we could send the response
-            pass
+        if self.path.startswith(config.local_test_base_path):
+            try:
+                url = config.server_html_url + self.path[len(config.local_test_base_path):]
+                u = urllib2.urlopen(url)
+            except urllib2.HTTPError, e:
+                self.send_response(e.getcode())
+            else:
+                data = u.read()
+                self.send_response(200)
+                for header, value in u.info().items():
+                    self.send_header(header, value)
+                self.end_headers()
+                self.wfile.write(data)
+        else:
+            self.send_response(404)
 
     def do_POST(self):
-        # Parse the form data posted
-        form = cgi.FieldStorage(
-            fp=self.rfile, 
-            headers=self.headers,
-            environ={'REQUEST_METHOD':'POST',
-                     'CONTENT_TYPE':self.headers['Content-Type'],
-                     })
-
-        # record results
-        web_data = json.loads(form['body'].value)
+        length = int(self.headers.getheader('content-length'))
+        web_data = json.loads(self.rfile.read(length))
         testname = web_data['testname']
-        self.server.results[self.server.browser_runner.browser_name()][testname].append(web_data['results'])
+        self.server.results[self.server.browser_runner.browser_name()][testname].extend(web_data['results'])
+        if not config.testmode and not config.noresults:
+            web_data.update(self.server.standard_web_data())
+            raw_data = json.dumps(web_data)
+            req = urllib2.Request(config.server_results_url, raw_data)
+            req.add_header('Content-Type', 'application/json; charset=utf-8')
+            req.add_header('Content-Length', len(raw_data))
+            try:
+                urllib2.urlopen(req)
+            except urllib2.HTTPError, e:
+                print '**ERROR sending results to server: %s' % e
+                print ''
         self.send_response(200)
         self.end_headers()
         self.wfile.write('<html></html>')
+        self.server.browser_runner.next_test()
 
-    def read_data(self):
-        data = ''
-        while True:
-            buf = self.rfile.read()
-            if buf == '':
-                break
-            data += buf
-        return data
+    def log_message(self, format, *args):
+        """ Suppress log output. """
+        return
 
 
 MAX_TEST_TIME = datetime.timedelta(seconds=60*10)
@@ -503,7 +561,8 @@ MAX_TEST_TIME = datetime.timedelta(seconds=60*10)
 def main():
     from optparse import OptionParser
     parser = OptionParser()
-    parser.add_option('-t', '--test', dest='testmode', action='store_true')
+    parser.add_option('-t', '--test', dest='tests', action='append', default=[])
+    parser.add_option('--testmode', dest='testmode', action='store_true')
     parser.add_option('-n', '--noresults', dest='noresults', action='store_true')
     (options, args) = parser.parse_args()
     config.read(options.testmode, options.noresults)
@@ -527,27 +586,54 @@ def main():
         sys.exit(0)
     
     # start tests in specified browsers.  if none given, run all.
-    br = BrowserRunner(evt, args)
+    url_prefix = config.local_test_base_url + '/start.html?ip=%s&port=%d' % (config.local_ip, config.local_port)
+    if config.testmode:
+        url_prefix += '&test=true'
+    url_prefix += '&testUrl='
+    if not options.tests:
+        print 'Getting test list from server...'
+        try:
+            tests_url = config.server_api_url + '/tests/'
+            print 'Getting test list from %s...' % tests_url
+            options.tests = json.loads(urllib2.urlopen(tests_url).read())
+        except urllib2.HTTPError, e:
+            sys.stderr.write('Could not get test list: %s\n' % e)
+            sys.exit(errno.EPERM)
+        except urllib2.URLError, e:
+            sys.stderr.write('Could not get test list: %s\n' % e.reason)
+            sys.exit(e.reason.errno)
+
+    test_urls = map(lambda x: url_prefix + x, options.tests)
+    br = BrowserRunner(evt, args, test_urls)
     trs = TestRunnerHTTPServer(('', config.local_port), TestRunnerRequestHandler, br)
     server_thread = threading.Thread(target=trs.serve_forever)
     server_thread.start()
+    start = datetime.datetime.now()
     br.launch_next_browser()
     while not evt.is_set():
         if br.browser_running():
+            if evt.is_set():
+                # evt may have been set while we were waiting for the lock in browser_running().
+                break
             if br.execution_time() > MAX_TEST_TIME:
-                print 'test has taken too long; starting next browser'
+                print 'Test has taken too long; starting next browser'
                 br.launch_next_browser()
         else:
-            print 'browser isn\'t running!'
+            print 'Browser isn\'t running!'
             br.launch_next_browser()
         evt.wait(5)
     trs.shutdown()
     server_thread.join()
+    end = datetime.datetime.now()
+    print ''
     print 'Done!'
-    #report = results.SpeedTestReport(trs.results)
-    #print 'Test results:'
-    #print ''
-    #print report.report()
+    report = results.SpeedTestReport(trs.results)
+    print
+    print 'Start: %s' % start
+    print 'Duration: %s' % (end - start)
+    print 'Client: %s' % config.local_ip
+    print
+    print report.report()
 
 
 if __name__ == '__main__':

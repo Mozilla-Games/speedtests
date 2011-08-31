@@ -1,5 +1,3 @@
-DYNAMIC_SERVER_URL = "http://" + window.location.hostname + '/speedtestssvr';
-
 var SpeedTests = function() {
 
   var loadingNextTest = false;
@@ -24,33 +22,17 @@ var SpeedTests = function() {
     all_results.push(results);
   };
 
-//  var crossDomainPost = function NetUtils_crossDomainPost(url, values, callback) {
-//    if (!arguments.callee.c)
-//      arguments.callee.c = 1;
-//    var iframeName = "iframe" + arguments.callee.c++;
-//    var iframe = $("<iframe></iframe>").hide().attr("name", iframeName).appendTo("body");
-//    var form = $("<form></form>").hide().attr({ action: url, method: "post", target: iframeName }).appendTo("body");
-//    for (var i in values) {
-//      $("<input type='hidden'>").attr({ name: i, value: values[i]}).appendTo(form);
-//    }
-//    form.get(0).submit();
-//    form.remove();
-//    iframe.get(0).onload = function crossDomainIframeLoaded() {
-//      callback();
-//      setTimeout(function () { iframe.remove(); }, 0);
-//    }
-//  };
-
   var getSearchParams = function() {
     var params = document.location.search.slice(1).split("&");
     var args = new Object();
-    var l;
-    for (var i = 0; i < params.length; i++) {
-      l = params[i].split("=");
-      if (l.length != 2) {
-        continue;
+    for (p in params) {
+      var l = params[p].split("=");
+      for (var i = 0; i < l.length; i++) {
+        l[i] = decodeURIComponent(l[i]);
       }
-      args[decodeURIComponent(l[0])] = decodeURIComponent(l[1]);
+      if (l.length != 2)
+        continue;
+      args[l[0]] = l[1];
     }
     return args;
   };
@@ -59,6 +41,7 @@ var SpeedTests = function() {
     init: function() {
       startTime = new Date();
     },
+    getSearchParams: getSearchParams,
     isoDateTime: isoDateTime,
     recordResults: recordResults,
     periodicRecordResults: function (testname, resultFunc) {
@@ -78,34 +61,23 @@ var SpeedTests = function() {
       }
       loadingNextTest = true;
       var searchParams = getSearchParams();
-      if (searchParams.noresults === undefined) {
-        var results = {
-          testname: testname,
-          ip: searchParams.ip,
-          results: all_results,
-          ua: navigator.userAgent
-        };
-        if (searchParams.test !== undefined) {
-          results.test = true;
-        }
-        var body = JSON.stringify(results);
-        var req = new XMLHttpRequest();
-        req.open("POST", DYNAMIC_SERVER_URL + "/testresults/", false);
-        req.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-        req.setRequestHeader("Content-length", body.length);
-        req.setRequestHeader("Connection", "close");
-        req.send(body);
+      if (!searchParams.ip) {
+        alert("Can't submit test results: no local IP provided.");
+        return;
       }
-
-      var url = DYNAMIC_SERVER_URL + "/nexttest/" + testname + "/" +
-                document.location.search;
-      window.location.assign(url);
-//      var local_url = 'http://' + searchParams.ip + ':' + searchParams.port + '/';
-//      crossDomainPost(local_url, {body: body}, function () {
-//        var url = DYNAMIC_SERVER_URL + "/nexttest/" + testname + "/" +
-//                  document.location.search;
-//        window.location.assign(url);
-//      });
+      if (!searchParams.port) {
+        alert("Can't submit test results: no local port provided.");
+        return;
+      }
+      var body = JSON.stringify({ testname: testname, ip: searchParams.ip,
+                                  results: all_results,
+                                  ua: navigator.userAgent });
+      var req = new XMLHttpRequest();
+      req.open("POST", "http://" + searchParams.ip + ":" + searchParams.port + "/", false);
+      req.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+      req.setRequestHeader("Content-length", body.length);
+      req.setRequestHeader("Connection", "close");
+      req.send(body);
     }
   };
 }();
