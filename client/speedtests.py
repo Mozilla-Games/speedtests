@@ -627,13 +627,15 @@ def main():
     end = datetime.datetime.now()
     print ''
     print 'Done!'
-    report = results.SpeedTestReport(trs.results)
-    print
-    print 'Start: %s' % start
-    print 'Duration: %s' % (end - start)
-    print 'Client: %s' % config.local_ip
-    print
-    print report.report()
+
+    if not config.testmode:
+        report = results.SpeedTestReport(trs.results)
+        print
+        print 'Start: %s' % start
+        print 'Duration: %s' % (end - start)
+        print 'Client: %s' % config.local_ip
+        print
+        print report.report()
 
 
 if __name__ == '__main__':
