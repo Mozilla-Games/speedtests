@@ -1,0 +1,30 @@
+<html>
+<head>
+  <meta http-equiv="Content-type" content="text/html; charset=utf-8"/>
+  <title>Mozilla SpeedTest Runner</title>
+  <script type="text/javascript" src="js/jquery.min.js"></script>
+  <script type="text/javascript" src="js/speedtests.js"></script>
+</head>
+<body>
+<div id="main">
+<p>
+SpeedTests go!
+</p>
+</div>
+<script>
+$(document).ready(function() {
+  var searchParams = SpeedTests.getSearchParams();
+  if (!searchParams.testUrl) {
+    $('#main p').text('No testUrl parameter given.');
+  } else if (searchParams.test) {
+    var testName = searchParams.testUrl.slice(0, searchParams.testUrl.lastIndexOf('/'));
+    $('#main p').text('TEST submitting results for ' + testName + '...');
+    SpeedTests.nextTest(testName);
+  } else {
+    window.open(searchParams.testUrl + document.location.search, 'testWindow',
+                'resizable=no,status=no,top=0,left=0,height=768,width=1024,menubar=no,toolbar=no,location=no,personalbar=no');
+  }
+});
+</script>
+</body>
+</html>
