@@ -126,7 +126,7 @@ def get_browser_id(ua):
 
 class TestList(object):
 
-    @templeton.handlers.get_json
+    @templeton.handlers.json_response
     def GET(self):
         return test_list()
 
@@ -159,7 +159,7 @@ class TestResults(object):
                 cols[k.encode('ascii')] = v
             db.insert(testname, **cols)
 
-    @templeton.handlers.get_json
+    @templeton.handlers.json_response
     def GET(self):
         args, body = templeton.handlers.get_request_parms()
         tables = args.get('testname', None)
