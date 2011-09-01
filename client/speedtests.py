@@ -66,7 +66,7 @@ class Config(object):
             pass            
 
         try:
-            self.server_results_url = self.cfg.get('speedtests', 'server_results_url').rstrip('/')
+            self.server_results_url = self.cfg.get('speedtests', 'server_results_url').rstrip('/') + '/'
         except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
             self.server_results_url = self.server_api_url + '/testresults/'
 
@@ -545,7 +545,7 @@ class TestRunnerRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 urllib2.urlopen(req)
             except urllib2.HTTPError, e:
                 print '**ERROR sending results to server: %s' % e
-                print ''
+                print
         self.send_response(200)
         self.end_headers()
         self.wfile.write('<html></html>')
