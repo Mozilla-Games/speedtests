@@ -38,12 +38,10 @@ except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
 db = web.database(dbn='mysql', db='speedtests', user='speedtests',
                   pw='speedtests')
 
-urls = ['/testresults/', 'TestResults']
-if not RESULTS_ONLY:
-    urls.extend([
-        '/tests/', 'TestList',
-        ])
-
+urls = ('/testresults/', 'TestResults',
+        '/machines/', 'Machines',
+        '/testnames/', 'TestNames',
+        '/testpaths/', 'TestPaths')
 
 def query_params():
     params = {}
@@ -55,7 +53,7 @@ def query_params():
     return params
                     
 
-def test_list():
+def test_paths():
     """ List of relative paths of test index files. """
     tests = []
     for d in os.listdir(HTML_DIR):
@@ -63,6 +61,14 @@ def test_list():
             if os.path.exists(os.path.join(HTML_DIR, d, f)):
                 tests.append(os.path.join(d, f))
                 break
+    tests.sort()
+    return tests
+
+
+def test_names():
+    tests = filter(lambda x: x != 'browser',
+                   map(lambda x: x['Tables_in_speedtests'],
+                       db.query('show tables')))
     tests.sort()
     return tests
 
@@ -124,11 +130,20 @@ def get_browser_id(ua):
     return browser[0].id
         
 
-class TestList(object):
+class TestPaths(object):
+
+    """ Paths of locally served tests. """
 
     @templeton.handlers.json_response
     def GET(self):
-        return test_list()
+        return test_paths()
+
+
+class TestNames(object):
+
+    @templeton.handlers.json_response
+    def GET(self):
+        return test_names()
 
 
 class TestResults(object):
@@ -166,7 +181,7 @@ class TestResults(object):
         start = args.get('start', None)
         end = args.get('end', None)
         if not tables:
-            tables = map(lambda x: os.path.dirname(x), test_list())
+            tables = test_names()
         response = {}
         for t in tables:
             wheres = []

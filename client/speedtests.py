@@ -593,7 +593,7 @@ def main():
     if not options.tests:
         print 'Getting test list from server...'
         try:
-            tests_url = config.server_api_url + '/tests/'
+            tests_url = config.server_api_url + '/testpaths/'
             print 'Getting test list from %s...' % tests_url
             options.tests = json.loads(urllib2.urlopen(tests_url).read())
         except urllib2.HTTPError, e:
