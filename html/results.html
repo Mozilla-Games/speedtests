@@ -1,0 +1,54 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="/templeton/style/Aristo/jquery-ui-1.8.7.custom.css"/>
+    <link rel="stylesheet" href="/templeton/style/datatables.css"/>
+    <link rel="stylesheet" href="style/speedtest_results.css"/>
+    <script src="/templeton/scripts/SS.min.js"></script>
+    <script src="/templeton/scripts/jquery-1.6.1.min.js"></script>
+    <script src="/templeton/scripts/jquery-ui-1.8.13.custom.min.js"></script>
+    <script src="/templeton/scripts/jquery.selectboxes.js"></script>
+    <script src="/templeton/scripts/jquery.dataTables.min.js"></script>
+    <script src="/templeton/scripts/jquery.flot.min.js"></script>
+    <script src="/templeton/scripts/jquery.flot.hiddengraphs.js"></script>
+    <script src="/templeton/scripts/jquery.flot.axislabels.js"></script>
+    <script src="js/speedtest_results.js"></script>
+    <title>Speedtests Results</title>
+</head>
+
+<body>
+
+  <div id="loading" class="ui-widget ui-widget-content ui-corner-all"><img src="images/loading.gif" /></div>
+
+  <div id="controls" class="ui-widget ui-widget-content ui-corner-all">
+    <form id="controlsform" name="controlsform">
+    Test: <select id="testselect"></select>&nbsp;&nbsp;
+    Machine: <select id="machineselect"></select>&nbsp;&nbsp;
+    Start: <input id="startentry" type="text" size="10" pattern="[\d]{4}-[\d]{2}-[\d]{2}" />&nbsp;&nbsp;
+    End: <input id="endentry" type="text" size="10" pattern="[\d]{4}-[\d]{2}-[\d]{2}" />&nbsp;&nbsp;
+    <input type="submit" value="reload" />
+    </form>
+    <div class="loading"></div>
+  </div>
+
+  <div id="results" class="ui-widget ui-widget-content ui-corner-all">
+    <div id="title"></div>
+    <div class="graph"></div>
+    <div class="clear"></div>
+    <div class="data"></div>
+    <div class="clear"></div>
+    </div>
+  </div>
+
+  <div id="templates">
+    <div class="resultsdata">
+      <table class="display"></table>
+    </div>
+  </div>
+
+</body>
+
+</html>
+

@@ -7,40 +7,35 @@ import speedtests
 import templeton.handlers
 import urllib2
 import web
+from collections import defaultdict
+
+class DefaultConfigParser(ConfigParser.ConfigParser):
+
+    def get_default(self, section, option, default):
+        try:
+            return cfg.get(section, option)
+        except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
+            return default
 
 TESTS_DIR = 'speedtests'
 
 DEFAULT_CONF_FILE = 'speedtests_server.conf'
-cfg = ConfigParser.ConfigParser()
+cfg = DefaultConfigParser()
+
 cfg.read(DEFAULT_CONF_FILE)
-try:
-    HTML_URL = cfg.get('speedtests', 'html_url')
-except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
-    HTML_URL = 'http://192.168.1.101/speedtests'
-try:
-    HTML_DIR = cfg.get('speedtests', 'html_dir')
-except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
-    HTML_DIR = os.path.join('..', 'html')
-try:
-    SERVER_URL = cfg.get('speedtests', 'server_url')
-except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
-    SERVER_URL = 'http://192.168.1.101/speedtestssvr'
-try:
-    PROXY_TO = cfg.get('speedtests', 'proxy')
-except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
-    PROXY_TO = None
-try:
-    RESULTS_ONLY = cfg.get('speedtests', 'results only')
-except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
-    RESULTS_ONLY = False
+HTML_URL = cfg.get_default('speedtests', 'html_url',
+                           'http://192.168.1.101/speedtests')
+HTML_DIR = cfg.get_default('speedtests', 'html_dir', os.path.join('..', 'html'))
+SERVER_URL = cfg.get_default('speedtests', 'server_url', 
+                             'http://192.168.1.101/speedtestssvr')
+PROXY_TO = cfg.get_default('speedtests', 'proxy', None)
+DB_HOST = cfg.get_default('speedtests', 'db_host', 'localhost')
 
-
-db = web.database(dbn='mysql', db='speedtests', user='speedtests',
+db = web.database(dbn='mysql', host=DB_HOST, db='speedtests', user='speedtests',
                   pw='speedtests')
 
 urls = ('/testresults/', 'TestResults',
-        '/machines/', 'Machines',
-        '/testnames/', 'TestNames',
+        '/params/', 'Params',
         '/testpaths/', 'TestPaths')
 
 def query_params():
@@ -139,11 +134,17 @@ class TestPaths(object):
         return test_paths()
 
 
-class TestNames(object):
+class Params(object):
 
     @templeton.handlers.json_response
     def GET(self):
-        return test_names()
+        response = {'machines': [], 'testnames': test_names()}
+        if cfg.has_section('machines'):
+            response['machines'] = cfg.items('machines')
+            response['machines'].sort(key=lambda x: x[1])
+        # Could query database for all IPs, but that's slow and probably not
+        # useful.
+        return response
 
 
 class TestResults(object):
@@ -180,9 +181,13 @@ class TestResults(object):
         tables = args.get('testname', None)
         start = args.get('start', None)
         end = args.get('end', None)
+        ip = args.get('ip', None)
         if not tables:
             tables = test_names()
-        response = {}
+        response = { 'browsers': {},
+                     'results': defaultdict(list) }
+        for row in db.select('browser'):
+            response['browsers'][row['id']] = dict(row)
         for t in tables:
             wheres = []
             vars = {}
@@ -192,10 +197,13 @@ class TestResults(object):
             if end:
                 vars['end'] = end[0]
                 wheres.append('teststart <= $end')
-            response[t] = map(lambda x: dict(x),
-                              db.select(t, vars, where=' AND '.join(wheres)))
-            for r in response[t]:
-                for k, v in r.iteritems():
+            if ip:
+                vars['ip'] = ip[0]
+                wheres.append('ip like $ip')
+            for row in db.select(t, vars, where=' AND '.join(wheres), order='teststart ASC'):
+                record = dict(row)
+                for k, v in record.iteritems():
                     if isinstance(v, datetime.datetime):
-                        r[k] = v.isoformat()
+                        record[k] = v.isoformat()
+                response['results'][t].append(record)
         return response

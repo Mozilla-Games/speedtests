@@ -1,0 +1,91 @@
+body {
+  background: url("../images/bg.gif") repeat scroll 0 0 transparent;
+  padding: 0;
+}
+
+td.textleft {
+  text-align: left;
+}
+
+.clear {
+  clear: both;
+}
+
+.hidden {
+  show: false;
+}
+
+#controls {
+  text-align: center;
+  margin-top: 0px;
+  padding: 5px;
+  margin-left: auto;
+  margin-right: auto;
+  width: 1000px;
+  display: none;
+ }
+
+#results {
+  margin-top: 10px;
+  width: 1300px;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 10px;
+  display: none;
+}
+
+#loading {
+  position: absolute;
+  top: 0px;
+  right: 0px;
+}
+
+#templates {
+  display: none;
+}
+
+#title {
+  font-weight: bold;
+  text-align: center;
+}
+
+#tooltip {
+  position: absolute;
+  border: 1px solid #fdd;
+  padding: 2px;
+  background-color: #fee;
+  opacity: 0.80;
+}
+
+.graph {
+  width: 1200px;
+  height: 600px;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 20px;
+  margin-bottom: 20px;
+  padding: 10px;
+}
+
+.dataTables_wrapper {
+  width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+table.display {
+  border-spacing: 0;
+  width: 800px;
+}
+
+table.display td {
+//  padding: 0;
+}
+
+table.display th {
+  padding: 0;
+}
+
+.ui-datepicker-trigger {
+  vertical-align: middle;
+}
