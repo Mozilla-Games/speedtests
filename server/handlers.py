@@ -23,11 +23,7 @@ DEFAULT_CONF_FILE = 'speedtests_server.conf'
 cfg = DefaultConfigParser()
 
 cfg.read(DEFAULT_CONF_FILE)
-HTML_URL = cfg.get_default('speedtests', 'html_url',
-                           'http://192.168.1.101/speedtests')
 HTML_DIR = cfg.get_default('speedtests', 'html_dir', os.path.join('..', 'html'))
-SERVER_URL = cfg.get_default('speedtests', 'server_url', 
-                             'http://192.168.1.101/speedtestssvr')
 PROXY_TO = cfg.get_default('speedtests', 'proxy', None)
 DB_HOST = cfg.get_default('speedtests', 'db_host', 'localhost')
 
