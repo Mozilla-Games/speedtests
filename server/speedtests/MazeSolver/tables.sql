@@ -5,7 +5,7 @@ CREATE TABLE MazeSolver (
     FOREIGN KEY (browser_id) REFERENCES browser(id),
     browser_height INT,
     browser_width INT,
-    score INT,
+    duration INT,
     teststart TIMESTAMP,
     ip VARCHAR(15) COLLATE utf8_bin
 );

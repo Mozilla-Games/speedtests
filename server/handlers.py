@@ -192,7 +192,13 @@ class TestResults(object):
                 wheres.append('teststart >= $start')
             if end:
                 vars['end'] = end[0]
-                wheres.append('teststart <= $end')
+                # if just a date is passed in (as opposed to a full datetime),
+                # we want it to be *inclusive*, i.e., returning all results
+                # on that date.
+                if re.match('\d{4}-\d{2}-\d{2}$', vars['end']):
+                    wheres.append('date(teststart) <= $end')
+                else:
+                    wheres.append('teststart <= $end')
             if ip:
                 vars['ip'] = ip[0]
                 wheres.append('ip like $ip')

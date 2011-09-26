@@ -4,17 +4,20 @@ class SpeedTestReport(object):
 
     def __init__(self, results):
         self.results = results
-        self.highest_scores = defaultdict(lambda: {'score': 0,
-                                                   'score_str': '',
-                                                   'browsers': []})
+        self.best_scores = defaultdict(lambda: {'score': None,
+                                                'score_str': '',
+                                                'browsers': []})
 
-    def record_highest_score(self, test, score, score_str, browser):
-        if self.highest_scores[test]['score'] < score:
-            self.highest_scores[test]['score'] = score
-            self.highest_scores[test]['score_str'] = score_str
-            self.highest_scores[test]['browsers'] = [browser]
-        elif self.highest_scores[test]['score'] == score:
-            self.highest_scores[test]['browsers'].append(browser)
+    def record_best_score(self, test, score, score_str, browser,
+                          higher_is_better=True):
+        if (self.best_scores[test]['score'] is None) or \
+           (higher_is_better and self.best_scores[test]['score'] < score) or \
+           (not higher_is_better and self.best_scores[test]['score'] > score):
+            self.best_scores[test]['score'] = score
+            self.best_scores[test]['score_str'] = score_str
+            self.best_scores[test]['browsers'] = [browser]
+        elif self.best_scores[test]['score'] == score:
+            self.best_scores[test]['browsers'].append(browser)
 
     def report(self):
         s = 'Results by browser:\n\n'
@@ -30,9 +33,17 @@ class SpeedTestReport(object):
                     s += '  Hallucinogenic (checkerboard): %d rpm\n\n' % \
                         checkerboard
                     total = colorwheel + checkerboard
-                    self.record_highest_score(test, total, '%d/%d rpm' %
-                                              (colorwheel, checkerboard),
-                                              browser)
+                    self.record_best_score(test, total, '%d/%d rpm' %
+                                           (colorwheel, checkerboard),
+                                           browser)
+                    continue
+
+                if test == 'MazeSolver':
+                    score = int(results_strs[0]['duration'])
+                    score_str = '%d ms' % score
+                    s += '  Duration: %s\n\n' % score_str
+                    self.record_best_score(test, score, score_str, browser,
+                                           False)
                     continue
 
                 score = 0
@@ -59,17 +70,17 @@ class SpeedTestReport(object):
                     else:
                         s += '  No data.\n'
                 if score:
-                    self.record_highest_score(test, score, score_str, browser)
+                    self.record_best_score(test, score, score_str, browser)
                 s += '\n'
             s += '\n'
-        test_list = self.highest_scores.keys()
+        test_list = self.best_scores.keys()
         test_list.sort()
         s += 'Results by test:\n\n'
         for test in test_list:
             s += '%s\n%s\n\n' % (test, '=' * len(test))
-            s += ' Highest median score: %s (%s)\n\n' % \
-                (self.highest_scores[test]['score_str'],
-                 ', '.join(self.highest_scores[test]['browsers']))
+            s += ' Best median score: %s (%s)\n\n' % \
+                (self.best_scores[test]['score_str'],
+                 ', '.join(self.best_scores[test]['browsers']))
         return s
 
 

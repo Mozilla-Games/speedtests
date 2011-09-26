@@ -184,12 +184,30 @@ PsychBrowsingScoreDisplay.prototype.getScore = function(testRunRecords) {
 };
 
 
+DurationScoreDisplay.prototype = new ScoreDisplay();
+DurationScoreDisplay.prototype.constructor = DurationScoreDisplay;
+function DurationScoreDisplay(testname, records, browsers) {
+  ScoreDisplay.prototype.constructor.call(this, testname, records, browsers);
+  this.title = testname + ' test runs, durations in milliseconds (lower is better)';
+  this.scoreName = 'duration (ms)';
+}
+
+DurationScoreDisplay.prototype.getScore = function(testRunRecords) {
+  return testRunRecords[0].duration;
+};
+
+
 function scoreDisplayFactory(testname, records, browsers) {
   var scoreDisplayClass = null;
-  if (testname == 'PsychedelicBrowsing') {
-    scoreDisplayClass = PsychBrowsingScoreDisplay;
-  } else {
-    scoreDisplayClass = FpsScoreDisplay;
+  switch (testname) {
+    case 'PsychedelicBrowsing':
+        scoreDisplayClass = PsychBrowsingScoreDisplay;
+        break;
+    case 'MazeSolver':
+        scoreDisplayClass = DurationScoreDisplay;
+        break;
+    default:
+        scoreDisplayClass = FpsScoreDisplay;
   }
   return new scoreDisplayClass(testname, records, browsers);
 }
