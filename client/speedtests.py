@@ -556,7 +556,7 @@ class TestRunnerRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         return
 
 
-MAX_TEST_TIME = datetime.timedelta(seconds=60*10)
+MAX_TEST_TIME = datetime.timedelta(seconds=60*5)
         
 def main():
     from optparse import OptionParser
@@ -616,11 +616,11 @@ def main():
                 # evt may have been set while we were waiting for the lock in browser_running().
                 break
             if br.execution_time() > MAX_TEST_TIME:
-                print 'Test has taken too long; starting next browser'
-                br.launch_next_browser()
+                print 'Test has taken too long; starting next test.'
+                br.next_test()
         else:
             print 'Browser isn\'t running!'
-            br.launch_next_browser()
+            br.next_test()
         evt.wait(5)
     trs.shutdown()
     server_thread.join()
