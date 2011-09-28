@@ -48,7 +48,7 @@ def test_paths():
     """ List of relative paths of test index files. """
     tests = []
     for d in os.listdir(HTML_DIR):
-        for f in ('index.html', 'Default.html'):
+        for f in ('index.html', 'Default.html', 'default.html'):
             if os.path.exists(os.path.join(HTML_DIR, d, f)):
                 tests.append(os.path.join(d, f))
                 break

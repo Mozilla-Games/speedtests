@@ -556,7 +556,7 @@ class TestRunnerRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         return
 
 
-MAX_TEST_TIME = datetime.timedelta(seconds=60*5)
+MAX_TEST_TIME = datetime.timedelta(seconds=60*10)
         
 def main():
     from optparse import OptionParser

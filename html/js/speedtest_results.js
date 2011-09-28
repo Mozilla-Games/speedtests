@@ -197,6 +197,19 @@ DurationScoreDisplay.prototype.getScore = function(testRunRecords) {
 };
 
 
+TestsPassedScoreDisplay.prototype = new ScoreDisplay();
+TestsPassedScoreDisplay.prototype.constructor = TestsPassedScoreDisplay;
+function TestsPassedScoreDisplay(testname, records, browsers) {
+  ScoreDisplay.prototype.constructor.call(this, testname, records, browsers);
+  this.title = testname + ' test runs, number of tests passed (higher is better)';
+  this.scoreName = 'tests passed';
+}
+
+TestsPassedScoreDisplay.prototype.getScore = function(testRunRecords) {
+  return testRunRecords[0].score;
+};
+
+
 function scoreDisplayFactory(testname, records, browsers) {
   var scoreDisplayClass = null;
   switch (testname) {
@@ -205,6 +218,9 @@ function scoreDisplayFactory(testname, records, browsers) {
         break;
     case 'MazeSolver':
         scoreDisplayClass = DurationScoreDisplay;
+        break;
+    case 'test262':
+        scoreDisplayClass = TestsPassedScoreDisplay;
         break;
     default:
         scoreDisplayClass = FpsScoreDisplay;
