@@ -29,6 +29,7 @@ class Config(object):
     
     def __init__(self):
         self.cfg = None
+        self.sixtyfour_bit = False
         self.local_port = 8111
         self.server_html_url = 'http://brasstacks.mozilla.com/speedtests'
         self.server_api_url = 'http://brasstacks.mozilla.com/speedtests/api'
@@ -49,6 +50,11 @@ class Config(object):
             conf_file = Config.DEFAULT_CONF_FILE
         self.cfg = ConfigParser.ConfigParser()
         self.cfg.read(conf_file)
+
+        try:
+            self.sixtyfour_bit = self.cfg.getboolean('speedtests', '64bit')
+        except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
+            pass
         
         try:
             self.local_port = self.cfg.getint('speedtests', 'local_port')
@@ -264,7 +270,7 @@ class LatestFxBrowserController(BrowserController):
             user_profile = os.getenv('USERPROFILE')
             install_path = os.path.join(user_profile, LatestFxBrowserController.INSTALL_SUBDIR)
             shutil.rmtree(install_path, ignore_errors=True)
-            fxins = fxinstall.FirefoxInstaller(install_path)
+            fxins = fxinstall.FirefoxInstaller(install_path, config.sixtyfour_bit)
             print 'Getting firefox nightly...'
             if not fxins.get_install():
                 print 'Failed to get firefox nightly.'
