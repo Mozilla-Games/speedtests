@@ -188,6 +188,7 @@ class BrowserController(object):
             except OSError:
                 pass
             profile_zip = zipfile.ZipFile(profile_archive, 'r')
+            print 'Copying profile to %s...' % p['path']
             profile_zip.extractall(p['path'])
         return True
     
@@ -376,8 +377,9 @@ class BrowserRunner(object):
                                               os.path.join(lib_path, 'Safari'),
                                               '/Applications/Safari.app/Contents/MacOS/Safari'),
                    BrowserController(os_name, 'opera', 
-                                     os.path.join(app_supp_path, 'Opera'),
-                                   '/Applications/Opera.app/Contents/MacOS/Opera'),
+                                     [{'path': os.path.join(app_supp_path, 'Opera'), 'archive': 'osx_app_supp.zip'},
+                                      {'path': os.path.join(lib_path, 'Opera'), 'archive': 'osx_lib.zip'}],
+                                     '/Applications/Opera.app/Contents/MacOS/Opera'),
                    BrowserController(os_name, 'chrome',
                                      os.path.join(app_supp_path, 'Google', 
                                                   'Chrome'),
@@ -621,10 +623,12 @@ def main():
         test_urls = test_urls[:1]
 
     br = BrowserRunner(evt, args, test_urls)
+    print 'Starting HTTP server...'
     trs = TestRunnerHTTPServer(('', config.local_port), TestRunnerRequestHandler, br)
     server_thread = threading.Thread(target=trs.serve_forever)
     server_thread.start()
     start = datetime.datetime.now()
+    print 'Launching first browser...'
     br.launch_next_browser()
     while not evt.is_set():
         if br.browser_running():
