@@ -76,11 +76,17 @@ class Config(object):
         except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
             self.server_results_url = self.server_api_url + '/testresults/'
 
-        # We can also find out the address like this, supposedly more reliable:
-        #s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        #s.connect((<TEST_HOST>, 80))
-        #local_ip = s.getsockname()
-        self.local_ip = socket.gethostbyname(socket.gethostname())
+        # Find our IP address.
+        host, colon, port = urllib2.urlparse.urlsplit(self.server_html_url)[1] \
+                            .partition(':')
+        if colon:
+            port = int(port)
+        else:
+            port = 80
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect((host, port))
+        self.local_ip = s.getsockname()[0]
+        s.close()
 
 
 config = Config()
@@ -142,6 +148,8 @@ class BrowserController(object):
             if not os.path.exists(p['path']):
                 continue
             profile_archive = self.get_profile_archive_path(p)
+            if not os.path.exists(os.path.dirname(profile_archive)):
+                os.makedirs(os.path.dirname(profile_archive))
             profile_zip = zipfile.ZipFile(profile_archive, 'w')
             for (dirpath, dirnames, filenames) in os.walk(p['path']):
                 for f in filenames:
@@ -171,18 +179,10 @@ class BrowserController(object):
         for p in self.profiles:
             profile_archive = self.get_profile_archive_path(p)
             if not os.path.exists(profile_archive):
-                return
+                print 'Warning: no archived profile'
+                return True
             if os.path.exists(p['path']):
-                t = tempfile.mkdtemp()
-                def f(path, tmp):
-                    shutil.rmtree(tmp)
-                    shutil.move(path, tmp)
-                if not self.retry_file_op(f, [p['path'], t]):
-                    print 'Failed to copy profile 3 times; giving up.'
-                    return False
-                p['previous_profile'] = os.path.join(t, os.path.basename(p['path']))
-            else:
-                p['previous_profile'] = ''
+                shutil.rmtree(p['path'])
             try:
                 os.mkdir(p['path'])
             except OSError:
@@ -192,18 +192,7 @@ class BrowserController(object):
         return True
     
     def clean_up(self):
-        if not self.profiles:
-            return
-        for p in self.profiles:
-            if not p['previous_profile']:
-                continue
-            def f(p):
-                shutil.rmtree(p['path'])
-                shutil.move(p['previous_profile'], p['path'])
-                os.rmdir(os.path.dirname(p['previous_profile']))
-
-            if not self.retry_file_op(f, [p]):
-                print 'Failed to restore profile 3 times; giving up.'
+        pass
 
     def launch(self, url=None):
         if not self.copy_profiles():
@@ -261,26 +250,38 @@ class LatestFxBrowserController(BrowserController):
     
     INSTALL_SUBDIR = 'speedtests_firefox_nightly'
 
-    def __init__(self, os_name, browser_name, profiles):
-        cmd = os.path.join(os.getenv('USERPROFILE'), LatestFxBrowserController.INSTALL_SUBDIR, 'firefox', 'firefox.exe')
-        super(LatestFxBrowserController, self).__init__(os_name, browser_name, profiles, cmd)
+    # override these
+    ARCHIVE_FX_PATH = ''
+    INSTALLER_CLASS = None
+
+    def __init__(self, os_name, browser_name, profiles, base_install_dir):
+        self.base_install_dir = base_install_dir
+        cmd = os.path.join(self.base_install_dir,
+                           LatestFxBrowserController.INSTALL_SUBDIR,
+                           self.ARCHIVE_FX_PATH)
+        BrowserController.__init__(self, os_name, browser_name, profiles, cmd)
 
     def init_browser(self):
-        if self.os_name == 'windows':
-            user_profile = os.getenv('USERPROFILE')
-            install_path = os.path.join(user_profile, LatestFxBrowserController.INSTALL_SUBDIR)
-            shutil.rmtree(install_path, ignore_errors=True)
-            fxins = fxinstall.FirefoxInstaller(install_path, config.sixtyfour_bit)
-            print 'Getting firefox nightly...'
-            if not fxins.get_install():
-                print 'Failed to get firefox nightly.'
-        
-    def launch(self, url=None):
-        if self.os_name == 'windows':
-            return super(LatestFxBrowserController, self).launch(url)
-			
-        print 'Nightly not yet supported on OSs other than Windows.'
-        return False
+        install_path = os.path.join(self.base_install_dir,
+                                    LatestFxBrowserController.INSTALL_SUBDIR)
+        installer = self.INSTALLER_CLASS(install_path, config.sixtyfour_bit)
+        print 'Getting firefox nightly...'
+        if not installer.get_install():
+            print 'Failed to get firefox nightly.'
+            return False
+        return True
+
+
+class WinLatestFxBrowserController(LatestFxBrowserController):
+
+    ARCHIVE_FX_PATH = 'firefox\\firefox.exe'
+    INSTALLER_CLASS = fxinstall.FirefoxWinInstaller
+
+
+class MacLatestFxBrowserController(LatestFxBrowserController):
+
+    ARCHIVE_FX_PATH = 'Nightly.app/Contents/MacOS/firefox'
+    INSTALLER_CLASS = fxinstall.FirefoxMacInstaller
 
 
 class IEController(BrowserController):
@@ -364,13 +365,22 @@ class BrowserRunner(object):
 
             os_name = 'osx'
             return [
-                   BrowserController(os_name, 'firefox', os.path.join(app_supp_path, 'Firefox'),
-                                   '/Applications/Firefox.app/Contents/MacOS/firefox'),
-                   BrowserControllerRedirFile(os_name, 'safari', os.path.join(lib_path, 'Safari'),
-                                            '/Applications/Safari.app/Contents/MacOS/Safari'),
-                   BrowserController(os_name, 'opera', os.path.join(app_supp_path, 'Opera'),
+                   BrowserController(os_name, 'firefox',
+                                     os.path.join(app_supp_path, 'Firefox'),
+                                     '/Applications/Firefox.app/Contents/MacOS/firefox'),
+                   MacLatestFxBrowserController(os_name, 'nightly',
+                                                os.path.join(app_supp_path,
+                                                             'Firefox'),
+                                                os.getenv('HOME')),
+                   BrowserControllerRedirFile(os_name, 'safari',
+                                              os.path.join(lib_path, 'Safari'),
+                                              '/Applications/Safari.app/Contents/MacOS/Safari'),
+                   BrowserController(os_name, 'opera', 
+                                     os.path.join(app_supp_path, 'Opera'),
                                    '/Applications/Opera.app/Contents/MacOS/Opera'),
-                   BrowserController(os_name, 'chrome', os.path.join(app_supp_path, 'Google', 'Chrome'),
+                   BrowserController(os_name, 'chrome',
+                                     os.path.join(app_supp_path, 'Google', 
+                                                  'Chrome'),
                                    '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome')
                    ]
         elif os_str == 'Linux':
@@ -393,8 +403,8 @@ class BrowserRunner(object):
                    BrowserController(os_name, 'firefox',
                                    [{'path': os.path.join(app_data, 'Mozilla\\Firefox'), 'archive': 'windows.zip'}],
                                    os.path.join(program_files, 'Mozilla Firefox\\firefox.exe')),
-                   LatestFxBrowserController(os_name, 'nightly',
-                                   [{'path': os.path.join(app_data, 'Mozilla\\Firefox'), 'archive': 'windows.zip'}]),
+                   WinLatestFxBrowserController(os_name, 'nightly',
+                                   [{'path': os.path.join(app_data, 'Mozilla\\Firefox'), 'archive': 'windows.zip'}], user_profile),
                    IEController(os_name, 'internet explorer', os.path.join(program_files, 'Internet Explorer\\iexplore.exe')),
                    BrowserController(os_name, 'safari',
                                    [{'path': os.path.join(local_app_data, 'Apple Computer\\Safari'), 'archive': 'windows\\local.zip'},
@@ -586,10 +596,6 @@ def main():
         browser = get_browser_arg()
         BrowserRunner(evt).archive_current_profiles(browser)
         sys.exit(0)
-    elif len(args) >= 1 and args[0] == 'load':
-        browser = get_browser_arg()
-        BrowserRunner(evt).launch(browser, 'http://google.ca')
-        sys.exit(0)
     
     # start tests in specified browsers.  if none given, run all.
     url_prefix = config.local_test_base_url + '/start.html?ip=%s&port=%d' % (config.local_ip, config.local_port)
@@ -610,6 +616,10 @@ def main():
             sys.exit(e.reason.errno)
 
     test_urls = map(lambda x: url_prefix + x, options.tests)
+
+    if len(args) >= 1 and args[0] == 'load' and len(test_urls) > 1:
+        test_urls = test_urls[:1]
+
     br = BrowserRunner(evt, args, test_urls)
     trs = TestRunnerHTTPServer(('', config.local_port), TestRunnerRequestHandler, br)
     server_thread = threading.Thread(target=trs.serve_forever)
