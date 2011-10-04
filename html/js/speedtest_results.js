@@ -273,7 +273,11 @@ function loadFromRoute(testname, machine, start, end) {
   if (!machine) {
     machine = $($('#machineselect option')[0]).val();
   }
-  $('#machineselect').selectOptions(machine);
+  if ($('#machineselect').containsOption(machine)) {
+    $('#machineselect').selectOptions(machine);
+  } else {
+    $('#machineselect').addOption(machine, machine, true);
+  }
   var startDate, endDate;
   if (end) {
     endDate = new Date(end);
