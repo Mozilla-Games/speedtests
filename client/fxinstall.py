@@ -40,6 +40,7 @@ class FirefoxInstaller(object):
         self.archive_files = []
 
     def get_install(self):
+        print 'Fetching archive...'
         filename = self.get_archive()
         if filename:
             print 'Removing old installation...'
@@ -48,6 +49,8 @@ class FirefoxInstaller(object):
             os.makedirs(self.install_path)
             self.install(filename)
             print 'Done installing nightly.'
+        else:
+            print 'Archive not found!'
         return bool(filename)
 
     def dir_cb(self, line):
@@ -77,6 +80,7 @@ class FirefoxInstaller(object):
     def install(self, filename):
         pass
 
+
 class FirefoxWinInstaller(FirefoxInstaller):
     
     ARCHIVE_32_BIT_RE = re.compile('firefox-.*.en-US.win32.zip')
@@ -102,5 +106,33 @@ class FirefoxMacInstaller(FirefoxInstaller):
 
 
 if __name__ == '__main__':
-    fxins = FirefoxInstaller(None)
+    import errno
+    import platform
+    from optparse import OptionParser
+    install_classes = { 'Windows': FirefoxWinInstaller,
+                        'Darwin': FirefoxMacInstaller }
+    defaults = { 'Windows': { 'base_install': os.getenv('USERPROFILE') },
+                 'Darwin': { 'base_install': os.getenv('HOME') } }
+    parser = OptionParser()
+    parser.add_option('-d', '--dir', dest='base_install', default=None,
+                      help='base installation directory')
+    parser.add_option('-p', '--platform', dest='platform', default=None,
+                      help='target Firefox platform (\'Darwin\', \'Linux\')')
+    (options, args) = parser.parse_args()
+    fxins = None
+    if options.platform is None:
+        options.platform = platform.system()
+    if not options.platform in install_classes:
+        print 'No installer for %s.' % options.platform
+        sys.exit(errno.EINVAL)
+
+    if options.base_install is None:
+        options.base_install = defaults.get(platform.system(), None)
+    if options.base_install is None:
+        print 'No base install path given and no default defined for ' + \
+              'platform %s.' % platform.system()
+        sys.exit(errno.EINVAL)
+
+    fxins = install_classes[options.platform](os.path.join(options.base_install,
+                                                           'speedtests'))
     fxins.get_install()
