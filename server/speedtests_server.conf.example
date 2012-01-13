@@ -1,0 +1,9 @@
+[speedtests]
+# These are the defaults
+html_dir = ../html   # location of tests and results HTML/JS/CSS
+proxy = None         # forward results onto this results server
+db_host = localhost  # for results server, location of results db
+
+[machines]
+# for results server, list all clients here in the form <IP> = <displayed name>
+
