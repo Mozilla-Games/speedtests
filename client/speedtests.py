@@ -24,6 +24,11 @@ if platform.system() == 'Windows':
 import fxinstall
 import results
 
+try:
+    import jwt
+except ImportError:
+    pass
+
 class Config(object):
     DEFAULT_CONF_FILE = 'speedtests.conf'
     
@@ -33,7 +38,6 @@ class Config(object):
         self.local_port = 8111
         self.server_html_url = 'http://brasstacks.mozilla.com/speedtests'
         self.server_api_url = 'http://brasstacks.mozilla.com/speedtests/api'
-        self.cfg = None
         self.local_test_base_path = '/speedtests'
 
     @property
@@ -520,10 +524,15 @@ class BrowserRunner(object):
 
 class TestRunnerHTTPServer(BaseHTTPServer.HTTPServer):
     
-    def __init__(self, server_address, RequestHandlerClass, browser_runner):
+    def __init__(self, server_address, RequestHandlerClass, browser_runner,
+                 signing_key=None):
         BaseHTTPServer.HTTPServer.__init__(self, server_address, RequestHandlerClass)
         self.browser_runner = browser_runner
         self.results = collections.defaultdict(lambda: collections.defaultdict(list))
+        self.signer = None
+        if signing_key:
+            self.signer = jwt.jws.HmacSha(key=signing_key,
+                                          key_id=config.local_ip)
     
     def standard_web_data(self):
         return {'ip': config.local_ip}
@@ -555,10 +564,16 @@ class TestRunnerRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.server.results[self.server.browser_runner.browser_name()][testname].extend(web_data['results'])
         if not config.testmode and not config.noresults:
             web_data.update(self.server.standard_web_data())
-            raw_data = json.dumps(web_data)
+            if self.server.signer:
+                raw_data = jwt.encode(web_data, signer=self.server.signer)
+                content_type = 'application/jwt'
+            else:
+                raw_data = json.dumps(web_data)
+                content_type = 'application/json; charset=utf-8'
             req = urllib2.Request(config.server_results_url, raw_data)
-            req.add_header('Content-Type', 'application/json; charset=utf-8')
+            req.add_header('Content-Type', content_type)
             req.add_header('Content-Length', len(raw_data))
+
             try:
                 urllib2.urlopen(req)
             except urllib2.HTTPError, e:
@@ -581,7 +596,11 @@ def main():
     parser = OptionParser()
     parser.add_option('-t', '--test', dest='tests', action='append', default=[])
     parser.add_option('--testmode', dest='testmode', action='store_true')
-    parser.add_option('-n', '--noresults', dest='noresults', action='store_true')
+    parser.add_option('-n', '--noresults', dest='noresults',
+                      action='store_true')
+    parser.add_option('-s', '--sign', dest='sign', type='string',
+                      action='store',
+                      help='sign results with key in given file')
     (options, args) = parser.parse_args()
     config.read(options.testmode, options.noresults)
     
@@ -592,7 +611,20 @@ def main():
             print 'Specify a browser.'
             sys.exit(errno.EINVAL)
         return browser
-    
+
+    key = None
+    if options.sign:
+        try:
+            import jwt
+        except ImportError:
+            print >>sys.stderr, 'jwt module required for signing'
+            sys.exit(errno.EINVAL)
+        try:
+            key = file(options.sign, 'r').read().strip()
+        except IOError, e:
+            print >>sys.stderr, 'error reading key: %s' % e
+            sys.exit(e.errno)
+
     evt = threading.Event()
     if len(args) >= 1 and args[0] == 'archive':
         browser = get_browser_arg()
@@ -624,7 +656,8 @@ def main():
 
     br = BrowserRunner(evt, args, test_urls)
     print 'Starting HTTP server...'
-    trs = TestRunnerHTTPServer(('', config.local_port), TestRunnerRequestHandler, br)
+    trs = TestRunnerHTTPServer(('', config.local_port),
+                               TestRunnerRequestHandler, br, key)
     server_thread = threading.Thread(target=trs.serve_forever)
     server_thread.start()
     start = datetime.datetime.now()
@@ -633,7 +666,8 @@ def main():
     while not evt.is_set():
         if br.browser_running():
             if evt.is_set():
-                # evt may have been set while we were waiting for the lock in browser_running().
+                # evt may have been set while we were waiting for the lock in
+                # browser_running().
                 break
             if br.execution_time() > MAX_TEST_TIME:
                 print 'Test has taken too long; starting next test.'

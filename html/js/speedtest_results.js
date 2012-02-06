@@ -273,11 +273,7 @@ function loadFromRoute(testname, machine, start, end) {
   if (!machine) {
     machine = $($('#machineselect option')[0]).val();
   }
-  if ($('#machineselect').containsOption(machine)) {
-    $('#machineselect').selectOptions(machine);
-  } else {
-    $('#machineselect').addOption(machine, machine, true);
-  }
+  $('#machineselect').selectOptions(machine);
   var startDate, endDate;
   if (end) {
     endDate = new Date(end);
@@ -379,8 +375,8 @@ $(document).ready(function() {
         $('#testselect').addOption(data.testnames[i], data.testnames[i],
                                    i == 0);
       }
-      for (i = 0; i < data.machines.length; i++) {
-        $('#machineselect').addOption(data.machines[i][0], data.machines[i][1], 
+      for (i = 0; i < data.clients.length; i++) {
+        $('#machineselect').addOption(data.clients[i][0], data.clients[i][1], 
                                      i == 0);
       }
       $('#controlsform').submit(function() {

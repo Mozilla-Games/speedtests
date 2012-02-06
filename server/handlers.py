@@ -26,9 +26,22 @@ cfg.read(DEFAULT_CONF_FILE)
 HTML_DIR = cfg.get_default('speedtests', 'html_dir', os.path.join('..', 'html'))
 PROXY_TO = cfg.get_default('speedtests', 'proxy', None)
 DB_HOST = cfg.get_default('speedtests', 'db_host', 'localhost')
+DB_NAME = cfg.get_default('speedtests', 'db_name', 'speedtests')
+DB_USER = cfg.get_default('speedtests', 'db_user', 'speedtests')
+DB_PASSWD = cfg.get_default('speedtests', 'db_passwd', 'speedtests')
+try:
+    CLIENT_KEYS = dict(cfg.items('client keys'))
+except ConfigParser.NoSectionError:
+    CLIENT_KEYS = {}
 
-db = web.database(dbn='mysql', host=DB_HOST, db='speedtests', user='speedtests',
-                  pw='speedtests')
+if CLIENT_KEYS:
+    try:
+        import jwt
+    except ImportError:
+        pass  # FIXME: log this error!
+
+db = web.database(dbn='mysql', host=DB_HOST, db=DB_NAME, user=DB_USER,
+                  pw=DB_PASSWD)
 
 urls = ('/testresults/', 'TestResults',
         '/params/', 'Params',
@@ -58,7 +71,7 @@ def test_paths():
 
 def test_names():
     tests = filter(lambda x: x != 'browser',
-                   map(lambda x: x['Tables_in_speedtests'],
+                   map(lambda x: x['Tables_in_%s' % DB_NAME],
                        db.query('show tables')))
     tests.sort()
     return tests
@@ -134,10 +147,10 @@ class Params(object):
 
     @templeton.handlers.json_response
     def GET(self):
-        response = {'machines': [], 'testnames': test_names()}
-        if cfg.has_section('machines'):
-            response['machines'] = cfg.items('machines')
-            response['machines'].sort(key=lambda x: x[1])
+        response = {'clients': [], 'testnames': test_names()}
+        if cfg.has_section('clients'):
+            response['clients'] = cfg.items('clients')
+            response['clients'].sort(key=lambda x: x[1])
         # Could query database for all IPs, but that's slow and probably not
         # useful.
         return response
@@ -159,7 +172,17 @@ class TestResults(object):
         if PROXY_TO:
             self.proxy_request()
             return
-        web_data = json.loads(web.data())
+        content_type = web.ctx.env.get('CONTENT_TYPE', '')
+        if content_type == 'application/jwt':
+            token = jwt.decode(web.data(),
+                               signers=[jwt.jws.HmacSha(keydict=CLIENT_KEYS)])
+            if not token['valid']:
+                # JWT signature not valid
+                # FIXME: Log error!
+                return
+            web_data = token['payload']
+        else:
+            web_data = json.loads(web.data())
         machine_ip = web_data['ip']
         testname = web_data['testname']
         browser_id = get_browser_id(web_data['ua'])
