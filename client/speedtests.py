@@ -43,6 +43,7 @@ class Config(object):
         self.server_html_url = 'http://brasstacks.mozilla.com/speedtests'
         self.server_api_url = 'http://brasstacks.mozilla.com/speedtests/api'
         self.local_test_base_path = '/speedtests'
+        self.ignore = False
 
     @property
     def local_test_base_url(self):
@@ -51,9 +52,11 @@ class Config(object):
         return 'http://%s:%d%s' % (self.local_ip, self.local_port,
                                    self.local_test_base_path)
 
-    def read(self, testmode=False, noresults=False, conf_file=None):
+    def read(self, testmode=False, noresults=False, ignore=False,
+             conf_file=None):
         self.testmode = testmode
         self.noresults = noresults
+        self.ignore = ignore
         if not conf_file:
             conf_file = Config.DEFAULT_CONF_FILE
         self.cfg = ConfigParser.ConfigParser()
@@ -564,6 +567,8 @@ class TestRunnerRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     def do_POST(self):
         length = int(self.headers.getheader('content-length'))
         web_data = json.loads(self.rfile.read(length))
+        if config.ignore:
+            web_data['ignore'] = True
         testname = web_data['testname']
         self.server.results[self.server.browser_runner.browser_name()][testname].extend(web_data['results'])
         if not config.testmode and not config.noresults:
@@ -614,7 +619,7 @@ def main():
     parser.add_option('--ignore', dest='ignore', action='store_true',
                       help='instruct server to ignore results')
     (options, args) = parser.parse_args()
-    config.read(options.testmode, options.noresults)
+    config.read(options.testmode, options.noresults, options.ignore)
     
     def get_browser_arg():
         try:
