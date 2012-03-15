@@ -11,9 +11,9 @@ from collections import defaultdict
 
 class DefaultConfigParser(ConfigParser.ConfigParser):
 
-    def get_default(self, section, option, default):
+    def get_default(self, section, option, default, func='get'):
         try:
-            return cfg.get(section, option)
+            return getattr(cfg, func)(section, option)
         except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
             return default
 
@@ -29,6 +29,8 @@ DB_HOST = cfg.get_default('speedtests', 'db_host', 'localhost')
 DB_NAME = cfg.get_default('speedtests', 'db_name', 'speedtests')
 DB_USER = cfg.get_default('speedtests', 'db_user', 'speedtests')
 DB_PASSWD = cfg.get_default('speedtests', 'db_passwd', 'speedtests')
+REQUIRE_SIGNED = cfg.get_default('speedtests', 'require_signed', False,
+                                 'getboolean')
 try:
     CLIENT_KEYS = dict(cfg.items('client keys'))
 except ConfigParser.NoSectionError:
@@ -168,6 +170,7 @@ class TestResults(object):
         request = urllib2.Request(PROXY_TO, web.data(), headers)
         response = urllib2.urlopen(request, timeout=120).read()
 
+    @templeton.handlers.json_response
     def POST(self):
         if PROXY_TO:
             self.proxy_request()
@@ -179,12 +182,16 @@ class TestResults(object):
             if not token['valid']:
                 # JWT signature not valid
                 # FIXME: Log error!
-                return
+                return {'result': 'error', 'error': 'invalid signature'}
             web_data = token['payload']
+        elif REQUIRE_SIGNED:
+            return {'result': 'error', 'error': 'results must be signed'}
         else:
             web_data = json.loads(web.data())
-        machine_ip = web_data['ip']
+        if web_data.get('ignore'):
+            return {'result': 'ok'}
         testname = web_data['testname']
+        machine_ip = web_data['ip']
         browser_id = get_browser_id(web_data['ua'])
         for results in web_data['results']:
             results['browser_id'] = browser_id
@@ -193,6 +200,7 @@ class TestResults(object):
             for k, v in results.iteritems():
                 cols[k.encode('ascii')] = v
             db.insert(testname, **cols)
+        return {'result': 'ok'}
 
     @templeton.handlers.json_response
     def GET(self):
