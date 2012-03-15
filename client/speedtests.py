@@ -1,3 +1,7 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this file,
+# You can obtain one at http://mozilla.org/MPL/2.0/.
+
 import BaseHTTPServer
 import cgi
 import collections
@@ -575,10 +579,16 @@ class TestRunnerRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             req.add_header('Content-Length', len(raw_data))
 
             try:
-                urllib2.urlopen(req)
+                response = json.loads(urllib2.urlopen(req).read())
             except urllib2.HTTPError, e:
                 print '**ERROR sending results to server: %s' % e
                 print
+            else:
+                if response['result'] == 'ok':
+                    print 'Results submitted to server.'
+                else:
+                    print '**ERROR sending results to server: %s' % \
+                        response['error']
         self.send_response(200)
         self.end_headers()
         self.wfile.write('<html></html>')
@@ -601,6 +611,8 @@ def main():
     parser.add_option('-s', '--sign', dest='sign', type='string',
                       action='store',
                       help='sign results with key in given file')
+    parser.add_option('--ignore', dest='ignore', action='store_true',
+                      help='instruct server to ignore results')
     (options, args) = parser.parse_args()
     config.read(options.testmode, options.noresults)
     
