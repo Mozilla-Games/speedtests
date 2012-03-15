@@ -18,6 +18,7 @@ import sys
 import tempfile
 import threading
 import time
+import traceback
 import urllib2
 import zipfile
 
@@ -585,8 +586,9 @@ class TestRunnerRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
             try:
                 response = json.loads(urllib2.urlopen(req).read())
-            except urllib2.HTTPError, e:
-                print '**ERROR sending results to server: %s' % e
+            except (urllib2.URLError, urllib2.HTTPError):
+                print '**ERROR sending results to server:'
+                traceback.print_exc()
                 print
             else:
                 if response['result'] == 'ok':
