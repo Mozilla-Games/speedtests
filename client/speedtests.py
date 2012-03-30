@@ -194,7 +194,21 @@ class BrowserController(object):
                 print 'Warning: no archived profile'
                 return True
             if os.path.exists(p['path']):
-                shutil.rmtree(p['path'])
+                attempts = 0
+                while attempts < 3:
+                    if attempts > 0:
+                        time.sleep(5)
+                    try:
+                        shutil.rmtree(p['path'])
+                    except (OSError, WindowsError):
+                        print 'Failed to remove profile:'
+                        traceback.print_exc()
+                        attempts += 1
+                    else:
+                        break
+                if attempts == 3:
+                    print 'Couldn\'t remove profile; giving up.'
+                    return False
             try:
                 os.mkdir(p['path'])
             except OSError:
