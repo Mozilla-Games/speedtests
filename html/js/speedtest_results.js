@@ -217,6 +217,7 @@ function scoreDisplayFactory(testname, records, browsers) {
         scoreDisplayClass = PsychBrowsingScoreDisplay;
         break;
     case 'MazeSolver':
+    case 'Kraken':
         scoreDisplayClass = DurationScoreDisplay;
         break;
     case 'test262':

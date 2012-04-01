@@ -42,7 +42,7 @@ class SpeedTestReport(object):
                                            browser)
                     continue
 
-                if test == 'MazeSolver':
+                if test == 'MazeSolver' or test == 'Kraken':
                     score = int(results_strs[0]['duration'])
                     score_str = '%d ms' % score
                     s += '  Duration: %s\n\n' % score_str

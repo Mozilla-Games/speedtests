@@ -1,0 +1,26 @@
+CREATE TABLE Kraken (
+	id INT AUTO_INCREMENT,
+	PRIMARY KEY (id),
+	browser_id INT,
+	FOREIGN KEY (browser_id) REFERENCES browser(id),
+	browser_height INT,
+	browser_width INT,
+	teststart TIMESTAMP,
+	ip VARCHAR(15) COLLATE utf8_bin,
+	json_stringify_tinderbox FLOAT,
+	audio_beat_detection FLOAT,
+	imaging_gaussian_blur FLOAT,
+	audio_oscillator FLOAT,
+	audio_dft FLOAT,
+	imaging_desaturate FLOAT,
+	audio_fft FLOAT,
+	stanford_crypto_pbkdf2 FLOAT,
+	imaging_darkroom FLOAT,
+	stanford_crypto_sha256_iterative FLOAT,
+	ai_astar FLOAT,
+	stanford_crypto_ccm FLOAT,
+	json_parse_financial FLOAT,
+	stanford_crypto_aes FLOAT,
+	duration INT
+);
+
