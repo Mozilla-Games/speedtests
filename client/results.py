@@ -57,6 +57,13 @@ class SpeedTestReport(object):
                     self.record_best_score(test, score, score_str, browser)
                     continue
 
+                if test == 'V8':
+                    score = int(results_strs[0]['score'])
+                    score_str = '%d' % score
+                    s += '  Score: %s\n\n' % score_str
+                    self.record_best_score(test, score, score_str, browser)
+                    continue
+
                 score = 0
                 results = map(lambda x: int(x['fps']), results_strs)
                 if len(results) == 1:
