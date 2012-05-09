@@ -6,7 +6,7 @@ var SpeedTests = function() {
   var lastReportTime = null;
   
   var isoDateTime = function (d) {
-    function pad(n) { return n < 10 ? '0' + n : n }
+    function pad(n) { return n < 10 ? '0' + n : n; }
     return d.getUTCFullYear() + '-'
          + pad(d.getUTCMonth()+1) + '-'
          + pad(d.getUTCDate()) + ' '
@@ -25,7 +25,7 @@ var SpeedTests = function() {
   var getSearchParams = function() {
     var params = document.location.search.slice(1).split("&");
     var args = new Object();
-    for (p in params) {
+    for (var p = 0; p < params.length; p++) {
       var l = params[p].split("=");
       for (var i = 0; i < l.length; i++) {
         l[i] = decodeURIComponent(l[i]);
