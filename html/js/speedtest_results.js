@@ -210,6 +210,19 @@ TestsPassedScoreDisplay.prototype.getScore = function(testRunRecords) {
 };
 
 
+GeometricMeanScoreDisplay.prototype = new ScoreDisplay();
+GeometricMeanScoreDisplay.prototype.constructor = GeometricMeanScoreDisplay;
+function GeometricMeanScoreDisplay(testname, records, browsers) {
+  ScoreDisplay.prototype.constructor.call(this, testname, records, browsers);
+  this.title = testname + ' test runs, geometric mean of test scores (higher is better)';
+  this.scoreName = 'geometric mean score';
+}
+
+GeometricMeanScoreDisplay.prototype.getScore = function(testRunRecords) {
+  return testRunRecords[0].score;
+};
+
+
 function scoreDisplayFactory(testname, records, browsers) {
   var scoreDisplayClass = null;
   switch (testname) {
@@ -222,6 +235,9 @@ function scoreDisplayFactory(testname, records, browsers) {
         break;
     case 'test262':
         scoreDisplayClass = TestsPassedScoreDisplay;
+        break;
+    case 'V8':
+        scoreDisplayClass = GeometricMeanScoreDisplay;
         break;
     default:
         scoreDisplayClass = FpsScoreDisplay;

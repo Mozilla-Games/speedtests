@@ -274,6 +274,8 @@ class BrowserController(object):
 class LatestFxBrowserController(BrowserController):
     
     """ Specialization to download latest nightly before launching. """
+
+    # FIXME: if we fail to contact ftp.mozilla.org, recover gracefully
     
     INSTALL_SUBDIR = 'speedtests_firefox_nightly'
 
