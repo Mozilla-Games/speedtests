@@ -235,8 +235,14 @@ class TestResults(object):
                     wheres.append('teststart <= $end')
             if client:
                 client_wheres = []
-                for i, ip in enumerate([x.strip() for x in
-                                        cfg.get('clients',client[0]).split(',')]):
+                try:
+                    ips = [x.strip() for x in
+                           cfg.get('clients',client[0]).split(',')]
+                except ConfigParser.NoOptionError:
+                    response['results'] = {}
+                    return response
+                    
+                for i, ip in enumerate(ips):
                     vars['ip%d' % i] = ip
                     client_wheres.append('ip like $ip%d' % i)
                 wheres.append('(' + ' OR '.join(client_wheres) + ')')
