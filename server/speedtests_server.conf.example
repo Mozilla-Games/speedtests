@@ -6,7 +6,9 @@ proxy = None            # forward results onto this results server
 db_host = localhost     # for results server, location of results db
 
 [clients]
-# for results server, list all clients here in the form <IP> = <displayed name>
+# for results server, list all clients here in the form
+# <displayed name> = <IPs>
+# Multiple IPs can be specified in case machines change IPs.
 
 [client keys]
 # to support JWS authenticated messages from clients, place keys here in

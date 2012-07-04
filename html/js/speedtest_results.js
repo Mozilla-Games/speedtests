@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 function ScoreDisplay(testname, records, browsers) {
   this.records = records;
   this.browsers = browsers;
@@ -282,15 +286,15 @@ function routerFactory() {
  * route always matches the controls and vice versa, no matter if we come
  * here via the controls or directly via URL.
  */
-function loadFromRoute(testname, machine, start, end) {
+function loadFromRoute(testname, client, start, end) {
   if (!testname) {
     testname = $($('#testselect option')[0]).val();
   }
   $('#testselect').selectOptions(testname);
-  if (!machine) {
-    machine = $($('#machineselect option')[0]).val();
+  if (!client) {
+    client = $($('#clientselect option')[0]).val();
   }
-  $('#machineselect').selectOptions(machine);
+  $('#clientselect').selectOptions(client);
   var startDate, endDate;
   if (end) {
     endDate = new Date(end);
@@ -307,7 +311,7 @@ function loadFromRoute(testname, machine, start, end) {
   }
   $('#startentry').val(start);
   $('#endentry').val(end);
-  loadView(testname, machine, start, end);
+  loadView(testname, client, start, end);
 }
 
 function loading(display) {
@@ -318,10 +322,10 @@ function loading(display) {
   }
 }
 
-function getTestData(testname, machine, start, end, success, error) {
+function getTestData(testname, client, start, end, success, error) {
   var url = 'api/testresults/?testname=' + testname;
-  if (machine) {
-    url += '&ip=' + machine;
+  if (client) {
+    url += '&client=' + client;
   }
   if (start) {
     url += '&start=' + start;
@@ -339,19 +343,19 @@ function getTestData(testname, machine, start, end, success, error) {
 
 function controlFormSubmit() {
   var testname = $('#testselect').selectedValues()[0];
-  var machine = $('#machineselect').selectedValues()[0];
+  var client = $('#clientselect').selectedValues()[0];
   var start = $('#startentry').val();
   var end = $('#endentry').val();
-  var route = '/' + testname + '/' + machine + '/' + start + '/' + end;
+  var route = '/' + testname + '/' + client + '/' + start + '/' + end;
   router.setRoute(route);
 }
 
-function loadView(testname, machine, start, end) {
+function loadView(testname, client, start, end) {
   loading();
   if (scoreDisplay) {
     scoreDisplay.destroy();
   }
-  getTestData(testname, machine, start, end, function(data) {
+  getTestData(testname, client, start, end, function(data) {
     scoreDisplay = scoreDisplayFactory(testname, data.results[testname],
                                        data.browsers);
     loading(false);
@@ -393,8 +397,8 @@ $(document).ready(function() {
                                    i == 0);
       }
       for (i = 0; i < data.clients.length; i++) {
-        $('#machineselect').addOption(data.clients[i][0], data.clients[i][1], 
-                                     i == 0);
+        $('#clientselect').addOption(data.clients[i], data.clients[i], 
+                                      i == 0);
       }
       $('#controlsform').submit(function() {
         controlFormSubmit();

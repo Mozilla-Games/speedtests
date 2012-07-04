@@ -153,10 +153,9 @@ class Params(object):
 
     @templeton.handlers.json_response
     def GET(self):
-        response = {'clients': [], 'testnames': test_names()}
-        if cfg.has_section('clients'):
-            response['clients'] = cfg.items('clients')
-            response['clients'].sort(key=lambda x: x[1])
+        response = {'clients': [x[0].capitalize() for x in
+                                cfg.items('clients')],
+                    'testnames': test_names()}
         # Could query database for all IPs, but that's slow and probably not
         # useful.
         return response
@@ -212,7 +211,7 @@ class TestResults(object):
         tables = args.get('testname', None)
         start = args.get('start', None)
         end = args.get('end', None)
-        ip = args.get('ip', None)
+        client = args.get('client', None)
         if not tables:
             tables = test_names()
         response = { 'browsers': {},
@@ -234,9 +233,13 @@ class TestResults(object):
                     wheres.append('date(teststart) <= $end')
                 else:
                     wheres.append('teststart <= $end')
-            if ip:
-                vars['ip'] = ip[0]
-                wheres.append('ip like $ip')
+            if client:
+                client_wheres = []
+                for i, ip in enumerate([x.strip() for x in
+                                        cfg.get('clients',client[0]).split(',')]):
+                    vars['ip%d' % i] = ip
+                    client_wheres.append('ip like $ip%d' % i)
+                wheres.append('(' + ' OR '.join(client_wheres) + ')')
             for row in db.select(t, vars, where=' AND '.join(wheres), order='teststart ASC'):
                 record = dict(row)
                 for k, v in record.iteritems():
