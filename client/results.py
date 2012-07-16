@@ -64,7 +64,7 @@ class SpeedTestReport(object):
                     self.record_best_score(test, score, score_str, browser)
                     continue
 
-                if 'fps' in resluts_strs[0]:
+                if 'fps' in results_strs[0]:
                     score = 0
                     results = map(lambda x: int(x['fps']), results_strs)
                     if len(results) == 1:
@@ -94,7 +94,7 @@ class SpeedTestReport(object):
                     continue
 
                 if 'value' in results_strs[0]:
-                    score = result_strs[0]['value']
+                    score = results_strs[0]['value']
                     score_str = '%f' % score
                     s += '  %s\n' % score_str
                     continue

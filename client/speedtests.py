@@ -43,8 +43,9 @@ class Config(object):
         self.local_port = 8111
         self.server_html_url = 'http://brasstacks.mozilla.com/speedtests'
         self.server_api_url = 'http://brasstacks.mozilla.com/speedtests/api'
-        self.local_test_base_path = '/speedtests'
+        self.local_test_base_path = ''
         self.ignore = False
+        self.platform = platform.system()
 
     @property
     def local_test_base_url(self):
@@ -87,6 +88,11 @@ class Config(object):
             self.server_results_url = self.cfg.get('speedtests', 'server_results_url').rstrip('/') + '/'
         except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
             self.server_results_url = self.server_api_url + '/testresults/'
+
+        try:
+            self.platform = self.cfg.get('speedtests', 'platform')
+        except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
+            pass
 
         # Find our IP address.
         host, colon, port = urllib2.urlparse.urlsplit(self.server_html_url)[1] \
@@ -232,7 +238,7 @@ class BrowserController(object):
         if not url:
             url = config.test_url
         cl = self.cmd_line(url)
-        print 'Launching %s...' % ' '.join(cl)
+        print '  command line: %s...' % ' '.join(cl)
         self.launch_time = datetime.datetime.now()
         self.proc = subprocess.Popen(cl)
         return True
@@ -274,6 +280,76 @@ class BrowserController(object):
             time.sleep(5)
         self.clean_up()
 
+class AndroidAdbBrowserController(BrowserController):
+    browserPackage = "org.mozilla.fennec_vladimir"
+
+    def __init__(self, os_name, browser_name, package):
+        BrowserController.__init__(self, os_name, browser_name, "default", None)
+        self.browserPackage = package
+
+    def cmd_line(self, url):
+        pass
+
+    def init_browser(self):
+        pass
+
+    def browser_exists(self):
+        # XXX fixme to check
+        return True
+
+    def get_profile_archive_path(self, profile):
+        raise "Can't get profile archive for Android fennec browser"
+
+    def archive_current_profiles(self):
+        raise "Can't get profile archive for Android fennec browser"
+
+    def copy_profiles(self):
+        print "Skipping profile copy on Android"
+        return True
+
+    def launch(self, url=None):
+        try:
+            if url is None:
+                url = "about:blank"
+            cmdline = "adb shell am start -a android.intent.action.VIEW -d '\"%s\"' %s" % (url, self.browserPackage)
+            #print "ADB Launch command line: %s" % (cmdline)
+            self.launch_time = datetime.datetime.now()
+            subprocess.check_call(cmdline, shell=True)
+            return True
+        except:
+            return False
+
+    def getBrowserPid(self):
+        try:
+            # grep -v is for chrome
+            result = subprocess.check_output("adb shell ps | grep %s | grep -v sandbox | tail -1" % self.browserPackage, shell=True)
+            result = result.split()
+            if result[0] == "USER":
+                return -1
+            #print "getBrowserPid: %s" % (result[1])
+            return int(result[1])
+        except:
+            return -1
+
+    def running(self):
+        return self.getBrowserPid() > 0
+
+    def terminate(self):
+        pid = self.getBrowserPid()
+        if pid < 0:
+            return
+
+        # hack
+        if self.browserPackage.find("fennec") == -1:
+            subprocess.call("adb shell su -c 'kill %d'" % (pid), shell=True)
+        else:
+            subprocess.call("adb shell run-as %s kill %d" % (self.browserPackage, pid), shell=True)
+
+        pid = self.getBrowserPid()
+        while pid > 0:
+            time.sleep(2)
+            pid = self.getBrowserPid()
+        self.clean_up()
 
 class LatestFxBrowserController(BrowserController):
     
@@ -452,6 +528,15 @@ class BrowserRunner(object):
                                    [{'path': os.path.join(local_app_data, 'Google\\Chrome\\User Data'), 'archive': 'windows.zip'}],
                                    os.path.join(user_profile, 'Local Settings\\Application Data\\Google\\Chrome\\Application\\chrome.exe'))
                    ]
+        elif os_str == 'android':
+            return [
+                AndroidAdbBrowserController(os_str, 'firefox', 'org.mozilla.fennec_vladimir'),
+                AndroidAdbBrowserController(os_str, 'browser', 'com.google.android.browser'),
+                AndroidAdbBrowserController(os_str, 'chrome', 'com.android.chrome')
+                   ]
+        else:
+            print "Unrecognized platform '%s'" % (os_str)
+            raise Exception
 
     class BrowserControllerIter(object):
         
@@ -472,13 +557,13 @@ class BrowserRunner(object):
                 if not self.browser_names or n.browser_name in self.browser_names:
                     return n
                    
-    def __init__(self, evt, browser_names=[], test_urls=[]):
+    def __init__(self, evt, browser_names=[], test_urls=[], platform_system=platform.system()):
         self.evt = evt
         self.test_urls = test_urls
         try:
-            self.browsers = BrowserRunner.browsers_by_os(platform.system())
+            self.browsers = BrowserRunner.browsers_by_os(platform_system)
         except KeyError:
-            sys.stderr.write('Unknown platform "%s".\n' % platform.system())
+            sys.stderr.write('Unknown platform "%s".\n' % platform_system)
             sys.exit(errno.EOPNOTSUPP)
         self.browser_iter = BrowserRunner.BrowserControllerIter(self.browsers, browser_names)
         self.current_controller = None
@@ -688,12 +773,12 @@ def main():
             sys.stderr.write('Could not get test list: %s\n' % e.reason)
             sys.exit(e.reason.errno)
 
-    test_urls = map(lambda x: url_prefix + x, options.tests)
+    test_urls = map(lambda x: url_prefix + urllib2.quote(x.encode("utf-8")), options.tests)
 
     if len(args) >= 1 and args[0] == 'load' and len(test_urls) > 1:
         test_urls = test_urls[:1]
 
-    br = BrowserRunner(evt, args, test_urls)
+    br = BrowserRunner(evt, args, test_urls, config.platform)
     print 'Starting HTTP server...'
     trs = TestRunnerHTTPServer(('', config.local_port),
                                TestRunnerRequestHandler, br, key)
