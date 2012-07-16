@@ -1,0 +1,16 @@
+html/fishtank/.*
+html/Kraken/.*
+html/MazeSolver/.*
+html/MrPotatoGun/.*
+html/PsychedelicBrowsing/.*
+html/SantasWorkshop/.*
+html/SpeedReading/.*
+html/test262/.*
+html/V8/.*
+html/webgl-perf-tests/.*
+
+client/speedtests.conf
+server/speedtests_server.conf
+
+\.pyc$
+~$
