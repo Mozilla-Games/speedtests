@@ -118,11 +118,15 @@ class BrowserController(object):
             else:
                 self.profiles.append(p)
         self.cmd = cmd
+        self.cmd_args = tuple()
         self.args_tuple = args_tuple
         self.proc = None
         self.launch_time = None
         try:
             self.cmd = config.cfg.get(os_name, browser_name)
+            args = config.cfg.get(os_name, browser_name + "_args")
+            if args is not None:
+                self.cmd_args = tuple(args.split(" "))
         except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
             pass
 
@@ -144,7 +148,7 @@ class BrowserController(object):
         pass
             
     def cmd_line(self, url):
-        return (self.cmd,) + self.args_tuple + (url,)
+        return (self.cmd,) + self.cmd_args + self.args_tuple + (url,)
 
     def browser_exists(self):
         return os.path.exists(self.cmd)

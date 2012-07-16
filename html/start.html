@@ -17,11 +17,19 @@ $(document).ready(function() {
   if (!searchParams.testUrl) {
     $('#main p').text('No testUrl parameter given.');
   } else if (searchParams.test) {
-    var testName = searchParams.testUrl.slice(0, searchParams.testUrl.lastIndexOf('/'));
+    var s = decodeURIComponent(searchParams.testUrl);
+    var testName = s.slice(0, s.lastIndexOf('/')).slice(0, s.lastIndexOf("#"));
     $('#main p').text('TEST submitting results for ' + testName + '...');
     SpeedTests.nextTest(testName);
   } else {
-    window.open(searchParams.testUrl + document.location.search, 'testWindow',
+    var s = decodeURIComponent(searchParams.testUrl);
+    var hashStart = s.lastIndexOf("#");
+    var hash = "";
+    if (hashStart != -1) {
+      hash = s.slice(hashStart);
+      s = s.slice(0, hashStart);
+    }
+    window.open(s + document.location.search + hash, 'testWindow',
                 'resizable=no,status=no,top=0,left=0,height=768,width=1024,menubar=no,toolbar=no,location=no,personalbar=no');
   }
 });

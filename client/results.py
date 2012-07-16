@@ -64,33 +64,43 @@ class SpeedTestReport(object):
                     self.record_best_score(test, score, score_str, browser)
                     continue
 
-                score = 0
-                results = map(lambda x: int(x['fps']), results_strs)
-                if len(results) == 1:
-                    score = results[0]
-                    score_str = '%d fps' % score
-                    s += '  %s\n' % score_str
-                else:
-                    if len(results) > 0:
-                        s += '  Series:'
-                        for r in results:
-                            s += ' %3d' % r
-                        s += '\n  Mean: %.1d\n' % (sum(results) / len(results))
-                        sorted_results = results[:]
-                        sorted_results.sort()
-                        if len(sorted_results) % 2 == 0:
-                            median = (sorted_results[len(sorted_results)/2 - 1] + sorted_results[len(sorted_results)/2]) / 2
-                        else:
-                            median = sorted_results[len(sorted_results)/2]
-                        s += '  Median: %d\n' % median
-                        score = median
+                if 'fps' in resluts_strs[0]:
+                    score = 0
+                    results = map(lambda x: int(x['fps']), results_strs)
+                    if len(results) == 1:
+                        score = results[0]
                         score_str = '%d fps' % score
+                        s += '  %s\n' % score_str
                     else:
-                        s += '  No data.\n'
-                if score:
-                    self.record_best_score(test, score, score_str, browser)
+                        if len(results) > 0:
+                            s += '  Series:'
+                            for r in results:
+                                s += ' %3d' % r
+                            s += '\n  Mean: %.1d\n' % (sum(results) / len(results))
+                            sorted_results = results[:]
+                            sorted_results.sort()
+                            if len(sorted_results) % 2 == 0:
+                                median = (sorted_results[len(sorted_results)/2 - 1] + sorted_results[len(sorted_results)/2]) / 2
+                            else:
+                                median = sorted_results[len(sorted_results)/2]
+                            s += '  Median: %d\n' % median
+                            score = median
+                            score_str = '%d fps' % score
+                        else:
+                            s += '  No data.\n'
+                    if score:
+                        self.record_best_score(test, score, score_str, browser)
+                    s += '\n'
+                    continue
+
+                if 'value' in results_strs[0]:
+                    score = result_strs[0]['value']
+                    score_str = '%f' % score
+                    s += '  %s\n' % score_str
+                    continue
+
+                s += "!!!! Can't handle result object for test '%s'!\n" % result_strs[0].description
                 s += '\n'
-            s += '\n'
         test_list = self.best_scores.keys()
         test_list.sort()
         s += 'Results by test:\n\n'
