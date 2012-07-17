@@ -76,9 +76,15 @@ def test_paths():
 
 
 def test_names():
-    tests = filter(lambda x: x != 'browser',
+    tests = filter(lambda x: x != 'browser' and x != 'generic',
                    map(lambda x: x['Tables_in_%s' % DB_NAME],
                        db.query('show tables')))
+    tests.sort()
+    return tests
+
+def generic_test_names():
+    tests = map(lambda x: x['testname'], db.query('select distinct testname from generic'))
+    print tests
     tests.sort()
     return tests
 
@@ -155,7 +161,7 @@ class Params(object):
     def GET(self):
         response = {'clients': [x[0].capitalize() for x in
                                 cfg.items('clients')],
-                    'testnames': test_names()}
+                    'testnames': test_names() + generic_test_names()}
         # Could query database for all IPs, but that's slow and probably not
         # useful.
         return response
@@ -197,12 +203,41 @@ class TestResults(object):
         machine_ip = web_data['ip']
         browser_id = get_browser_id(web_data['ua'])
         for results in web_data['results']:
-            results['browser_id'] = browser_id
-    	    results['ip'] = machine_ip
+            r = results
+            tablename = testname
+            if 'value' in results:
+                r = {}
+                r['browser_id'] = browser_id
+                r['ip'] = machine_ip
+                r['browser_height'] = results['browser_height']
+                r['browser_width'] = results['browser_width']
+                r['teststart'] = results['teststart']
+                r['testname'] = testname
+                r['result_value'] = results['value']
+                r['result_data'] = json.dumps(results['raw'])
+                tablename = 'generic'
+            else:
+                r['browser_id'] = browser_id
+                r['ip'] = machine_ip
             cols = {}
-            for k, v in results.iteritems():
+            for k, v in r.iteritems():
                 cols[k.encode('ascii')] = v
-            db.insert(testname, **cols)
+            # web.py is a piece of shit that builds up sql inserts/queries by adding
+            # strings together, so we can't just use db.insert because it's basically
+            # begging to be exploited (and gets any strings that have complicated things
+            # in them wrong
+            ###db.insert(tablename, **cols)
+
+            colkeys = cols.keys()
+            colvals = []
+            for i in range(len(colkeys)):
+                colvals.append(cols[colkeys[i]])
+            cursor = db.ctx.db.cursor()
+            sql_query = "INSERT INTO " + tablename + " (" + (",".join(colkeys)) + ") VALUES (" + (",".join(['%s'] * len(colkeys))) + ")";
+            cursor.execute(sql_query, tuple(colvals))
+            db.ctx.db.commit()
+            cursor.close()
+
         return {'result': 'ok'}
 
     @templeton.handlers.json_response
@@ -212,8 +247,14 @@ class TestResults(object):
         start = args.get('start', None)
         end = args.get('end', None)
         client = args.get('client', None)
+        fullresults = args.get('full', False)
+        gentests = generic_test_names()
         if not tables:
-            tables = test_names()
+            tables = test_names() + gentests
+        for i in range(len(tables)):
+            if tables[i] in gentests:
+                tables[i] = ["generic", tables[i].encode('ascii')]
+        
         response = { 'browsers': {},
                      'results': defaultdict(list) }
         for row in db.select('browser'):
@@ -233,6 +274,7 @@ class TestResults(object):
                     wheres.append('date(teststart) <= $end')
                 else:
                     wheres.append('teststart <= $end')
+            print "client", client
             if client:
                 client_wheres = []
                 try:
@@ -246,10 +288,25 @@ class TestResults(object):
                     vars['ip%d' % i] = ip
                     client_wheres.append('ip like $ip%d' % i)
                 wheres.append('(' + ' OR '.join(client_wheres) + ')')
-            for row in db.select(t, vars, where=' AND '.join(wheres), order='teststart ASC'):
+
+            tablename = t
+            testname = t
+            if type(t) is not str:
+                tablename = t[0]
+                testname = t[1]
+                wheres.append("testname = '%s'" % (testname))
+
+            print tablename
+            result = db.select(tablename, vars, where=' AND '.join(wheres), order='teststart ASC')
+            for row in result:
                 record = dict(row)
                 for k, v in record.iteritems():
                     if isinstance(v, datetime.datetime):
                         record[k] = v.isoformat()
-                response['results'][t].append(record)
+                # no need to send this with each line
+                record.pop('testname', False)
+                # and don't send the full data unless explicitly requested
+                if not fullresults:
+                    record.pop('result_data', False)
+                response['results'][testname].append(record)
         return response

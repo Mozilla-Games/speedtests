@@ -174,6 +174,17 @@ FpsScoreDisplay.prototype.getScore = function(testRunRecords) {
   return median;
 };
 
+GenericScoreDisplay.prototype = new ScoreDisplay();
+GenericScoreDisplay.prototype.constructor = GenericScoreDisplay;
+function GenericScoreDisplay(testname, records, browsers) {
+  ScoreDisplay.prototype.constructor.call(this, testname, records, browsers);
+  this.title = testname + ' test runs';
+  this.scoreName = ' ';
+}
+
+GenericScoreDisplay.prototype.getScore = function(testRunRecords) {
+  return testRunRecords[0].result_value;
+};
 
 PsychBrowsingScoreDisplay.prototype = new ScoreDisplay();
 PsychBrowsingScoreDisplay.prototype.constructor = PsychBrowsingScoreDisplay;
@@ -243,8 +254,16 @@ function scoreDisplayFactory(testname, records, browsers) {
     case 'V8':
         scoreDisplayClass = GeometricMeanScoreDisplay;
         break;
-    default:
+    case 'fishtank':
+    case 'MrPotatoGun':
+    case 'SantasWorkshop':
+    case 'SpeedReading':
         scoreDisplayClass = FpsScoreDisplay;
+        break;
+    // all the 'generic' tests
+    default:
+        scoreDisplayClass = GenericScoreDisplay;
+        break;
   }
   return new scoreDisplayClass(testname, records, browsers);
 }
@@ -324,13 +343,13 @@ function loading(display) {
 
 function getTestData(testname, client, start, end, success, error) {
   var url = 'api/testresults/?testname=' + testname;
-  if (client) {
+  if (client && client != "undefined") {
     url += '&client=' + client;
   }
-  if (start) {
+  if (start && start != "undefined") {
     url += '&start=' + start;
   }
-  if (end) {
+  if (end && end != "undefined") {
     url += '&end=' + end;
   }
   $.ajax({
@@ -356,6 +375,7 @@ function loadView(testname, client, start, end) {
     scoreDisplay.destroy();
   }
   getTestData(testname, client, start, end, function(data) {
+    console.log(data);
     scoreDisplay = scoreDisplayFactory(testname, data.results[testname],
                                        data.browsers);
     loading(false);
@@ -392,6 +412,7 @@ $(document).ready(function() {
     type: 'GET',
     url: 'api/params/',
     success: function(data) {
+      console.log(data);
       for (var i = 0; i < data.testnames.length; i++) {
         $('#testselect').addOption(data.testnames[i], data.testnames[i],
                                    i == 0);
