@@ -49,10 +49,11 @@ class Config(object):
 
     @property
     def local_test_base_url(self):
+        return self.server_html_url + self.local_test_base_path
         # IE has issues loading pages from localhost, so we'll use the
         # external IP.
-        return 'http://%s:%d%s' % (self.local_ip, self.local_port,
-                                   self.local_test_base_path)
+        #return 'http://%s:%d%s' % (self.local_ip, self.local_port,
+        #                           self.local_test_base_path)
 
     def read(self, testmode=False, noresults=False, ignore=False,
              conf_file=None):
