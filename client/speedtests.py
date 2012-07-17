@@ -717,6 +717,8 @@ MAX_TEST_TIME = datetime.timedelta(seconds=60*10)
 def main():
     from optparse import OptionParser
     parser = OptionParser()
+    parser.add_option('-f', '--config', dest='config_file', type='string', action='store', default=None,
+                      help='config file (default speedtests.conf)')
     parser.add_option('-t', '--test', dest='tests', action='append', default=[])
     parser.add_option('--testmode', dest='testmode', action='store_true')
     parser.add_option('-n', '--noresults', dest='noresults',
@@ -727,7 +729,7 @@ def main():
     parser.add_option('--ignore', dest='ignore', action='store_true',
                       help='instruct server to ignore results')
     (options, args) = parser.parse_args()
-    config.read(options.testmode, options.noresults, options.ignore)
+    config.read(options.testmode, options.noresults, options.ignore, options.config_file)
     
     def get_browser_arg():
         try:
