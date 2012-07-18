@@ -400,6 +400,9 @@ class LatestTinderboxFxBrowserController(BrowserController):
     ARCHIVE_FX_PATH = None
     PLATFORM = None
 
+    # maybe override these
+    BUILDTYPE = None   # "debug", "pgo", ...
+
     # filled out from application.ini
     AppVersion = None
     AppBuildID = None
@@ -416,7 +419,7 @@ class LatestTinderboxFxBrowserController(BrowserController):
 
     def init_browser(self):
         install_path = os.path.join(self.base_install_dir, self.INSTALL_SUBDIR)
-        latest = GetLatestTinderbox(self.branch, self.PLATFORM, debug=True, app='firefox', app_short='firefox')
+        latest = GetLatestTinderbox(self.branch, self.PLATFORM, buildtype=self.BUILDTYPE, app='firefox', app_short='firefox')
         latest_url = latest.latest_build_url()
         basename = latest_url[latest_url.rfind("/")+1:]
 
@@ -454,6 +457,7 @@ class LatestTinderboxFxBrowserController(BrowserController):
 class LinuxLatestTinderboxFxBrowserController(LatestTinderboxFxBrowserController):
     ARCHIVE_FX_PATH = 'firefox/firefox'
     PLATFORM = 'linux'
+    BUILDTYPE = 'pgo'
 
     def __init__(self, os_name, browser_name, profiles, base_install_dir, branch='mozilla-central'):
         LatestTinderboxFxBrowserController.__init__(self, os_name, browser_name, profiles, base_install_dir, branch)
@@ -463,23 +467,35 @@ class LinuxLatestTinderboxFxBrowserController(LatestTinderboxFxBrowserController
         try:
             subprocess.check_call("cd '" + install_path + "' && tar xjf '" + buildpath + "'", shell=True)
             return os.path.join(install_path, "firefox", "application.ini")
-        except:
+        except Exception as e:
+            print "Failed to unpack:"
+            print e
             return None
 
 class WinLatestTinderboxFxBrowserController(LatestTinderboxFxBrowserController):
     ARCHIVE_FX_PATH = 'firefox\\firefox.exe'
     PLATFORM = 'win32'
+    BUILDTYPE = 'pgo'
 
     def __init__(self, os_name, browser_name, profiles, base_install_dir, branch='mozilla-central'):
         LatestTinderboxFxBrowserController.__init__(self, os_name, browser_name, profiles, base_install_dir, branch)
 
     def prepare_archived_build(self, install_path, buildpath):
         # on windows, this is a zip file
+        cwd = os.getcwd()
         try:
-            subprocess.check_call("cd '" + install_path + "' && unzip '" + buildpath + "'", shell=True)
+            fn = os.path.basename(buildpath)
+            os.chdir(install_path)
+            print "chdir to " + install_path + " cwd now " + os.getcwd()
+            subprocess.check_call("unzip -q \"%s\"" % (fn), shell=True)
             return os.path.join(install_path, "firefox", "application.ini")
-        except:
+        except Exception as e:
+            print "Failed to unpack:"
+            print e
             return None
+        finally:
+            os.chdir(cwd)
+
 
 class WinLatestFxBrowserController(LatestFxBrowserController):
 

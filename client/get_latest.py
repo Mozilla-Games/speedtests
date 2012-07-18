@@ -97,15 +97,15 @@ class GetLatestTinderbox(object):
 
   def __init__(self, branch='mozilla-central',
                platform=platform(),
-               debug=False, locale='en-US',
+               buildtype=None, locale='en-US',
                app=DEFAULT_APP, app_short=DEFAULT_APP_SHORT):
     # build the base URL
     self.branch = branch
     self.platform = platform
     self.base_url = self.BASE_URL % { 'APP': app }
     self.base_url += branch + '-' + platform
-    if debug:
-      self.base_url += '-debug'
+    if buildtype is not None:
+      self.base_url += '-' + buildtype
     self.base_url += '/'
     regex = self.BASE_REGEX % { 'LOCALE': locale,
                                 'PLATFORM': self.platform_regex(),
@@ -331,6 +331,9 @@ def main(args=sys.argv[1:]):
   if options.platform == 'macosx' and not options.debug:
     # universal binary
     parser.error("No more opt macosx builds; use the universal binary, macosx64, android")
+
+  if options.debug:
+    options.debug = "debug"
 
   # fix timestamp for start-date
   if options.start:
