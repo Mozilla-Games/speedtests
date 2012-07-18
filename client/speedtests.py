@@ -19,8 +19,11 @@ import tempfile
 import threading
 import time
 import traceback
+import urllib
 import urllib2
 import zipfile
+
+from get_latest import GetLatestTinderbox
 
 if platform.system() == 'Windows':
     import _winreg
@@ -131,6 +134,10 @@ class BrowserController(object):
         self.launch_time = None
         try:
             self.cmd = config.cfg.get(os_name, browser_name)
+        except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
+            pass
+
+        try:
             args = config.cfg.get(os_name, browser_name + "_args")
             if args is not None:
                 self.cmd_args = tuple(args.split(" "))
@@ -381,6 +388,98 @@ class LatestFxBrowserController(BrowserController):
             return False
         return True
 
+class LatestTinderboxFxBrowserController(BrowserController):
+    
+    """ Specialization to download latest tinderbox build before launching. """
+
+    # FIXME: if we fail to contact ftp.mozilla.org, recover gracefully
+    
+    INSTALL_SUBDIR = 'speedtests_firefox_tb'
+
+    # override these
+    ARCHIVE_FX_PATH = None
+    PLATFORM = None
+
+    # filled out from application.ini
+    AppVersion = None
+    AppBuildID = None
+    AppSourceRepository = None
+    AppSourceStamp = None
+
+    def __init__(self, os_name, browser_name, profiles, base_install_dir, branch='mozilla-central'):
+        self.base_install_dir = base_install_dir
+        self.branch = branch
+        cmd = os.path.join(self.base_install_dir,
+                           self.INSTALL_SUBDIR,
+                           self.ARCHIVE_FX_PATH)
+        BrowserController.__init__(self, os_name, browser_name, profiles, cmd)
+
+    def init_browser(self):
+        install_path = os.path.join(self.base_install_dir, self.INSTALL_SUBDIR)
+        latest = GetLatestTinderbox(self.branch, self.PLATFORM, debug=True, app='firefox', app_short='firefox')
+        latest_url = latest.latest_build_url()
+        basename = latest_url[latest_url.rfind("/")+1:]
+
+        try:
+            shutil.rmtree(install_path)
+        except:
+            pass
+
+        os.makedirs(install_path)
+
+        try:
+            print "Fetching " + latest_url + "..."
+            urllib.urlretrieve(latest_url, os.path.join(install_path, basename))
+        except Exception as e:
+            print 'Failed to get latest tinderbox build'
+            print e
+            return False
+
+        appini = self.prepare_archived_build(install_path, os.path.join(install_path, basename))
+        if appini is None:
+            return False
+
+        self.parse_app_ini(appini)
+        return True
+
+    def parse_app_ini(self, appini):
+        ini = ConfigParser.ConfigParser()
+        ini.read(appini)
+
+        self.AppVersion = ini.get('App', 'Version')
+        self.AppBuildID = ini.get('App', 'BuildID')
+        self.AppSourceRepository = ini.get('App', 'SourceRepository')
+        self.AppSourceStamp = ini.get('App', 'SourceStamp')
+
+class LinuxLatestTinderboxFxBrowserController(LatestTinderboxFxBrowserController):
+    ARCHIVE_FX_PATH = 'firefox/firefox'
+    PLATFORM = 'linux'
+
+    def __init__(self, os_name, browser_name, profiles, base_install_dir, branch='mozilla-central'):
+        LatestTinderboxFxBrowserController.__init__(self, os_name, browser_name, profiles, base_install_dir, branch)
+
+    def prepare_archived_build(self, install_path, buildpath):
+        # on linux, this is a bz2 file
+        try:
+            subprocess.check_call("cd '" + install_path + "' && tar xjf '" + buildpath + "'", shell=True)
+            return os.path.join(install_path, "firefox", "application.ini")
+        except:
+            return None
+
+class WinLatestTinderboxFxBrowserController(LatestTinderboxFxBrowserController):
+    ARCHIVE_FX_PATH = 'firefox\\firefox.exe'
+    PLATFORM = 'win32'
+
+    def __init__(self, os_name, browser_name, profiles, base_install_dir, branch='mozilla-central'):
+        LatestTinderboxFxBrowserController.__init__(self, os_name, browser_name, profiles, base_install_dir, branch)
+
+    def prepare_archived_build(self, install_path, buildpath):
+        # on windows, this is a zip file
+        try:
+            subprocess.check_call("cd '" + install_path + "' && unzip '" + buildpath + "'", shell=True)
+            return os.path.join(install_path, "firefox", "application.ini")
+        except:
+            return None
 
 class WinLatestFxBrowserController(LatestFxBrowserController):
 
@@ -502,7 +601,10 @@ class BrowserRunner(object):
                    BrowserController(os_name, 'opera', os.path.join(os.getenv('HOME'), '.opera'),
                                    '/usr/bin/opera'),
                    BrowserController(os_name, 'chrome', os.path.join(os.getenv('HOME'), '.config', 'google-chrome'),
-                                   '/usr/bin/google-chrome')
+                                   '/usr/bin/google-chrome'),
+                   LinuxLatestTinderboxFxBrowserController(os_name, 'tinderbox',
+                                                           os.path.join(os.getenv('HOME'), '.mozilla'),
+                                                           "/tmp", "mozilla-central")
                    ]
         elif os_str == 'Windows':
             os_name = 'windows'
@@ -516,6 +618,9 @@ class BrowserRunner(object):
                                    os.path.join(program_files, 'Mozilla Firefox\\firefox.exe')),
                    WinLatestFxBrowserController(os_name, 'nightly',
                                    [{'path': os.path.join(app_data, 'Mozilla\\Firefox'), 'archive': 'windows.zip'}], user_profile),
+                   WinLatestTinderboxFxBrowserController(os_name, 'tinderbox',
+                                                         [{'path': os.path.join(app_data, 'Mozilla\\Firefox'), 'archive': 'windows.zip'}],
+                                                         os.getenv('TEMP'), "mozilla-central"),
                    IEController(os_name, 'internet explorer', os.path.join(program_files, 'Internet Explorer\\iexplore.exe')),
                    BrowserController(os_name, 'safari',
                                    [{'path': os.path.join(local_app_data, 'Apple Computer\\Safari'), 'archive': 'windows\\local.zip'},
