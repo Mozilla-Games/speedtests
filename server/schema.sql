@@ -1,3 +1,16 @@
+
+
+DROP TABLE IF EXISTS browser;
+CREATE TABLE browser (
+    id INT AUTO_INCREMENT,
+    PRIMARY KEY (id),
+    browsername TEXT,
+    browserversion TEXT,
+    platform TEXT,
+    geckoversion TEXT,
+    buildid TEXT
+);
+
 DROP TABLE IF EXISTS generic;
 CREATE TABLE generic (
 	id INTEGER AUTO_INCREMENT PRIMARY KEY,
