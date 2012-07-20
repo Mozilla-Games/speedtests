@@ -891,6 +891,7 @@ def main():
 
     if not options.client and not config.get_str('speedtests', 'client'):
         print "--client must be specified on command line or in config (we don't support ip-based clients here)"
+        sys.exit(errno.EINVAL)
 
     if options.platform:
         config.platform = options.platform
