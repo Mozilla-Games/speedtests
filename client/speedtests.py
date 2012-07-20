@@ -123,6 +123,15 @@ def conf_get_str(section, param, default):
         val = default
     return val
 
+def parse_app_ini(dest, appini):
+    ini = ConfigParser.ConfigParser()
+    ini.read(appini)
+
+    dest.AppVersion = ini.get('App', 'Version')
+    dest.AppBuildID = ini.get('App', 'BuildID')
+    dest.AppSourceRepository = ini.get('App', 'SourceRepository')
+    dest.AppSourceStamp = ini.get('App', 'SourceStamp')
+
 class BrowserController(object):
     
     def __init__(self, os_name, browser_name, profiles, cmd, args_tuple=()):
@@ -393,6 +402,10 @@ class LatestFxBrowserController(BrowserController):
         if not installer.get_install():
             print 'Failed to get firefox nightly.'
             return False
+        try:
+            parse_app_ini(self, os.path.join(install_path, 'firefox', 'application.ini'))
+        except:
+            pass
         return True
 
 class LatestTinderboxFxBrowserController(BrowserController):
@@ -449,17 +462,8 @@ class LatestTinderboxFxBrowserController(BrowserController):
         if appini is None:
             return False
 
-        self.parse_app_ini(appini)
+        parse_app_ini(self, appini)
         return True
-
-    def parse_app_ini(self, appini):
-        ini = ConfigParser.ConfigParser()
-        ini.read(appini)
-
-        self.AppVersion = ini.get('App', 'Version')
-        self.AppBuildID = ini.get('App', 'BuildID')
-        self.AppSourceRepository = ini.get('App', 'SourceRepository')
-        self.AppSourceStamp = ini.get('App', 'SourceStamp')
 
 class LinuxLatestTinderboxFxBrowserController(LatestTinderboxFxBrowserController):
     ARCHIVE_FX_PATH = 'firefox/firefox'
@@ -809,6 +813,11 @@ class TestRunnerRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.server.results[self.server.browser_runner.browser_name()][testname].extend(web_data['results'])
         if not config.testmode and not config.noresults:
             web_data.update(self.server.standard_web_data())
+            if self.server.browser_runner.current_controller.AppSourceStamp:
+                web_data['sourcestamp'] = self.server.browser_runner.current_controller.AppSourceStamp
+            if self.server.browser_runner.current_controller.AppBuildID:
+                web_data['buildid'] = self.server.browser_runner.current_controller.AppBuildID
+
             if self.server.signer:
                 raw_data = jwt.encode(web_data, signer=self.server.signer)
                 content_type = 'application/jwt'
@@ -888,9 +897,15 @@ def main():
         sys.exit(0)
     
     # start tests in specified browsers.  if none given, run all.
-    url_prefix = config.local_test_base_url + '/start.html?ip=%s&port=%d&client=%s' % (config.local_ip, config.local_port, urllib2.quote(config.client, ''))
+    queryparams = []
+    queryparams.append("ip=%s" % (config.local_ip))
+    queryparams.append("port=%d" % (config.local_port))
+    queryparams.append("client=%s" % (urllib2.quote(config.client, '')))
+
     if config.testmode:
-        url_prefix += '&test=true'
+        queryparams.append('test=true')
+
+    url_prefix = config.local_test_base_url + '/start.html?' + "&".join(queryparams)
     url_prefix += '&testUrl='
     if not options.tests:
         print 'Getting test list from server...'

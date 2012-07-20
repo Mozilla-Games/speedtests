@@ -94,7 +94,7 @@ class SpeedTestReport(object):
                     continue
 
                 if 'value' in results_strs[0]:
-                    score = results_strs[0]['value']
+                    score = float(results_strs[0]['value'])
                     score_str = '%f' % score
                     s += '  %s\n' % score_str
                     continue

@@ -105,8 +105,8 @@ def generic_test_names():
     return tests
 
 
-def get_browser_id(ua):
-    ua = ua.lower()
+def get_browser_id(web_data):
+    ua = web_data['ua'].lower()
     platform = 'unknown'
     geckover = 'n/a'
     buildid = 'unknown'
@@ -155,6 +155,12 @@ def get_browser_id(ua):
         'geckoversion': geckover,
         'buildid': buildid
         }
+
+    # now allow for some overrides
+    for token in ['buildid', 'geckoversion', 'sourcestamp']:
+        if token in web_data:
+            wheredict[token] = web_data[token]
+
     browser = db.select('browser', where=web.db.sqlwhere(wheredict))
     if not browser:
         db.insert('browser', **wheredict)
@@ -229,11 +235,8 @@ class TestResults(object):
         testname = web_data['testname']
         machine_ip = web_data['ip']
         machine_client = web_data['client']
-        browser_id = get_browser_id(web_data['ua'])
-        if 'buildid' in web_data:
-            browser_id['buildid'] = web_data['buildid']
-        if 'geckoversion' in web_data:
-            browser_id['geckoversion'] = web_data['geckoversion']
+        browser_id = get_browser_id(web_data)
+
         for results in web_data['results']:
             r = results
             tablename = testname

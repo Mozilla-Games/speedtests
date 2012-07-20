@@ -8,7 +8,8 @@ CREATE TABLE browser (
     browserversion TEXT,
     platform TEXT,
     geckoversion TEXT,
-    buildid TEXT
+    buildid TEXT,
+    sourcestamp TEXT
 );
 
 DROP TABLE IF EXISTS generic;

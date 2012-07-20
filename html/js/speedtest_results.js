@@ -55,15 +55,18 @@ ScoreDisplay.prototype.getPoints = function() {
   var tablePoints = [], graphPoints = [];
   var byBrowser = {};
   var browserNames = [];
-  var browserId, browserName, longBrowserName, score;
+  var browserId, browser, browserName, longBrowserName, score;
   for (var i = 0; i < testRuns.length; i++) {
     browserId = testRuns[i][1][0].browser_id;
+    browser = this.browsers[browserId];
     score = this.getScore(testRuns[i][1]);
-    browserName = this.browsers[browserId].browsername + ' '
-                  + this.browsers[browserId].browserversion;
+    browserName = browser.browsername + ' ' + browser.browserversion;
     longBrowserName = browserName;
-    if (this.browsers[browserId].browsername == 'Firefox') {
-      longBrowserName += ' (build ' + this.browsers[browserId].buildid + ')';
+    if (browser.browsername == 'Firefox') {
+      longBrowserName += ' <span style="font-size: 60%">(' + browser.buildid;
+      if (browser.sourcestamp)
+        longBrowserName += '-' + browser.sourcestamp
+      longBrowserName += ')</span>';
     }
     tablePoints.push([testRuns[i][0], longBrowserName, score]);
     if (!(browserName in byBrowser)) {
