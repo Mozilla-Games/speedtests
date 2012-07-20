@@ -67,13 +67,10 @@ def query_params():
 def simple_ascii_only(val):
     if type(val) is list:
         for i in range(len(val)):
-            print "val[i]", val[i]
             val[i] = simple_ascii_only(val[i])
-            print "--> ", val[i]
         return val
 
     if type(val) is not str and type(val) is not unicode:
-        print type(val)
         return val
 
     val = val.encode('ascii')
@@ -100,7 +97,6 @@ def test_names():
 
 def generic_test_names():
     tests = map(lambda x: x['testname'], db.query('select distinct testname from generic'))
-    print tests
     tests.sort()
     return tests
 
@@ -187,7 +183,6 @@ class Params(object):
         # XXX hack.  We don't use the other tests, so we don't bother querying them.
         # Also the ips column might contain an actual name in our case.
         generic_ips = map(lambda x: x['ip'], db.query('select distinct ip from generic'))
-        print "ips", generic_ips
         clients = [x[0].capitalize() for x in cfg.items('clients')]
         match_ip = re.compile(r'^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$')
         for x in generic_ips:
@@ -233,6 +228,7 @@ class TestResults(object):
             return {'result': 'error', 'error': 'results must be signed'}
         else:
             web_data = json.loads(web.data())
+        #print "POST: " + str(web_data)
         if web_data.get('ignore'):
             return {'result': 'ok'}
         testname = web_data['testname']
@@ -312,7 +308,6 @@ class TestResults(object):
                     wheres.append('date(teststart) <= $end')
                 else:
                     wheres.append('teststart <= $end')
-            print "client", client
             if client:
                 client_wheres = []
                 try:
@@ -339,7 +334,7 @@ class TestResults(object):
                 testname = t[1]
                 wheres.append("testname = '%s'" % (testname))
 
-            print "WHERE", ' AND '.join(wheres)
+            #print "WHERE", ' AND '.join(wheres)
 
             result = db.select(tablename, vars, where=' AND '.join(wheres), order='teststart ASC')
             for row in result:

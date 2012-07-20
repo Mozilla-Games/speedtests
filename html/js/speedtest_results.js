@@ -34,16 +34,24 @@ ScoreDisplay.prototype.display = function() {
 ScoreDisplay.prototype.getTestRuns = function() {
   var testRuns = [];
   var byTestStart = {};
+  var testStart;
+  console.log("records:", this.records);
+
   for (var i = 0; i < this.records.length; i++) {
-    if (!(this.records[i].teststart in testRuns)) {
-      byTestStart[this.records[i].teststart] = [];
+    var record = this.records[i];
+    testStart = this.records[i].teststart;
+    if (!(testStart in byTestStart)) {
+      byTestStart[testStart] = [];
     }
-    byTestStart[this.records[i].teststart].push(this.records[i]);
+
+    byTestStart[testStart].push(record);
   }
-  for (var testStart in byTestStart) {
-    testRuns.push([testStart, byTestStart[testStart]]);
+  for (testStart in byTestStart) {
+    for (var i = 0; i < byTestStart[testStart].length; ++i)
+      testRuns.push([testStart, [ byTestStart[testStart][i]] ]);
   }
   testRuns.sort(function(a, b) { return a[0] - b[0]; });
+
   return testRuns;
 };
 
@@ -57,15 +65,16 @@ ScoreDisplay.prototype.getPoints = function() {
   var browserNames = [];
   var browserId, browser, browserName, longBrowserName, score;
   for (var i = 0; i < testRuns.length; i++) {
-    browserId = testRuns[i][1][0].browser_id;
+    var runResult = testRuns[i][1];
+    browserId = runResult[0].browser_id;
     browser = this.browsers[browserId];
-    score = this.getScore(testRuns[i][1]);
+    score = this.getScore(runResult);
     browserName = browser.browsername + ' ' + browser.browserversion;
     longBrowserName = browserName;
     if (browser.browsername.indexOf('Firefox') != -1) {
       longBrowserName += ' <span style="font-size: 60%">(' + browser.buildid;
       if (browser.sourcestamp)
-        longBrowserName += '-' + browser.sourcestamp
+        longBrowserName += '-' + browser.sourcestamp;
       longBrowserName += ')</span>';
     }
     tablePoints.push([testRuns[i][0], longBrowserName, score]);
@@ -386,7 +395,7 @@ function loadView(testname, client, start, end) {
   }
 
   getTestData(testname, client, start, end, function(data) {
-    console.log(data);
+    //console.log(data);
     scoreDisplay = scoreDisplayFactory(testname, data.results[testname],
                                        data.browsers);
     loading(false);
@@ -423,7 +432,7 @@ $(document).ready(function() {
     type: 'GET',
     url: 'api/params/',
     success: function(data) {
-      console.log(data);
+      //console.log(data);
       for (var i = 0; i < data.testnames.length; i++) {
         $('#testselect').addOption(data.testnames[i], data.testnames[i],
                                    i == 0);
