@@ -99,8 +99,7 @@ class Config(object):
             pass
 
         # Find our IP address.
-        host, colon, port = urllib2.urlparse.urlsplit(self.server_html_url)[1] \
-                            .partition(':')
+        host, colon, port = urllib2.urlparse.urlsplit(self.server_html_url)[1].partition(':')
         if colon:
             port = int(port)
         else:
@@ -110,9 +109,19 @@ class Config(object):
         self.local_ip = s.getsockname()[0]
         s.close()
 
+        try:
+            self.client = self.cfg.get('speedtests', 'client')
+        except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
+            self.client = self.local_ip
 
 config = Config()
 
+def conf_get_str(section, param, default):
+    try:
+        val = config.cfg.get(section, param)
+    except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
+        val = default
+    return val
 
 class BrowserController(object):
     
@@ -289,9 +298,7 @@ class BrowserController(object):
         self.clean_up()
 
 class AndroidAdbBrowserController(BrowserController):
-    browserPackage = "org.mozilla.fennec_vladimir"
-
-    def __init__(self, os_name, browser_name, package):
+    def __init__(self, os_name, browser_name, package="org.mozilla.fennec"):
         BrowserController.__init__(self, os_name, browser_name, "default", None)
         self.browserPackage = package
 
@@ -651,8 +658,9 @@ class BrowserRunner(object):
                                    os.path.join(user_profile, 'Local Settings\\Application Data\\Google\\Chrome\\Application\\chrome.exe'))
                    ]
         elif os_str == 'android':
+            fennec_package = conf_get_str('android', 'firefox_package', 'org.mozilla.fennec')
             return [
-                AndroidAdbBrowserController(os_str, 'firefox', 'org.mozilla.fennec_vladimir'),
+                AndroidAdbBrowserController(os_str, 'firefox', fennec_package),
                 AndroidAdbBrowserController(os_str, 'browser', 'com.google.android.browser'),
                 AndroidAdbBrowserController(os_str, 'chrome', 'com.android.chrome')
                    ]
@@ -770,7 +778,7 @@ class TestRunnerHTTPServer(BaseHTTPServer.HTTPServer):
                                           key_id=config.local_ip)
     
     def standard_web_data(self):
-        return {'ip': config.local_ip}
+        return {'ip': config.local_ip, 'client': config.client}
         
 
 class TestRunnerRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
@@ -880,7 +888,7 @@ def main():
         sys.exit(0)
     
     # start tests in specified browsers.  if none given, run all.
-    url_prefix = config.local_test_base_url + '/start.html?ip=%s&port=%d' % (config.local_ip, config.local_port)
+    url_prefix = config.local_test_base_url + '/start.html?ip=%s&port=%d&client=%s' % (config.local_ip, config.local_port, urllib2.quote(config.client, ''))
     if config.testmode:
         url_prefix += '&test=true'
     url_prefix += '&testUrl='

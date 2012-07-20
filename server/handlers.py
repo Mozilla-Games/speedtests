@@ -61,7 +61,23 @@ def query_params():
             if equals:
                 params[name] = value
     return params
-                    
+
+# nuke everything but a-z A-Z 0-9 _ . - and space'
+# at the very least it should be safe for sql (inside strings)
+def simple_ascii_only(val):
+    if type(val) is list:
+        for i in range(len(val)):
+            print "val[i]", val[i]
+            val[i] = simple_ascii_only(val[i])
+            print "--> ", val[i]
+        return val
+
+    if type(val) is not str and type(val) is not unicode:
+        print type(val)
+        return val
+
+    val = val.encode('ascii')
+    return re.sub(r'[^a-zA-Z0-9_., -]', '', val)
 
 def test_paths():
     """ List of relative paths of test index files. """
@@ -159,11 +175,22 @@ class Params(object):
 
     @templeton.handlers.json_response
     def GET(self):
-        response = {'clients': [x[0].capitalize() for x in
-                                cfg.items('clients')],
-                    'testnames': test_names() + generic_test_names()}
-        # Could query database for all IPs, but that's slow and probably not
-        # useful.
+        # XXX hack.  We don't use the other tests, so we don't bother querying them.
+        # Also the ips column might contain an actual name in our case.
+        generic_ips = map(lambda x: x['ip'], db.query('select distinct ip from generic'))
+        print "ips", generic_ips
+        clients = [x[0].capitalize() for x in cfg.items('clients')]
+        match_ip = re.compile(r'^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$')
+        for x in generic_ips:
+            if not match_ip.match(x):
+                clients.append(x)
+        clients.sort()
+
+        testnames = test_names() + generic_test_names()
+        testnames.sort()
+
+        response = { 'clients': clients, 'testnames': testnames }
+
         return response
 
 
@@ -201,14 +228,19 @@ class TestResults(object):
             return {'result': 'ok'}
         testname = web_data['testname']
         machine_ip = web_data['ip']
+        machine_client = web_data['client']
         browser_id = get_browser_id(web_data['ua'])
+        if 'buildid' in web_data:
+            browser_id['buildid'] = web_data['buildid']
+        if 'geckoversion' in web_data:
+            browser_id['geckoversion'] = web_data['geckoversion']
         for results in web_data['results']:
             r = results
             tablename = testname
             if 'value' in results:
                 r = {}
                 r['browser_id'] = browser_id
-                r['ip'] = machine_ip
+                r['ip'] = machine_client # not machine_ip
                 r['browser_height'] = results['browser_height']
                 r['browser_width'] = results['browser_width']
                 r['teststart'] = results['teststart']
@@ -218,7 +250,7 @@ class TestResults(object):
                 tablename = 'generic'
             else:
                 r['browser_id'] = browser_id
-                r['ip'] = machine_ip
+                r['ip'] = machine_client
             cols = {}
             for k, v in r.iteritems():
                 cols[k.encode('ascii')] = v
@@ -243,18 +275,18 @@ class TestResults(object):
     @templeton.handlers.json_response
     def GET(self):
         args, body = templeton.handlers.get_request_parms()
-        tables = args.get('testname', None)
-        start = args.get('start', None)
-        end = args.get('end', None)
-        client = args.get('client', None)
-        fullresults = args.get('full', False)
+        tables = simple_ascii_only(args.get('testname', None))
+        start = simple_ascii_only(args.get('start', None))
+        end = simple_ascii_only(args.get('end', None))
+        client = simple_ascii_only(args.get('client', None))
+        fullresults = simple_ascii_only(args.get('full', False))
         gentests = generic_test_names()
         if not tables:
             tables = test_names() + gentests
         for i in range(len(tables)):
             if tables[i] in gentests:
                 tables[i] = ["generic", tables[i].encode('ascii')]
-        
+
         response = { 'browsers': {},
                      'results': defaultdict(list) }
         for row in db.select('browser'):
@@ -281,13 +313,18 @@ class TestResults(object):
                     ips = [x.strip() for x in
                            cfg.get('clients',client[0]).split(',')]
                 except ConfigParser.NoOptionError:
-                    response['results'] = {}
-                    return response
+                    ips = []
                     
                 for i, ip in enumerate(ips):
                     vars['ip%d' % i] = ip
                     client_wheres.append('ip like $ip%d' % i)
-                wheres.append('(' + ' OR '.join(client_wheres) + ')')
+
+                if len(client_wheres) == 0:
+                    # note that we already applied simple_ascii_only to client, so this is safe
+                    client = client[0].split(",")
+                    wheres.append("ip in ('" + "','".join(client) + "')")
+                else:
+                    wheres.append('(' + ' OR '.join(client_wheres) + ')')
 
             tablename = t
             testname = t
@@ -296,7 +333,8 @@ class TestResults(object):
                 testname = t[1]
                 wheres.append("testname = '%s'" % (testname))
 
-            print tablename
+            print "WHERE", ' AND '.join(wheres)
+
             result = db.select(tablename, vars, where=' AND '.join(wheres), order='teststart ASC')
             for row in result:
                 record = dict(row)

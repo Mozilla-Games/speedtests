@@ -374,6 +374,14 @@ function loadView(testname, client, start, end) {
   if (scoreDisplay) {
     scoreDisplay.destroy();
   }
+
+  if (!testname) {
+    loading(false);
+    $('#title').text('No tests to show.');
+    $('#results').show();
+    return;
+  }
+
   getTestData(testname, client, start, end, function(data) {
     console.log(data);
     scoreDisplay = scoreDisplayFactory(testname, data.results[testname],

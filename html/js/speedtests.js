@@ -73,9 +73,16 @@ var SpeedTests = function() {
         alert("Can't submit test results: no local port provided.");
         return;
       }
-      var body = JSON.stringify({ testname: testname, ip: searchParams.ip,
-                                  results: all_results,
-                                  ua: navigator.userAgent });
+      var bodyobj = { testname: testname,
+                      ip: searchParams.ip,
+                      client: searchParams.client,
+                      results: all_results,
+                      ua: navigator.userAgent };
+      if (searchParams.buildid)
+        bodyobj.buildid = searchParams.buildid;
+      if (searchParams.geckoversion)
+        bodyobj.geckoversion = searchParams.geckoversion;
+      var body = JSON.stringify(bodyobj);
       var req = new XMLHttpRequest();
       req.open("POST", "http://" + searchParams.ip + ":" + searchParams.port + "/", false);
       req.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
