@@ -657,18 +657,20 @@ class BrowserRunner(object):
                    WinLatestTinderboxFxBrowserController(os_name, 'tinderbox',
                                                          [{'path': os.path.join(app_data, 'Mozilla\\Firefox'), 'archive': 'windows.zip'}],
                                                          os.getenv('TEMP'), "mozilla-central"),
-                   IEController(os_name, 'internet explorer', os.path.join(program_files, 'Internet Explorer\\iexplore.exe')),
-                   BrowserController(os_name, 'safari',
-                                   [{'path': os.path.join(local_app_data, 'Apple Computer\\Safari'), 'archive': 'windows\\local.zip'},
-                                    {'path': os.path.join(app_data, 'Apple Computer\\Safari'), 'archive': 'windows\\roaming.zip'}],
-                                    os.path.join(program_files, 'Safari\\Safari.exe')),
-                   BrowserController(os_name, 'opera',
-                                   [{'path': os.path.join(local_app_data, 'Opera\\Opera'), 'archive': 'windows\\local.zip'},
-                                    {'path': os.path.join(app_data, 'Opera\\Opera'), 'archive': 'windows\\roaming.zip'}],
-                                   os.path.join(program_files, 'Opera\\opera.exe')),
                    BrowserController(os_name, 'chrome',
                                    [{'path': os.path.join(local_app_data, 'Google\\Chrome\\User Data'), 'archive': 'windows.zip'}],
                                    os.path.join(user_profile, 'Local Settings\\Application Data\\Google\\Chrome\\Application\\chrome.exe'))
+
+                   # don't care about these
+                   # BrowserController(os_name, 'safari',
+                   #                [{'path': os.path.join(local_app_data, 'Apple Computer\\Safari'), 'archive': 'windows\\local.zip'},
+                   #                 {'path': os.path.join(app_data, 'Apple Computer\\Safari'), 'archive': 'windows\\roaming.zip'}],
+                   #                 os.path.join(program_files, 'Safari\\Safari.exe')),
+                   # BrowserController(os_name, 'opera',
+                   #                [{'path': os.path.join(local_app_data, 'Opera\\Opera'), 'archive': 'windows\\local.zip'},
+                   #                 {'path': os.path.join(app_data, 'Opera\\Opera'), 'archive': 'windows\\roaming.zip'}],
+                   #                os.path.join(program_files, 'Opera\\opera.exe')),
+                   # IEController(os_name, 'internet explorer', os.path.join(program_files, 'Internet Explorer\\iexplore.exe')),
                    ]
         elif os_str == 'android':
             fennec_package = config.get_str('android', 'firefox_package', 'org.mozilla.fennec')
