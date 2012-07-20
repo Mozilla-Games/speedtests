@@ -109,30 +109,26 @@ class Config(object):
         self.local_ip = s.getsockname()[0]
         s.close()
 
-        try:
-            self.client = self.cfg.get('speedtests', 'client')
-        except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
+        self.client = self.get_str('speedtests', 'client')
+        if self.client is None:
             self.client = self.local_ip
+
+    def get_str(self, section, param, default=None):
+        try:
+            val = self.cfg.get(section, param)
+        except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
+            val = default
+        return val
 
 config = Config()
 
-def conf_get_str(section, param, default):
-    try:
-        val = config.cfg.get(section, param)
-    except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
-        val = default
-    return val
-
-def parse_app_ini(dest, appini):
-    ini = ConfigParser.ConfigParser()
-    ini.read(appini)
-
-    dest.AppVersion = ini.get('App', 'Version')
-    dest.AppBuildID = ini.get('App', 'BuildID')
-    dest.AppSourceRepository = ini.get('App', 'SourceRepository')
-    dest.AppSourceStamp = ini.get('App', 'SourceStamp')
-
 class BrowserController(object):
+
+    AppVersion = None
+    AppBuildID = None
+    AppSourceRepository = None
+    AppSourceStamp = None
+    NameExtra = None
     
     def __init__(self, os_name, browser_name, profiles, cmd, args_tuple=()):
         self.os_name = os_name
@@ -155,12 +151,11 @@ class BrowserController(object):
         except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
             pass
 
-        try:
-            args = config.cfg.get(os_name, browser_name + "_args")
-            if args is not None:
-                self.cmd_args = tuple(args.split(" "))
-        except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
-            pass
+        args = config.get_str(os_name, browser_name + "_args")
+        if args is not None:
+            self.cmd_args = tuple(args.split(" "))
+
+        self.NameExtra = config.get_str(os_name, browser_name + "_suffix")
 
     def set_test_urls(self, tests):
         self.test_url_iter = iter(tests)
@@ -306,6 +301,15 @@ class BrowserController(object):
             time.sleep(5)
         self.clean_up()
 
+    def parse_app_ini(self, appini):
+        ini = ConfigParser.ConfigParser()
+        ini.read(appini)
+
+        self.AppVersion = ini.get('App', 'Version')
+        self.AppBuildID = ini.get('App', 'BuildID')
+        self.AppSourceRepository = ini.get('App', 'SourceRepository')
+        self.AppSourceStamp = ini.get('App', 'SourceStamp')
+
 class AndroidAdbBrowserController(BrowserController):
     def __init__(self, os_name, browser_name, package="org.mozilla.fennec"):
         BrowserController.__init__(self, os_name, browser_name, "default", None)
@@ -403,7 +407,7 @@ class LatestFxBrowserController(BrowserController):
             print 'Failed to get firefox nightly.'
             return False
         try:
-            parse_app_ini(self, os.path.join(install_path, 'firefox', 'application.ini'))
+            self.parse_app_ini(os.path.join(install_path, 'firefox', 'application.ini'))
         except:
             pass
         return True
@@ -462,7 +466,7 @@ class LatestTinderboxFxBrowserController(BrowserController):
         if appini is None:
             return False
 
-        parse_app_ini(self, appini)
+        self.parse_app_ini(appini)
         return True
 
 class LinuxLatestTinderboxFxBrowserController(LatestTinderboxFxBrowserController):
@@ -507,6 +511,11 @@ class WinLatestTinderboxFxBrowserController(LatestTinderboxFxBrowserController):
         finally:
             os.chdir(cwd)
 
+
+class LinuxLatestFxBrowserController(LatestFxBrowserController):
+
+    ARCHIVE_FX_PATH = 'firefox/firefox'
+    INSTALLER_CLASS = fxinstall.FirefoxLinuxInstaller
 
 class WinLatestFxBrowserController(LatestFxBrowserController):
 
@@ -605,8 +614,7 @@ class BrowserRunner(object):
                                      os.path.join(app_supp_path, 'Firefox'),
                                      '/Applications/Firefox.app/Contents/MacOS/firefox'),
                    MacLatestFxBrowserController(os_name, 'nightly',
-                                                os.path.join(app_supp_path,
-                                                             'Firefox'),
+                                                os.path.join(app_supp_path, 'Firefox'),
                                                 os.getenv('HOME')),
                    BrowserControllerRedirFile(os_name, 'safari',
                                               os.path.join(lib_path, 'Safari'),
@@ -625,6 +633,7 @@ class BrowserRunner(object):
             return [
                    BrowserController(os_name, 'firefox', os.path.join(os.getenv('HOME'), '.mozilla', 'firefox'),
                                    '/usr/bin/firefox'),
+                   LinuxLatestFxBrowserController(os_name, 'nightly', os.path.join(os.getenv('HOME'), '.mozilla', 'firefox'), '/tmp'),
                    BrowserController(os_name, 'opera', os.path.join(os.getenv('HOME'), '.opera'),
                                    '/usr/bin/opera'),
                    BrowserController(os_name, 'chrome', os.path.join(os.getenv('HOME'), '.config', 'google-chrome'),
@@ -662,7 +671,7 @@ class BrowserRunner(object):
                                    os.path.join(user_profile, 'Local Settings\\Application Data\\Google\\Chrome\\Application\\chrome.exe'))
                    ]
         elif os_str == 'android':
-            fennec_package = conf_get_str('android', 'firefox_package', 'org.mozilla.fennec')
+            fennec_package = config.get_str('android', 'firefox_package', 'org.mozilla.fennec')
             return [
                 AndroidAdbBrowserController(os_str, 'firefox', fennec_package),
                 AndroidAdbBrowserController(os_str, 'browser', 'com.google.android.browser'),
@@ -817,6 +826,8 @@ class TestRunnerRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 web_data['sourcestamp'] = self.server.browser_runner.current_controller.AppSourceStamp
             if self.server.browser_runner.current_controller.AppBuildID:
                 web_data['buildid'] = self.server.browser_runner.current_controller.AppBuildID
+            if self.server.browser_runner.current_controller.NameExtra:
+                web_data['name_extra'] = self.server.browser_runner.current_controller.NameExtra
 
             if self.server.signer:
                 raw_data = jwt.encode(web_data, signer=self.server.signer)
@@ -861,13 +872,23 @@ def main():
     parser.add_option('--testmode', dest='testmode', action='store_true')
     parser.add_option('-n', '--noresults', dest='noresults',
                       action='store_true')
-    parser.add_option('-s', '--sign', dest='sign', type='string',
-                      action='store',
+    parser.add_option('-s', '--sign', dest='sign', type='string', action='store',
                       help='sign results with key in given file')
     parser.add_option('--ignore', dest='ignore', action='store_true',
                       help='instruct server to ignore results')
+    parser.add_option('--client', dest='client', type='string', action='store',
+                     help='override client name reported to server')
+    parser.add_option('--platform', dest='platform', type='string', action='store',
+                     help='override detected platform')
     (options, args) = parser.parse_args()
+
     config.read(options.testmode, options.noresults, options.ignore, options.config_file)
+
+    if options.client:
+        config.client = options.client
+
+    if options.platform:
+        config.platform = options.platform
     
     def get_browser_arg():
         try:

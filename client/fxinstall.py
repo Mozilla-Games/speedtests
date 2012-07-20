@@ -94,6 +94,12 @@ class FirefoxWinInstaller(FirefoxInstaller):
         zip = zipfile.ZipFile(filename, 'r')
         zip.extractall(self.install_path)
 
+class FirefoxLinuxInstaller(FirefoxInstaller):
+    
+    ARCHIVE_32_BIT_RE = re.compile('firefox-.*.en-US.linux-i686.tar.bz2')
+    
+    def install(self, filename):
+        os.system('tar xjCf "%s" "%s"' % (self.install_path, filename))
 
 class FirefoxMacInstaller(FirefoxInstaller):
 

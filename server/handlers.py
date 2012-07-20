@@ -161,6 +161,9 @@ def get_browser_id(web_data):
         if token in web_data:
             wheredict[token] = web_data[token]
 
+    if 'name_extra' in web_data:
+        wheredict['browsername'] += "-" + web_data['name_extra']
+
     browser = db.select('browser', where=web.db.sqlwhere(wheredict))
     if not browser:
         db.insert('browser', **wheredict)

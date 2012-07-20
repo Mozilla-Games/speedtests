@@ -62,7 +62,7 @@ ScoreDisplay.prototype.getPoints = function() {
     score = this.getScore(testRuns[i][1]);
     browserName = browser.browsername + ' ' + browser.browserversion;
     longBrowserName = browserName;
-    if (browser.browsername == 'Firefox') {
+    if (browser.browsername.indexOf('Firefox') != -1) {
       longBrowserName += ' <span style="font-size: 60%">(' + browser.buildid;
       if (browser.sourcestamp)
         longBrowserName += '-' + browser.sourcestamp
@@ -380,7 +380,7 @@ function loadView(testname, client, start, end) {
 
   if (!testname) {
     loading(false);
-    $('#title').text('No tests to show.');
+    $('#title').text('No results to show.');
     $('#results').show();
     return;
   }
