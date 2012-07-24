@@ -6,6 +6,7 @@ var gCurrentScoreDisplay = null;
 
 // if we're being asked to just display as an inline graph
 var gAsInlineGraph = false;
+var gHideLegend = false;
 
 function ScoreDisplay(testname, records, browsers) {
   this.records = records;
@@ -104,20 +105,22 @@ ScoreDisplay.prototype.getPoints = function() {
     var name = browserNames[i];
     points.push({ data: byBrowser[name],
                   extraData: byBrowserExtra[name],
-                  label: name });
+                  label: name,
+                  color: window.FixedColorForBrowser ? FixedColorForBrowser(name) : null,
+                  });
   }
   return points;
 };
 
 ScoreDisplay.prototype.displayGraph = function(points) {
   var graphDiv = $('#results .graph');
-  var plot = $.plot(graphDiv, points, {
+  var plotOpts = {
     grid: {
       hoverable: true
     },
     series: {
       lines: { show: true },
-      points: { show: gAsInlineGraph ? false : true }
+      points: { show: true }
     },
     xaxis: {
       mode: 'time'
@@ -131,7 +134,15 @@ ScoreDisplay.prototype.displayGraph = function(points) {
     },
     zoom: { interactive: true },
     pan: { interactive: true }
-  });
+  };
+
+  if (gAsInlineGraph) {
+    plotOpts.series.points.show = false;
+    plotOpts.legend.show = false;
+    plotOpts.shadowSize = 0;
+  }
+
+  var plot = $.plot(graphDiv, points, plotOpts);
 
   function plotHoverFunc() {
     var prevPoint = null;
@@ -413,17 +424,39 @@ function loadFromRoute(testname, client, start, end, extraFlags) {
   if (extraFlags) {
     extraFlags = extraFlags.split(",");
     if (extraFlags.indexOf("inlineGraph") != -1)
-      setInlineGraph();
+      gAsInlineGraph = true;
+    if (extraFlags.indexOf("hideLegend") != -1)
+      gHideLegend = true;
+    flagsSet();
   }
 
   loadView(testname, client, start, end);
 }
 
+function flagsSet() {
+  if (gAsInlineGraph)
+    setInlineGraph();
+
+  $(window).resize();
+}
+
 function setInlineGraph() {
-  gAsInlineGraph = true;
+  $("body").addClass("no-overflow");
 
   // hide a whole pile of stuff
   $("#disptable, #controls").hide();
+
+  $("#results").removeClass("padded");
+  $("#results").addClass("smallpadded");
+
+  if (window.innerWidth < 500) {
+    $("#title").addClass("small");
+    $(".graph").addClass("small");
+  }
+
+  $("#results").removeClass("ui-corner-all");
+  $("#results").removeClass("ui-widget-content");
+  $("#results").removeClass("ui-widget");
 }
 
 function loading(display) {
@@ -480,6 +513,9 @@ function loadView(testname, client, start, end) {
     gCurrentScoreDisplay = scoreDisplayFactory(testname, data.results[testname],
                                                data.browsers);
     loading(false);
+
+    if (gAsInlineGraph)
+      gCurrentScoreDisplay.title = testname + " - " + client;
     gCurrentScoreDisplay.display();
   }, function() {
     loading(false);
@@ -497,15 +533,16 @@ function ISODateString(d) {
 }
 
 $(window).resize(function() {
-  if (gAsInlineGraph) {
-    // there's padding (20) on the results, so we need to account for it in the width
-    // and the height.  We also need to account for the margin on body (10).  The - 5
-    // is to avoid a 1px rounding error.
-    $(".graph").height(window.innerHeight - 60 - $("#title").height() - 5);
-  } else {
-    $("#results").width(1100);
-    $(".graph").height(600);
-  }
+  // there's padding (20) on the results, so we need to account for it in the width
+  // and the height.  We also need to account for the margin on body (10).  The - 5
+  // is to avoid a 1px rounding error.
+
+  console.log("dim:", window.innerWidth,window.innerHeight);
+
+  var padding = 60;
+  if (gAsInlineGraph)
+    padding = 30;
+  $(".graph").height(window.innerHeight - padding - $("#title").height() - 5);
 });
 
 $(document).ready(function() {

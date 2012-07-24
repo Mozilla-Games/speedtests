@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <meta charset="utf-8">
+
+  <style type="text/css">
+body {
+  font-family: sans-serif;
+}
+
+.testresult {
+  width: 500px;
+  height: 400px;
+  display: inline-block;
+}
+
+.colorBox {
+  width: 1em;
+  height: 1em;
+  border: 2px solid gray;
+  display: inline-block;
+}
+
+.colorLabel {
+  font-weight: bold;
+  padding-left: 0.5em;
+  vertical-align: top;
+}
+
+.legendBar {
+  margin-left: 1em;
+  display: inline-block;
+  font-size: 10pt;
+}
+
+#legend {
+  text-align: center;
+}
+
+  </style>
+
+  <script src="libs/scripts/jquery-1.7.2.min.js"></script>
+  <script src="js/fixed-colors.js"></script>
+
+  <script type="text/javascript" version="1.7">
+
+function addLegend(browserName, color) {
+}
+
+function addFrame(testName, clientName, startString, endString) {
+  var iframe = $("<iframe>").addClass("testresult").attr({
+      scrolling: "no",
+      frameborder: 0,
+      src: 'results.html#/' + testName + '/' + clientName + '/' + startString + '/' + endString + '/inlineGraph,hideLegend'
+  });
+
+  $("#frames").append(iframe);
+}
+
+$(document).ready(function() {
+
+      $.each(FixedKnownColors, function (b, color) {
+        $("<div>")
+          .addClass("legendBar")
+	  .append($("<div>").addClass("colorBox").css("background-color", color))
+	  .append($("<span>").addClass("colorLabel").text(b))
+	  .appendTo("#legend");
+      });
+
+      var today = new Date();
+      var two_days_ago = new Date(today.getTime() - (2 * 24 * 60 * 60 * 1000));
+
+      var todayStr = today.getFullYear() + "-" + (today.getMonth()+1) + "-" + today.getDate();
+      var prevStr = two_days_ago.getFullYear() + "-" + (two_days_ago.getMonth()+1) + "-" + two_days_ago.getDate();
+
+      addFrame("webgl-perf-tests", "macmini-win7", prevStr, todayStr);
+      addFrame("webgl-perf-tests", "macmini-win7", prevStr, todayStr);
+      addFrame("webgl-perf-tests", "macmini-win7", prevStr, todayStr);
+      addFrame("webgl-perf-tests", "macmini-win7", prevStr, todayStr);
+});
+
+  </script>
+</head>
+
+<body>
+
+<div id="legend"></div>
+<div id="frames"></div>
+
+</body>
+</html>

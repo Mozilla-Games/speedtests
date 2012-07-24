@@ -2,6 +2,12 @@ body {
   background: url("../images/bg.gif") repeat scroll 0 0 transparent;
   padding: 0;
   margin: 10px;
+  font-family: sans-serif;
+}
+
+.no-overflow {
+  overflow: hidden;
+  background: white;
 }
 
 td.textleft {
@@ -16,6 +22,10 @@ td.textleft {
   show: false;
 }
 
+.small {
+  font-size: 50%;
+}
+
 #controls {
   text-align: center;
   margin-top: 0px;
@@ -24,13 +34,20 @@ td.textleft {
   margin-right: auto;
   width: 1000px;
   display: none;
- }
+}
 
 #results {
   margin-left: auto;
   margin-right: auto;
-  padding: 20px;
   display: none;
+}
+
+.padded {
+  padding: 20px;
+}
+
+.smallpadded {
+  padding: 5px;
 }
 
 #loading {
