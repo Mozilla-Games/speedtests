@@ -4,6 +4,9 @@
 
 var gCurrentScoreDisplay = null;
 
+// if we're being asked to just display as an inline graph
+var gAsInlineGraph = false;
+
 function ScoreDisplay(testname, records, browsers) {
   this.records = records;
   this.browsers = browsers;
@@ -26,7 +29,8 @@ ScoreDisplay.prototype.display = function() {
   var points = this.getPoints();
 
   $('#results .data').html("");
-  $('#disptable').show();
+  if (!gAsInlineGraph)
+    $('#disptable').show();
 
   if (!points.length) {
     this.points = null;
@@ -113,7 +117,7 @@ ScoreDisplay.prototype.displayGraph = function(points) {
     },
     series: {
       lines: { show: true },
-      points: { show: true }
+      points: { show: gAsInlineGraph ? false : true }
     },
     xaxis: {
       mode: 'time'
@@ -354,7 +358,10 @@ function routerFactory() {
         '/([^\/]*)': {
           on: loadFromRoute,
           '/([^\/]*)': {
-            on: loadFromRoute
+            on: loadFromRoute,
+            '/([^\/]*)': {
+              on: loadFromRoute
+            }
           }
         }
       }
@@ -377,7 +384,7 @@ function routerFactory() {
  * route always matches the controls and vice versa, no matter if we come
  * here via the controls or directly via URL.
  */
-function loadFromRoute(testname, client, start, end) {
+function loadFromRoute(testname, client, start, end, extraFlags) {
   if (!testname) {
     testname = $($('#testselect option')[0]).val();
   }
@@ -402,7 +409,21 @@ function loadFromRoute(testname, client, start, end) {
   }
   $('#startentry').val(start);
   $('#endentry').val(end);
+
+  if (extraFlags) {
+    extraFlags = extraFlags.split(",");
+    if (extraFlags.indexOf("inlineGraph") != -1)
+      setInlineGraph();
+  }
+
   loadView(testname, client, start, end);
+}
+
+function setInlineGraph() {
+  gAsInlineGraph = true;
+
+  // hide a whole pile of stuff
+  $("#disptable, #controls").hide();
 }
 
 function loading(display) {
@@ -475,8 +496,24 @@ function ISODateString(d) {
          + pad(d.getUTCDate());
 }
 
+$(window).resize(function() {
+  if (gAsInlineGraph) {
+    // there's padding (20) on the results, so we need to account for it in the width
+    // and the height.  We also need to account for the margin on body (10).  The - 5
+    // is to avoid a 1px rounding error.
+    $(".graph").height(window.innerHeight - 60 - $("#title").height() - 5);
+  } else {
+    $("#results").width(1100);
+    $(".graph").height(600);
+  }
+});
 
 $(document).ready(function() {
+  if (document.location.hash.indexOf("inlineGraph") != -1)
+    gAsInlineGraph = true;
+
+  $(window).resize();
+
   // Configure date controls.
   $.datepicker.setDefaults({
     showOn: "button",
