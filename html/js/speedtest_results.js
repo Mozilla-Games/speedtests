@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+var gCurrentScoreDisplay = null;
+
 function ScoreDisplay(testname, records, browsers) {
   this.records = records;
   this.browsers = browsers;
@@ -22,12 +24,17 @@ ScoreDisplay.prototype.destroy = function() {
 ScoreDisplay.prototype.display = function() {
   $('#results').show();
   var points = this.getPoints();
-  if (!points[0].length) {
+
+  $('#results .data').html("");
+  $('#disptable').show();
+
+  if (!points.length) {
+    this.points = null;
     $('#title').text('no results');
   } else {
+    this.points = points;
     $('#title').text(this.title);
-    this.displayGraph(points[0]);
-    this.displayTable(points[1]);
+    this.displayGraph(points);
   }
 };
 
@@ -35,7 +42,7 @@ ScoreDisplay.prototype.getTestRuns = function() {
   var testRuns = [];
   var byTestStart = {};
   var testStart;
-  console.log("records:", this.records);
+  //console.log("records:", this.records);
 
   for (var i = 0; i < this.records.length; i++) {
     var record = this.records[i];
@@ -57,40 +64,45 @@ ScoreDisplay.prototype.getTestRuns = function() {
 
 ScoreDisplay.prototype.getPoints = function() {
   if (!this.records) {
-    return [[], []];
+    return [];
   }
   var testRuns = this.getTestRuns();
-  var tablePoints = [], graphPoints = [];
   var byBrowser = {};
+  var byBrowserExtra = {};
   var browserNames = [];
-  var browserId, browser, browserName, longBrowserName, score;
+  var browserId, browser, browserName, browserExtra, score;
   for (var i = 0; i < testRuns.length; i++) {
     var runResult = testRuns[i][1];
     browserId = runResult[0].browser_id;
     browser = this.browsers[browserId];
     score = this.getScore(runResult);
     browserName = browser.browsername + ' ' + browser.browserversion;
-    longBrowserName = browserName;
+    browserExtra = [testRuns[i][0]];
     if (browser.browsername.indexOf('Firefox') != -1) {
-      longBrowserName += ' <span style="font-size: 60%">(' + browser.buildid;
-      if (browser.sourcestamp)
-        longBrowserName += '-' + browser.sourcestamp;
-      longBrowserName += ')</span>';
+      browserExtra.push(browser.buildid);
+      browserExtra.push(browser.sourcestamp);
     }
-    tablePoints.push([testRuns[i][0], longBrowserName, score]);
+
     if (!(browserName in byBrowser)) {
       byBrowser[browserName] = [];
+      byBrowserExtra[browserName] = [];
       browserNames.push(browserName);
     }
+
     var testtime = new Date(testRuns[i][0]).getTime();
     byBrowser[browserName].push([testtime, score]);
+    byBrowserExtra[browserName].push(browserExtra);
   }
   browserNames.sort();
+
+  var points = [];
   for (i = 0; i < browserNames.length; i++) {
-    graphPoints.push({ data: byBrowser[browserNames[i]],
-                       label: browserNames[i] });
+    var name = browserNames[i];
+    points.push({ data: byBrowser[name],
+                  extraData: byBrowserExtra[name],
+                  label: name });
   }
-  return [graphPoints, tablePoints];
+  return points;
 };
 
 ScoreDisplay.prototype.displayGraph = function(points) {
@@ -112,7 +124,9 @@ ScoreDisplay.prototype.displayGraph = function(points) {
     legend: {
       position: 'nw',
       hideable: true
-    }
+    },
+    zoom: { interactive: true },
+    pan: { interactive: true }
   });
 
   function plotHoverFunc() {
@@ -122,13 +136,38 @@ ScoreDisplay.prototype.displayGraph = function(points) {
         if (prevPoint != item.datapoint) {
           $('#tooltip').remove();
           prevPoint = item.datapoint;
-          var toolTip = $('<div id="tooltip"></div>');
-          toolTip.css({
+          var tooltip = $('<div id="tooltip"></div>');
+          tooltip.css({
             left: item.pageX + 5,
             top: item.pageY + 5
           });
-          toolTip.text(item.series.label + ': ' + item.datapoint[1]);
-          $('body').append(toolTip);
+
+          var tooltipHtml = '<b>' + item.series.label + '</b>: ' + item.datapoint[1] + '<br>';
+          for (var i = 0; i < gCurrentScoreDisplay.points.length; ++i) {
+            var points = gCurrentScoreDisplay.points[i];
+            if (item.series.label != points.label)
+              continue;
+
+            // find this point; this sucks a little (a lot)
+            var dataIndex = -1;
+            for (var j = 0; j < points.data.length; ++j) {
+              if (points.data[j][0] == item.datapoint[0] &&
+                  points.data[j][1] == item.datapoint[1])
+              {
+                if (points.extraData[j].length > 2) {
+                  var extra = points.extraData[j];
+
+                  tooltipHtml += "<tt>" + extra[1] + "-" + extra[2] + "</tt>";
+                }
+                break;
+              }
+            }
+
+            break;
+          }
+
+          tooltip.html(tooltipHtml);
+          $('body').append(tooltip);
         }
       } else {
         $('#tooltip').remove();
@@ -140,10 +179,31 @@ ScoreDisplay.prototype.displayGraph = function(points) {
 };
 
 ScoreDisplay.prototype.displayTable = function(points) {
+  $('#disptable').hide();
+
   var table = $('#templates .resultsdata').clone();
   $('#results .data').html(table);
+
+  var tablePoints = [];
+  for (var i = 0; i < points.length; ++i) {
+    var bname = points[i].label;
+    var pdata = points[i].data;
+    var pextra = points[i].extraData;
+    for (var j = 0; j < pdata.length; ++j) {
+      tablePoints.push([pextra[j][0], bname + (pextra[j].length > 2 ? ("&nbsp;<span style='font-size: small'>" + pextra[j][1] + "-" + pextra[j][2] + "</span>") : ""), pdata[j][1]]);
+    }
+  }
+
+  tablePoints.sort(function(a, b) {
+    if (a[0] < b[0]) return -1;
+    if (a[0] > b[0]) return 1;
+    if (a[1] < b[1]) return -1;
+    if (a[1] > b[1]) return 1;
+    return 0;
+  });
+
   this.resultsTable = table.find('table').dataTable({
-    aaData: points,
+    aaData: tablePoints,
     aoColumns: [
       { sTitle: 'test start', sType: 'date' },
       { sTitle: 'browser' },
@@ -396,10 +456,10 @@ function loadView(testname, client, start, end) {
 
   getTestData(testname, client, start, end, function(data) {
     //console.log(data);
-    scoreDisplay = scoreDisplayFactory(testname, data.results[testname],
-                                       data.browsers);
+    gCurrentScoreDisplay = scoreDisplayFactory(testname, data.results[testname],
+                                               data.browsers);
     loading(false);
-    scoreDisplay.display();
+    gCurrentScoreDisplay.display();
   }, function() {
     loading(false);
     $('#title').text('Error connecting to results server.');
