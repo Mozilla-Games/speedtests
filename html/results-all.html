@@ -61,6 +61,10 @@ function addFrame(testName, clientName, startString, endString) {
   $("#frames").append(iframe);
 }
 
+function pad2(x) {
+      return x < 10 ? "0"+x : x;
+}
+
 $(document).ready(function() {
 
       $.each(FixedKnownColors, function (b, color) {
@@ -74,13 +78,12 @@ $(document).ready(function() {
       var today = new Date();
       var two_days_ago = new Date(today.getTime() - (2 * 24 * 60 * 60 * 1000));
 
-      var todayStr = today.getFullYear() + "-" + (today.getMonth()+1) + "-" + today.getDate();
-      var prevStr = two_days_ago.getFullYear() + "-" + (two_days_ago.getMonth()+1) + "-" + two_days_ago.getDate();
+      var todayStr = today.getFullYear() + "-" + pad2(today.getMonth()+1) + "-" + pad2(today.getDate());
+      var prevStr = two_days_ago.getFullYear() + "-" + pad2(two_days_ago.getMonth()+1) + "-" + pad2(two_days_ago.getDate());
 
       addFrame("webgl-perf-tests", "macmini-win7", prevStr, todayStr);
-      addFrame("webgl-perf-tests", "macmini-win7", prevStr, todayStr);
-      addFrame("webgl-perf-tests", "macmini-win7", prevStr, todayStr);
-      addFrame("webgl-perf-tests", "macmini-win7", prevStr, todayStr);
+      addFrame("webgl-perf-tests", "android-galaxy-nexus-jb", prevStr, todayStr);
+      addFrame("webgl-perf-tests", "android-s3-ics", prevStr, todayStr);
 });
 
   </script>

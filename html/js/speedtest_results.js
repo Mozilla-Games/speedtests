@@ -536,9 +536,6 @@ $(window).resize(function() {
   // there's padding (20) on the results, so we need to account for it in the width
   // and the height.  We also need to account for the margin on body (10).  The - 5
   // is to avoid a 1px rounding error.
-
-  console.log("dim:", window.innerWidth,window.innerHeight);
-
   var padding = 60;
   if (gAsInlineGraph)
     padding = 30;

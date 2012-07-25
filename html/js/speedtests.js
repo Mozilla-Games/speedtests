@@ -77,6 +77,7 @@ var SpeedTests = function() {
                       ip: searchParams.ip,
                       client: searchParams.client,
                       results: all_results,
+                      test_skipped: all_results.length == 0 || all_results[0].test_skipped == true,
                       ua: navigator.userAgent };
       if (searchParams.buildid)
         bodyobj.buildid = searchParams.buildid;
