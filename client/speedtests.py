@@ -52,11 +52,10 @@ class Config(object):
 
     @property
     def local_test_base_url(self):
-        return self.server_html_url + self.local_test_base_path
+        #return self.server_html_url + self.local_test_base_path
         # IE has issues loading pages from localhost, so we'll use the
         # external IP.
-        #return 'http://%s:%d%s' % (self.local_ip, self.local_port,
-        #                           self.local_test_base_path)
+        return 'http://%s:%d%s' % (self.local_ip, self.local_port, self.local_test_base_path)
 
     def read(self, testmode=False, noresults=False, ignore=False,
              conf_file=None):
@@ -153,7 +152,7 @@ class BrowserController(object):
 
         args = config.get_str(os_name, browser_name + "_args")
         if args is not None:
-            self.cmd_args = tuple(args.split(" "))
+            self.cmd_args = tuple(args.split())
 
         self.NameExtra = config.get_str(os_name, browser_name + "_suffix")
 
@@ -311,9 +310,9 @@ class BrowserController(object):
         self.AppSourceStamp = ini.get('App', 'SourceStamp')
 
 class AndroidAdbBrowserController(BrowserController):
-    def __init__(self, os_name, browser_name, package="org.mozilla.fennec"):
-        BrowserController.__init__(self, os_name, browser_name, "default", None)
-        self.browserPackage = package
+    def __init__(self, os_name, browser_name, package='org.mozilla.fennec'):
+        super(AndroidAdbBrowserController, self).__init__(os_name, browser_name, "default", None)
+        self.browserPackage = config.get_str('android', browser_name + '_package', package)
 
     def cmd_line(self, url):
         pass
@@ -326,10 +325,10 @@ class AndroidAdbBrowserController(BrowserController):
         return True
 
     def get_profile_archive_path(self, profile):
-        raise "Can't get profile archive for Android fennec browser"
+        raise Exception("Can't get profile archive for Android fennec browser")
 
     def archive_current_profiles(self):
-        raise "Can't get profile archive for Android fennec browser"
+        raise Exception("Can't get profile archive for Android fennec browser")
 
     def copy_profiles(self):
         print "Skipping profile copy on Android"
@@ -337,6 +336,9 @@ class AndroidAdbBrowserController(BrowserController):
 
     def launch(self, url=None):
         try:
+            # simulate a press of the HOME button, to wake screen up if necessary
+            subprocess.check_call("adb shell input keyevent 3", shell=True)
+
             if url is None:
                 url = "about:blank"
             cmdline = "adb shell am start -a android.intent.action.VIEW -d '\"%s\"' %s" % (url, self.browserPackage)
@@ -354,7 +356,6 @@ class AndroidAdbBrowserController(BrowserController):
             result = result.split()
             if result[0] == "USER":
                 return -1
-            #print "getBrowserPid: %s" % (result[1])
             return int(result[1])
         except:
             return -1
@@ -367,16 +368,18 @@ class AndroidAdbBrowserController(BrowserController):
         if pid < 0:
             return
 
-        # hack
-        if self.browserPackage.find("fennec") == -1:
-            subprocess.call("adb shell su -c 'kill %d'" % (pid), shell=True)
-        else:
-            subprocess.call("adb shell run-as %s kill %d" % (self.browserPackage, pid), shell=True)
+        subprocess.call("adb shell am force-stop %s" % (self.browserPackage), shell=True)
+        time.sleep(1)
+        subprocess.call("adb shell am kill %s" % (self.browserPackage), shell=True)
 
         pid = self.getBrowserPid()
+        count = 0
         while pid > 0:
             time.sleep(2)
             pid = self.getBrowserPid()
+            count += 1
+            if count == 20:
+                raise Exception("Waited too long for browser to die!")
         self.clean_up()
 
 class LatestFxBrowserController(BrowserController):
@@ -392,11 +395,11 @@ class LatestFxBrowserController(BrowserController):
     INSTALLER_CLASS = None
 
     def __init__(self, os_name, browser_name, profiles, base_install_dir):
-        self.base_install_dir = base_install_dir
+        self.base_install_dir = os.path.join(base_install_dir, config.client)
         cmd = os.path.join(self.base_install_dir,
                            LatestFxBrowserController.INSTALL_SUBDIR,
                            self.ARCHIVE_FX_PATH)
-        BrowserController.__init__(self, os_name, browser_name, profiles, cmd)
+        super(LatestFxBrowserController, self).__init__(os_name, browser_name, profiles, cmd)
 
     def init_browser(self):
         install_path = os.path.join(self.base_install_dir,
@@ -434,12 +437,12 @@ class LatestTinderboxFxBrowserController(BrowserController):
     AppSourceStamp = None
 
     def __init__(self, os_name, browser_name, profiles, base_install_dir, branch='mozilla-central'):
-        self.base_install_dir = base_install_dir
+        self.base_install_dir = os.path.join(base_install_dir, config.client)
         self.branch = branch
         cmd = os.path.join(self.base_install_dir,
                            self.INSTALL_SUBDIR,
                            self.ARCHIVE_FX_PATH)
-        BrowserController.__init__(self, os_name, browser_name, profiles, cmd)
+        super(LatestTinderboxFxBrowserController, self).__init__(os_name, browser_name, profiles, cmd)
 
     def init_browser(self):
         install_path = os.path.join(self.base_install_dir, self.INSTALL_SUBDIR)
@@ -475,7 +478,7 @@ class LinuxLatestTinderboxFxBrowserController(LatestTinderboxFxBrowserController
     BUILDTYPE = 'pgo'
 
     def __init__(self, os_name, browser_name, profiles, base_install_dir, branch='mozilla-central'):
-        LatestTinderboxFxBrowserController.__init__(self, os_name, browser_name, profiles, base_install_dir, branch)
+        super(LinuxLatestTinderboxFxBrowserController, self).__init__(os_name, browser_name, profiles, base_install_dir, branch)
 
     def prepare_archived_build(self, install_path, buildpath):
         # on linux, this is a bz2 file
@@ -493,7 +496,7 @@ class WinLatestTinderboxFxBrowserController(LatestTinderboxFxBrowserController):
     BUILDTYPE = 'pgo'
 
     def __init__(self, os_name, browser_name, profiles, base_install_dir, branch='mozilla-central'):
-        LatestTinderboxFxBrowserController.__init__(self, os_name, browser_name, profiles, base_install_dir, branch)
+        super(WinLatestTinderboxFxBrowserController, self).__init__(os_name, browser_name, profiles, base_install_dir, branch)
 
     def prepare_archived_build(self, install_path, buildpath):
         # on windows, this is a zip file
@@ -511,6 +514,52 @@ class WinLatestTinderboxFxBrowserController(LatestTinderboxFxBrowserController):
         finally:
             os.chdir(cwd)
 
+class AndroidTinderboxFxAdbBrowserController(AndroidAdbBrowserController):
+    INSTALL_SUBDIR = 'speedtests_fennec_tb'
+
+    def __init__(self, os_name, browser_name, branch='mozilla-central'):
+        # explicitly not using super()
+        AndroidAdbBrowserController.__init__(self, os_name, browser_name)
+
+        # stuff from LatestTinderboxFxBrowserController.__init__
+        self.base_install_dir = os.path.join("/tmp", config.client)
+        self.branch = branch
+
+    def init_browser(self):
+        install_path = os.path.join(self.base_install_dir, self.INSTALL_SUBDIR)
+
+        try:
+            shutil.rmtree(install_path)
+        except:
+            pass
+        os.makedirs(install_path)
+
+        latest = GetLatestTinderbox(self.branch, "android", app='mobile', app_short='fennec')
+        latest_url = latest.latest_build_url()
+        basename = latest_url[latest_url.rfind("/")+1:]
+
+        apkpath = os.path.join(install_path, basename)
+
+        try:
+            print "Fetching " + latest_url + "..."
+            urllib.urlretrieve(latest_url, apkpath)
+        except Exception as e:
+            print 'Failed to get latest tinderbox build'
+            print e
+            return False
+
+        # pull out app.ini and parse it
+        zip = zipfile.ZipFile(apkpath, 'r')
+        zip.extract("application.ini", install_path)
+        self.parse_app_ini(os.path.join(install_path, "application.ini"))
+
+        # now install the apk
+        subprocess.call("adb install -r '" + apkpath + "'", shell=True)
+        return True
+
+    def clean_up(self):
+        subprocess.call("adb shell pm uninstall -k " + self.browserPackage, shell=True)
+        return True
 
 class LinuxLatestFxBrowserController(LatestFxBrowserController):
 
@@ -527,7 +576,6 @@ class MacLatestFxBrowserController(LatestFxBrowserController):
 
     ARCHIVE_FX_PATH = 'Nightly.app/Contents/MacOS/firefox'
     INSTALLER_CLASS = fxinstall.FirefoxMacInstaller
-
 
 class IEController(BrowserController):
 
@@ -673,15 +721,15 @@ class BrowserRunner(object):
                    # IEController(os_name, 'internet explorer', os.path.join(program_files, 'Internet Explorer\\iexplore.exe')),
                    ]
         elif os_str == 'android':
-            fennec_package = config.get_str('android', 'firefox_package', 'org.mozilla.fennec')
             return [
-                AndroidAdbBrowserController(os_str, 'firefox', fennec_package),
+                AndroidAdbBrowserController(os_str, 'firefox'),
+                #AndroidLatestFxAdbBrowserController(os_str, 'nightly'),
+                AndroidTinderboxFxAdbBrowserController(os_str, 'tinderbox'),
                 AndroidAdbBrowserController(os_str, 'browser', 'com.google.android.browser'),
                 AndroidAdbBrowserController(os_str, 'chrome', 'com.android.chrome')
                    ]
         else:
-            print "Unrecognized platform '%s'" % (os_str)
-            raise Exception
+            raise Exception("Unrecognized platform '%s'" % (os_str))
 
     class BrowserControllerIter(object):
         
@@ -818,6 +866,16 @@ class TestRunnerRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     def do_POST(self):
         length = int(self.headers.getheader('content-length'))
         web_data = json.loads(self.rfile.read(length))
+
+        # if this was skipped, we've got nothing to do
+        if 'test_skipped' in web_data and web_data['test_skipped']:
+            print "Test was skipped."
+            self.send_response(200)
+            self.end_headers()
+            self.wfile.write('<html></html>')
+            self.server.browser_runner.next_test()
+            return
+
         if config.ignore:
             web_data['ignore'] = True
         testname = web_data['testname']
@@ -882,12 +940,17 @@ def main():
                      help='override client name reported to server')
     parser.add_option('--platform', dest='platform', type='string', action='store',
                      help='override detected platform')
+    parser.add_option('--port', dest='local_port', type='int', action='store',
+                     help='override local_port')
     (options, args) = parser.parse_args()
 
     config.read(options.testmode, options.noresults, options.ignore, options.config_file)
 
     if options.client:
         config.client = options.client
+
+    if options.local_port:
+        config.local_port = options.local_port
 
     if not options.client and not config.get_str('speedtests', 'client'):
         print "--client must be specified on command line or in config (we don't support ip-based clients here)"
@@ -952,11 +1015,18 @@ def main():
     if len(args) >= 1 and args[0] == 'load' and len(test_urls) > 1:
         test_urls = test_urls[:1]
 
-    br = BrowserRunner(evt, args, test_urls, config.platform)
+    browsers = args
+
+    conf_browsers = config.get_str(config.platform, "browsers")
+    if browsers is None or len(browsers) == 0:
+        browsers = conf_browsers.split()
+
+    br = BrowserRunner(evt, browsers, test_urls, config.platform)
     print 'Starting HTTP server...'
     trs = TestRunnerHTTPServer(('', config.local_port),
                                TestRunnerRequestHandler, br, key)
     server_thread = threading.Thread(target=trs.serve_forever)
+    server_thread.daemon = True
     server_thread.start()
     start = datetime.datetime.now()
     print 'Launching first browser...'
