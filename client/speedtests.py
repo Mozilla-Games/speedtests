@@ -1018,7 +1018,7 @@ def main():
     browsers = args
 
     conf_browsers = config.get_str(config.platform, "browsers")
-    if browsers is None or len(browsers) == 0:
+    if browsers is None or len(browsers) == 0 and conf_browsers is not None:
         browsers = conf_browsers.split()
 
     br = BrowserRunner(evt, browsers, test_urls, config.platform)
