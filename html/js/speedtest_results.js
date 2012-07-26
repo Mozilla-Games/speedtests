@@ -152,10 +152,6 @@ ScoreDisplay.prototype.displayGraph = function(points) {
           $('#tooltip').remove();
           prevPoint = item.datapoint;
           var tooltip = $('<div id="tooltip"></div>');
-          tooltip.css({
-            left: item.pageX + 5,
-            top: item.pageY + 5
-          });
 
           var tooltipHtml = '<b>' + item.series.label + '</b>: ' + item.datapoint[1] + '<br>';
           for (var i = 0; i < gCurrentScoreDisplay.points.length; ++i) {
@@ -183,6 +179,22 @@ ScoreDisplay.prototype.displayGraph = function(points) {
 
           tooltip.html(tooltipHtml);
           $('body').append(tooltip);
+
+          var tw = tooltip.outerWidth();
+          var th = tooltip.outerHeight();
+
+          var tx = item.pageX + 5;
+          var ty = item.pageY + 5;
+
+          if ((tx - window.scrollX) + tw > window.innerWidth) {
+            tx -= tw + 10;
+          }
+
+          if ((ty - window.scrollY) + th > window.innerHeight) {
+            ty -= th + 10;
+          }
+
+          tooltip.css({ left: tx, top: ty });
         }
       } else {
         $('#tooltip').remove();
