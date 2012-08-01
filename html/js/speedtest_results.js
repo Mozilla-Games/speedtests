@@ -7,6 +7,7 @@ var gCurrentScoreDisplay = null;
 // if we're being asked to just display as an inline graph
 var gAsInlineGraph = false;
 var gHideLegend = false;
+var gStartDate, gEndDate;
 
 function ScoreDisplay(testname, records, browsers) {
   this.records = records;
@@ -33,12 +34,16 @@ ScoreDisplay.prototype.display = function() {
   if (!gAsInlineGraph)
     $('#disptable').show();
 
+  var target = document.location.toString();
+  target = target.replace("hideLegend","").replace("inlineGraph","");
+  $('#titlea').attr('href', target);
+
   if (!points.length) {
     this.points = null;
-    $('#title').text('no results');
+    $('#titlea').text(this.title + "\n" + 'no results');
   } else {
     this.points = points;
-    $('#title').text(this.title);
+    $('#titlea').text(this.title);
     this.displayGraph(points);
   }
 };
@@ -114,6 +119,11 @@ ScoreDisplay.prototype.getPoints = function() {
 
 ScoreDisplay.prototype.displayGraph = function(points) {
   var graphDiv = $('#results .graph');
+  var endStamp = new Date(gEndDate);
+  var tzoffset = endStamp.getTimezoneOffset() * 60 * 1000;
+  endStamp.setDate(endStamp.getDate() + 1);
+  endStamp = Math.min(endStamp.getTime(), (new Date()).getTime());
+  endStamp += tzoffset;
   var plotOpts = {
     grid: {
       hoverable: true
@@ -123,7 +133,9 @@ ScoreDisplay.prototype.displayGraph = function(points) {
       points: { show: true }
     },
     xaxis: {
-      mode: 'time'
+      mode: 'time',
+      min: gStartDate.getTime() + tzoffset,
+      max: endStamp
     },
     yaxis: {
       axisLabel: this.scoreName
@@ -416,19 +428,18 @@ function loadFromRoute(testname, client, start, end, extraFlags) {
     client = $($('#clientselect option')[0]).val();
   }
   $('#clientselect').selectOptions(client);
-  var startDate, endDate;
   if (end) {
-    endDate = new Date(end);
+    gEndDate = new Date(end);
   } else {
-    endDate = new Date();
-    end = ISODateString(endDate);
+    gEndDate = new Date();
+    end = ISODateString(gEndDate);
   }
   if (start) {
-    startDate = new Date(start);
+    gStartDate = new Date(start);
   } else {
-    startDate = new Date(endDate);
-    startDate.setDate(startDate.getDate() - 28);
-    start = ISODateString(startDate);
+    gStartDate = new Date(gEndDate);
+    gStartDate.setDate(gStartDate.getDate() - 7);
+    start = ISODateString(gStartDate);
   }
   $('#startentry').val(start);
   $('#endentry').val(end);
@@ -515,7 +526,7 @@ function loadView(testname, client, start, end) {
 
   if (!testname) {
     loading(false);
-    $('#title').text('No results to show.');
+    $('#titlea').text('No results to show.');
     $('#results').show();
     return;
   }
@@ -531,7 +542,7 @@ function loadView(testname, client, start, end) {
     gCurrentScoreDisplay.display();
   }, function() {
     loading(false);
-    $('#title').text('Error connecting to results server.');
+    $('#titlea').text('Error connecting to results server.');
     $('#results').show();
   });
 }
@@ -593,7 +604,7 @@ $(document).ready(function() {
       var router = routerFactory();
     },
     error: function() {
-      $('#title').text('Error connecting to results server.');
+      $('#titlea').text('Error connecting to results server.');
     }
   });
 });
