@@ -272,7 +272,9 @@ class BrowserController(object):
         return running == None
 	
     def execution_time(self):
-        return datetime.datetime.now() - self.launch_time
+        if self.launch_time:
+            return datetime.datetime.now() - self.launch_time
+        return MAX_TEST_TIME * 2
 
     def terminate(self):
         if self.proc:

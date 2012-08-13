@@ -2,6 +2,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this file,
 # You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import json
+
 from collections import defaultdict
 
 class SpeedTestReport(object):
@@ -97,6 +99,19 @@ class SpeedTestReport(object):
                     score = float(results_strs[0]['value'])
                     score_str = '%f' % score
                     s += '  %s\n' % score_str
+
+                    if 'raw' in results_strs[0]:
+                        s += '  %s\n' % str(results_strs[0]['raw'])
+                        if False:
+                            try:
+                                raw = results_strs[0]['raw']
+                                for line in raw:
+                                    s += '      %s: %s\n' % (line['testDescription'], line['testResult'])
+                            except Exception, e:
+                                print str(e)
+                                print "Failed to parse raw results"
+                                print results_strs[0]['raw']
+
                     continue
 
                 s += "!!!! Can't handle result object for test '%s'!\n" % result_strs[0].description

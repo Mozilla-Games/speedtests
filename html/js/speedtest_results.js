@@ -8,6 +8,7 @@ var gCurrentScoreDisplay = null;
 var gAsInlineGraph = false;
 var gHideLegend = false;
 var gStartDate, gEndDate;
+var gYAxisZero = false;
 
 function ScoreDisplay(testname, records, browsers) {
   this.records = records;
@@ -152,6 +153,10 @@ ScoreDisplay.prototype.displayGraph = function(points) {
     plotOpts.series.points.show = false;
     plotOpts.legend.show = false;
     plotOpts.shadowSize = 0;
+  }
+
+  if (gYAxisZero) {
+    plotOpts.yaxis.min = 0;
   }
 
   var plot = $.plot(graphDiv, points, plotOpts);
@@ -450,6 +455,8 @@ function loadFromRoute(testname, client, start, end, extraFlags) {
       gAsInlineGraph = true;
     if (extraFlags.indexOf("hideLegend") != -1)
       gHideLegend = true;
+    if (extraFlags.indexOf("yAxisZero") != -1)
+      gYAxisZero = true;
     flagsSet();
   }
 

@@ -51,7 +51,8 @@ db = web.database(dbn='mysql', host=DB_HOST, db=DB_NAME, user=DB_USER,
 
 urls = ('/testresults/', 'TestResults',
         '/params/', 'Params',
-        '/testpaths/', 'TestPaths')
+        '/testpaths/', 'TestPaths',
+        '/testdetails/', 'TestDetails')
 
 def query_params():
     params = {}
@@ -62,7 +63,7 @@ def query_params():
                 params[name] = value
     return params
 
-# nuke everything but a-z A-Z 0-9 _ . - and space'
+# nuke everything but a-z A-Z 0-9 _ . , - and space'
 # at the very least it should be safe for sql (inside strings)
 def simple_ascii_only(val):
     if type(val) is list:
@@ -197,6 +198,26 @@ class Params(object):
 
         return response
 
+
+class TestDetails(object):
+
+    @templeton.handlers.json_response
+    def GET(self):
+        args, body = templeton.handlers.get_request_parms()
+        testids = simple_ascii_only(args.get('testids', None))
+        if testids is None:
+            return None
+        testids = map(lambda x: str(int(x)), testids[0].split(","))
+        response = { }
+        rows = db.query("SELECT * FROM generic WHERE id IN (" + ",".join(testids) + ")");
+        for row in rows:
+            record = dict(row)
+            for k, v in record.iteritems():
+                if isinstance(v, datetime.datetime):
+                    record[k] = v.isoformat()
+            record['result_data'] = json.loads(record['result_data'])
+            response[record['id']] = record
+        return response
 
 class TestResults(object):
 
