@@ -85,7 +85,7 @@ class Config(object):
         try:
             self.server_api_url = self.cfg.get('speedtests', 'server_url').rstrip('/')
         except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
-            pass            
+            self.server_api_url = self.server_html_url + '/api/'
 
         try:
             self.server_results_url = self.cfg.get('speedtests', 'server_results_url').rstrip('/') + '/'
