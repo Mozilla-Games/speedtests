@@ -68,6 +68,14 @@ class Config(object):
         self.cfg.read(conf_file)
 
         try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.connect(('8.8.8.8', 80))
+            self.local_ip = s.getsockname()[0]
+            s.close()
+        except:
+            raise Exception("Couldn't find local IP!")
+
+        try:
             self.sixtyfour_bit = self.cfg.getboolean('speedtests', '64bit')
         except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
             pass
@@ -78,17 +86,17 @@ class Config(object):
             pass
         
         try:
-            self.server_html_url = self.cfg.get('speedtests', 'test_base_url').rstrip('/')
+            self.server_html_url = self.cfg.get('speedtests', 'test_base_url').rstrip('/').replace("SELF_IP", self.local_ip)
         except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
             pass
 
         try:
-            self.server_api_url = self.cfg.get('speedtests', 'server_url').rstrip('/')
+            self.server_api_url = self.cfg.get('speedtests', 'server_url').rstrip('/').replace("SELF_IP", self.local_ip)
         except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
             self.server_api_url = self.server_html_url + '/api/'
 
         try:
-            self.server_results_url = self.cfg.get('speedtests', 'server_results_url').rstrip('/') + '/'
+            self.server_results_url = self.cfg.get('speedtests', 'server_results_url').rstrip('/').replace("SELF_IP", self.local_ip) + '/'
         except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
             self.server_results_url = self.server_api_url + '/testresults/'
 
@@ -96,17 +104,6 @@ class Config(object):
             self.platform = self.cfg.get('speedtests', 'platform')
         except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
             pass
-
-        # Find our IP address.
-        host, colon, port = urllib2.urlparse.urlsplit(self.server_html_url)[1].partition(':')
-        if colon:
-            port = int(port)
-        else:
-            port = 80
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect((host, port))
-        self.local_ip = s.getsockname()[0]
-        s.close()
 
         self.client = self.get_str('speedtests', 'client')
         if self.client is None:
@@ -560,7 +557,9 @@ class AndroidTinderboxFxAdbBrowserController(AndroidAdbBrowserController):
         return True
 
     def clean_up(self):
-        subprocess.call("adb shell pm uninstall -k " + self.browserPackage, shell=True)
+        # leave the browser on there for easier testing.  no reason to nuke it, especially since
+        # we're keeping the prefs.
+        #subprocess.call("adb shell pm uninstall -k " + self.browserPackage, shell=True)
         return True
 
 class LinuxLatestFxBrowserController(LatestFxBrowserController):
