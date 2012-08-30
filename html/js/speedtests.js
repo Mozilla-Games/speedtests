@@ -6,6 +6,7 @@ var SpeedTests = function() {
 
   var loadingNextTest = false;
   var all_results = [];
+  var hasError = false;
   var startTime = null;
   var lastReportTime = null;
   
@@ -20,9 +21,15 @@ var SpeedTests = function() {
   };
 
   var recordResults = function (testname, results) {
+    if (startTime == null) {
+      alert("startTime is null -- SpeedTests.init was not called");
+    }
+
     results.browser_width = window.innerWidth;
     results.browser_height = window.innerHeight;
     results.teststart = isoDateTime(startTime);
+    if (results['error'])
+      hasError = true;
     all_results.push(results);
   };
 
@@ -44,6 +51,7 @@ var SpeedTests = function() {
   return {
     init: function() {
       startTime = new Date();
+      hasError = false;
     },
     getSearchParams: getSearchParams,
     isoDateTime: isoDateTime,
@@ -78,7 +86,8 @@ var SpeedTests = function() {
                       client: searchParams.client,
                       results: all_results,
                       test_skipped: all_results.length == 0 || all_results[0].test_skipped == true,
-                      ua: navigator.userAgent };
+                      ua: navigator.userAgent,
+                      error: hasError };
       if (searchParams.buildid)
         bodyobj.buildid = searchParams.buildid;
       if (searchParams.geckoversion)

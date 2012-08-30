@@ -21,6 +21,7 @@ CREATE TABLE generic (
 	teststart TIMESTAMP,
 	ip VARCHAR(128),
 	testname VARCHAR(128),
+	error BOOLEAN,
 	result_value FLOAT,
 	result_data TEXT
 );

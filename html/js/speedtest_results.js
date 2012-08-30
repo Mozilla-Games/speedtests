@@ -88,10 +88,10 @@ ScoreDisplay.prototype.getPoints = function() {
     browser = this.browsers[browserId];
     score = this.getScore(runResult);
     browserName = browser.browsername + ' ' + browser.browserversion;
-    browserExtra = [testRuns[i][0]];
+    browserExtra = { time: testRuns[i][0], error: runResult[0].error };
     if (browser.browsername.indexOf('Firefox') != -1) {
-      browserExtra.push(browser.buildid);
-      browserExtra.push(browser.sourcestamp);
+      browserExtra['buildid'] = browser.buildid;
+      browserExtra['sourcestamp'] = browser.sourcestamp;
     }
 
     if (!(browserName in byBrowser)) {
@@ -118,6 +118,21 @@ ScoreDisplay.prototype.getPoints = function() {
   return points;
 };
 
+var first = true;
+function draw_point(ctx, x, y, radius, shadow, series, pointIndex) {
+  var error = series.extraData[pointIndex]['error'];
+
+  if (!error) {
+    ctx.arc(x, y, radius, 0, shadow ? Math.PI : Math.PI * 2, false);
+  } else {
+    ctx.moveTo(x - radius,
+               y + radius);
+    ctx.lineTo(x, y - radius);
+    ctx.lineTo(x + radius,
+               y + radius);
+  }
+}
+
 ScoreDisplay.prototype.displayGraph = function(points) {
   var graphDiv = $('#results .graph');
   var endStamp = new Date(gEndDate);
@@ -131,7 +146,7 @@ ScoreDisplay.prototype.displayGraph = function(points) {
     },
     series: {
       lines: { show: true },
-      points: { show: true }
+      points: { show: true, symbol: draw_point }
     },
     xaxis: {
       mode: 'time',
@@ -176,21 +191,17 @@ ScoreDisplay.prototype.displayGraph = function(points) {
             if (item.series.label != points.label)
               continue;
 
-            // find this point; this sucks a little (a lot)
-            var dataIndex = -1;
-            for (var j = 0; j < points.data.length; ++j) {
-              if (points.data[j][0] == item.datapoint[0] &&
-                  points.data[j][1] == item.datapoint[1])
-              {
-                if (points.extraData[j].length > 2) {
-                  var extra = points.extraData[j];
-
-                  tooltipHtml += "<tt>" + extra[1] + "-" + extra[2] + "</tt>";
-                }
-                break;
-              }
+            var dataIndex = item.dataIndex;
+            var extra = points.extraData[dataIndex];
+            if ('buildid' in extra) {
+              tooltipHtml += "<tt>" + extra['buildid'];
+                if (extra['sourcestamp'])
+                  tooltipHtml += "-" + extra['sourcestamp'];
+                tooltipHtml += "</tt>";
             }
-
+            if (extra['error']) {
+              tooltipHtml += "<br><span style='color: red'>Test had error!</span></br>";
+            }
             break;
           }
 

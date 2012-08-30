@@ -249,13 +249,16 @@ class TestResults(object):
             return {'result': 'error', 'error': 'results must be signed'}
         else:
             web_data = json.loads(web.data())
-        #print "POST: " + str(web_data)
+        print "POST: " + str(web_data)
         if web_data.get('ignore'):
             return {'result': 'ok'}
         testname = web_data['testname']
         machine_ip = web_data['ip']
         machine_client = web_data['client']
         browser_id = get_browser_id(web_data)
+        error = False
+        if 'error' in web_data and web_data['error'] is not False:
+            error = True
 
         for results in web_data['results']:
             r = results
@@ -268,6 +271,7 @@ class TestResults(object):
                 r['browser_width'] = results['browser_width']
                 r['teststart'] = results['teststart']
                 r['testname'] = testname
+                r['error'] = error
                 r['result_value'] = results['value']
                 r['result_data'] = json.dumps(results['raw'])
                 tablename = 'generic'
