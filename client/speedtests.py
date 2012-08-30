@@ -843,7 +843,16 @@ class TestRunnerHTTPServer(BaseHTTPServer.HTTPServer):
     
     def standard_web_data(self):
         return {'ip': config.local_ip, 'client': config.client}
-        
+
+    def handle_error(self, request, client_address):
+        print '-'*40
+        print 'Exception happened during processing of request from', client_address
+        traceback.print_exc() # XXX But this goes to stderr!
+        print '-'*40
+
+        # must use os._exit, otherwise this won't actually exit (sys.exit is
+        # implemented by throwing an exception)
+        os._exit(1)
 
 class TestRunnerRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     
