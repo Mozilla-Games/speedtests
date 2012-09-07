@@ -101,8 +101,8 @@ class SpeedTestReport(object):
                     s += '  %s\n' % score_str
 
                     if 'raw' in results_strs[0]:
-                        s += '  %s\n' % str(results_strs[0]['raw'])
                         if False:
+                            s += '  %s\n' % str(results_strs[0]['raw'])
                             try:
                                 raw = results_strs[0]['raw']
                                 for line in raw:
