@@ -18,8 +18,8 @@ echo -n "\033k""$CLIENT""\033\\"
 charge_delay=0
 case "$ANDROID_SERIAL" in
 	6410e088|42f0370803676f99|*)
-		# Everything can't charge under load; so give it a 15 minute nap after a reboot to charge
-		charge_delay=900
+		# Everything can't charge under load; so give them a 20 minute nap after a reboot to charge
+		charge_delay=1200
 		;;
 	*)
 	;;
@@ -36,12 +36,12 @@ while true ; do
         count=0
 	
         adb reboot
-	print Sleeping for $charge_delay seconds to allow phone to charge...
+	echo Sleeping for $charge_delay seconds to allow phone to charge...
 	sleep $charge_delay
         adb wait-for-device
     fi
 
     echo =======================================
-    sleep 30
+    sleep 60
 done
 
