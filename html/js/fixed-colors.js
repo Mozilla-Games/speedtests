@@ -2,9 +2,10 @@
 
 var FixedKnownColors = {
   "Chrome": "#edc240",
-  "Firefox-tinderbox": "#afd8f8",
+  "Firefox-tinderbox": "#cc33cc",
   "Firefox-nightly": "#cb4b4b",
-  "Firefox": "#4da74d"
+  "Firefox": "#4da74d",
+  "Safari": "#afd8f8"
 };
 
 function FixedColorForBrowser(browserLabel) {

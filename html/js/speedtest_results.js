@@ -120,7 +120,9 @@ ScoreDisplay.prototype.getPoints = function() {
 
 var first = true;
 function draw_point(ctx, x, y, radius, shadow, series, pointIndex) {
-  var error = series.extraData[pointIndex]['error'];
+  var error = false;
+  if (series && series.extraData)
+    error = series.extraData[pointIndex]['error'];
 
   if (!error) {
     ctx.arc(x, y, radius, 0, shadow ? Math.PI : Math.PI * 2, false);
@@ -154,7 +156,8 @@ ScoreDisplay.prototype.displayGraph = function(points) {
       max: endStamp
     },
     yaxis: {
-      axisLabel: this.scoreName
+      axisLabel: this.scoreName,
+      min: 0
     },
     legend: {
       position: 'nw',

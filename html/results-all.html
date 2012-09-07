@@ -78,15 +78,30 @@ $(document).ready(function() {
       });
 
       var today = new Date();
-      var two_days_ago = new Date(today.getTime() - (2 * 24 * 60 * 60 * 1000));
+      var n_days = 4; // number of days ago to start
+      var n_days_ago = new Date(today.getTime() - (n_days * 24 * 60 * 60 * 1000));
 
       var todayStr = today.getFullYear() + "-" + pad2(today.getMonth()+1) + "-" + pad2(today.getDate());
-      var prevStr = two_days_ago.getFullYear() + "-" + pad2(two_days_ago.getMonth()+1) + "-" + pad2(two_days_ago.getDate());
+      var prevStr = n_days_ago.getFullYear() + "-" + pad2(n_days_ago.getMonth()+1) + "-" + pad2(n_days_ago.getDate());
 
-      addFrame("webgl-perf-tests", "macmini-win7", prevStr, todayStr);
-      addFrame("webgl-perf-tests", "android-galaxy-nexus-jb", prevStr, todayStr);
-      addFrame("webgl-perf-tests", "android-s3-ics", prevStr, todayStr);
-      addFrame("webgl-perf-tests", "android-nexus-7-jb", prevStr, todayStr);
+      var devices = [
+        "android-galaxy-nexus-jb",
+        "android-s3-ics",
+        "android-s3-mali-ics",
+        "android-nexus-7-jb",
+        "osx-mini-10.7"
+      ];
+
+      var tests = [
+        "webgl-perf-tests",
+        "webgl-aquarium"
+      ];
+
+      for (var i = 0; i < tests.length; ++i) {
+        for (var j = 0; j < devices.length; ++j) {
+          addFrame(tests[i], devices[j], prevStr, todayStr);
+        }
+      }
 });
 
   </script>
