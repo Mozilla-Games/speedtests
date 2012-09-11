@@ -24,6 +24,7 @@ import urllib2
 import zipfile
 
 from get_latest import GetLatestTinderbox
+from mozdevice import DroidADB, DroidSUT
 
 if platform.system() == 'Windows':
     import _winreg
@@ -308,6 +309,79 @@ class BrowserController(object):
         self.AppSourceRepository = ini.get('App', 'SourceRepository')
         self.AppSourceStamp = ini.get('App', 'SourceStamp')
 
+class AndroidBrowserController(BrowserController):
+    def __init__(self, os_name, browser_name, package='org.mozilla.fennec'):
+        super(AndroidBrowserController, self).__init__(os_name, browser_name, "default", None)
+        self.browserPackage = config.get_str('android', browser_name + '_package', package)
+        self.dm = DroidADB(packageName=package)
+
+    def cmd_line(self, url):
+        pass
+
+    def init_browser(self):
+        pass
+
+    def browser_exists(self):
+        # XXX fixme to check
+        return True
+
+    def get_profile_archive_path(self, profile):
+        raise Exception("Can't get profile archive for Android fennec browser")
+
+    def archive_current_profiles(self):
+        raise Exception("Can't get profile archive for Android fennec browser")
+
+    def copy_profiles(self):
+        print "Skipping profile copy on Android"
+        return True
+
+    def launch(self, url=None):
+        try:
+            # simulate a press of the HOME button, to wake screen up if necessary
+            self.dm.shell(["input", "keyevent", "3"], None)
+
+            if url is None:
+                url = "about:blank"
+            
+            #print "ADB Launch command line: %s" % (cmdline)
+            self.launch_time = datetime.datetime.now()
+            return self.dm.launchApplication(self.browserPackage, ".App", "android.intent.action.VIEW", url=url)
+        except:
+            traceback.print_exc()
+            return False
+
+    def getBrowserPid(self):
+        result = self.dm.processExist(self.browserPackage)
+        if result is not None:
+            return result
+        return -1
+
+    def running(self):
+        return self.getBrowserPid() > 0
+
+    def terminate(self):
+        print "Trying to terminate browser..."
+        pid = self.getBrowserPid()
+        if pid < 0:
+            return
+
+        # the killProcess implementaiton is not ideal; requires root or run-as
+        #self.dm.killProcess(self.browserPackage, forceKill=True)
+
+        self.dm.shell(["am", "force-stop", self.browserPackage], None)
+        time.sleep(1)
+        self.dm.shell(["am", "kill", self.browserPackage], None)
+
+        pid = self.getBrowserPid()
+        count = 0
+        while pid > 0:
+            time.sleep(2)
+            pid = self.getBrowserPid()
+            count += 1
+            if count == 20:
+                raise Exception("Waited too long for browser to die!")
+        self.clean_up()
+
 class AndroidAdbBrowserController(BrowserController):
     def __init__(self, os_name, browser_name, package='org.mozilla.fennec'):
         super(AndroidAdbBrowserController, self).__init__(os_name, browser_name, "default", None)
@@ -346,6 +420,7 @@ class AndroidAdbBrowserController(BrowserController):
             subprocess.check_call(cmdline, shell=True)
             return True
         except:
+            traceback.print_exc()
             return False
 
     def getBrowserPid(self):
@@ -357,6 +432,7 @@ class AndroidAdbBrowserController(BrowserController):
                 return -1
             return int(result[1])
         except:
+            traceback.print_exc()
             return -1
 
     def running(self):
@@ -723,7 +799,7 @@ class BrowserRunner(object):
                    ]
         elif os_str == 'android':
             return [
-                AndroidAdbBrowserController(os_str, 'firefox'),
+                AndroidBrowserController(os_str, 'firefox'),
                 #AndroidLatestFxAdbBrowserController(os_str, 'nightly'),
                 AndroidTinderboxFxAdbBrowserController(os_str, 'tinderbox'),
                 AndroidAdbBrowserController(os_str, 'browser', 'com.google.android.browser'),
