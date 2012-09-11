@@ -7,6 +7,7 @@ import socket
 import os
 import re
 import StringIO
+import Zeroconf
 
 class FileError(Exception):
   " Signifies an error which occurs while doing a file operation."
@@ -38,7 +39,7 @@ def abstractmethod(method):
 class DeviceManager:
 
   @abstractmethod
-  def shell(self, cmd, outputfile, env=None, cwd=None, timeout=None):
+  def shell(self, cmd, outputfile=None, env=None, cwd=None, timeout=None):
     """
     executes shell command on device
 
@@ -530,6 +531,10 @@ class DeviceManager:
     """ Utility function to return escaped and quoted version of command line """
     quotedCmd = []
 
+    if type(cmd) is str:
+      print "Command must be an array of command arguments, not a string!"
+      raise
+
     for arg in cmd:
       arg.replace('&', '\&')
 
@@ -569,7 +574,7 @@ class NetworkTools:
       ip = socket.gethostbyname(socket.gethostname())
     except socket.gaierror:
       ip = socket.gethostbyname(socket.gethostname() + ".local") # for Mac OS X
-    if ip.startswith("127.") and os.name != "nt":
+    if (ip is None or ip.startswith("127.")) and os.name != "nt":
       interfaces = ["eth0","eth1","eth2","wlan0","wlan1","wifi0","ath0","ath1","ppp0"]
       for ifname in interfaces:
         try:

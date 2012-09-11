@@ -209,6 +209,7 @@ class DeviceManagerSUT(DeviceManager):
         found = False
         loopguard = 0
         data = ""
+        commandFailed = False
 
         while (found == False and (loopguard < recvGuard)):
           temp = ''
@@ -232,10 +233,12 @@ class DeviceManagerSUT(DeviceManager):
 
           # If something goes wrong in the agent it will send back a string that
           # starts with '##AGENT-WARNING##'
-          errorMatch = self.agentErrorRE.match(data)
-          if errorMatch:
-            raise AgentError("Agent Error processing command '%s'; err='%s'" %
-                             (cmd['cmd'], errorMatch.group(1)), fatal=True)
+          if not commandFailed:
+            errorMatch = self.agentErrorRE.match(data)
+            if errorMatch:
+              # We still need to consume the prompt, so raise an error after
+              # draining the rest of the buffer.
+              commandFailed = True
 
           for line in data.splitlines():
             if promptre.match(line):
@@ -254,6 +257,10 @@ class DeviceManagerSUT(DeviceManager):
           if (temp == ''):
             loopguard += 1
 
+        if commandFailed:
+          raise AgentError("Agent Error processing command '%s'; err='%s'" %
+                           (cmd['cmd'], errorMatch.group(1)), fatal=True)
+
         # Write any remaining data to outputfile
         outputfile.write(data)
 
@@ -270,6 +277,9 @@ class DeviceManagerSUT(DeviceManager):
   # success: <return code>
   # failure: None
   def shell(self, cmd, outputfile, env=None, cwd=None, timeout=None, root=False):
+    if outputfile is None:
+      outputfile = StringIO.StringIO()
+
     cmdline = self._escapedCommandLine(cmd)
     if env:
       cmdline = '%s %s' % (self.formatEnvString(env), cmdline)
@@ -962,7 +972,11 @@ class DeviceManagerSUT(DeviceManager):
       directives = [directive]
 
     for d in directives:
-      data = self.runCmds([{ 'cmd': 'info ' + d }])
+      try:
+        data = self.runCmds([{ 'cmd': 'info ' + d }])
+      except AgentError:
+        return result
+
       if (data is None):
         continue
       data = collapseSpaces.sub(' ', data)
