@@ -81,6 +81,8 @@ def test_paths():
     """ List of relative paths of test index files. """
     tests = []
     for d in os.listdir(HTML_DIR):
+        if os.path.exists(os.path.join(HTML_DIR, d, "test-disabled")):
+            continue
         for f in ('index.html', 'Default.html', 'default.html', 'run.html'):
             if os.path.exists(os.path.join(HTML_DIR, d, f)):
                 tests.append(os.path.join(d, f))
