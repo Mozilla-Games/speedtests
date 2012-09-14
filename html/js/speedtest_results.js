@@ -248,7 +248,8 @@ ScoreDisplay.prototype.displayTable = function(points) {
     var pdata = points[i].data;
     var pextra = points[i].extraData;
     for (var j = 0; j < pdata.length; ++j) {
-      tablePoints.push([pextra[j][0], bname + (pextra[j].length > 2 ? ("&nbsp;<span style='font-size: small'>" + pextra[j][1] + "-" + pextra[j][2] + "</span>") : ""), pdata[j][1]]);
+      tablePoints.push([pextra[j]['time'],
+                       bname + (pextra[j]['buildid'] ? ("&nbsp;<span style='font-size: small'>" + pextra[j]['buildid'] + (pextra[j]['sourcestamp'] ? ("-" + pextra[j]['sourcestamp']) : "") + "</span>") : ""), pdata[j][1]]);
     }
   }
 
