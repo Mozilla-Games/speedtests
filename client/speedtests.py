@@ -38,6 +38,13 @@ try:
 except ImportError:
     pass
 
+def find_local_port():
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.bind(("", 0))
+    local_port = s.getsockname()[1]
+    s.close()
+    return local_port
+
 class Config(object):
     DEFAULT_CONF_FILE = 'speedtests.conf'
     
@@ -84,7 +91,8 @@ class Config(object):
         try:
             self.local_port = self.cfg.getint('speedtests', 'local_port')
         except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
-            pass
+            self.local_port = find_local_port()
+            print "Using port %d" % (self.local_port)
         
         try:
             self.server_html_url = self.cfg.get('speedtests', 'test_base_url').rstrip('/').replace("SELF_IP", self.local_ip)
