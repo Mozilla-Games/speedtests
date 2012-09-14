@@ -13,7 +13,8 @@ import StringIO
 class DeviceManagerADB(DeviceManager):
 
   def __init__(self, host=None, port=20701, retrylimit=5, packageName='fennec',
-               adbPath='adb', deviceSerial=None, deviceRoot=None):
+               adbPath='adb', deviceSerial=None, deviceRoot=None, skipRoot=False,
+               **kwargs):
     self.host = host
     self.port = port
     self.retrylimit = retrylimit
@@ -26,6 +27,8 @@ class DeviceManagerADB(DeviceManager):
     self.packageName = None
     self.tempDir = None
     self.deviceRoot = deviceRoot
+    self.skipRoot = skipRoot
+    self.devNullFile = open(os.path.devnull, "w")
 
     # the path to adb, or 'adb' to assume that it's on the PATH
     self.adbPath = adbPath
@@ -67,17 +70,18 @@ class DeviceManagerADB(DeviceManager):
     try:
       self.verifyRoot()
     except DMError:
-      try:
-        self.checkCmd(["root"])
-        # The root command does not fail even if ADB cannot get
-        # root rights (e.g. due to production builds), so we have
-        # to check again ourselves that we have root now.
-        self.verifyRoot()
-      except DMError:
-        if useRunAsTmp:
-          print "restarting as root failed, but run-as available"
-        else:
-          print "restarting as root failed"
+      if not self.skipRoot:
+        try:
+          self.checkCmd(["root"])
+          # The root command does not fail even if ADB cannot get
+          # root rights (e.g. due to production builds), so we have
+          # to check again ourselves that we have root now.
+          self.verifyRoot()
+        except DMError:
+          if useRunAsTmp:
+            print "restarting as root failed, but run-as available"
+          else:
+            print "restarting as root failed"
     self.useRunAs = useRunAsTmp
 
     # can we use zip to speed up some file operations? (currently not
@@ -646,11 +650,19 @@ class DeviceManagerADB(DeviceManager):
         return ret
       except:
         try:
-          self.checkCmd(["root"])
+          if not self.skipRoot:
+            self.checkCmd(["root"])
         except:
           time.sleep(1)
           print "couldn't get root"
     return "Success"
+
+  def installLocalApp(self, localPath, destPath=None):
+    return self.runCmd(["install", "-r", localPath]).stdout.read()
+
+  def uninstallAppAndReboot(self, appName, installPath=None):
+    self.runCmd(["uninstall", appName])
+    self.reboot()
 
   # external function
   # returns:
@@ -730,7 +742,7 @@ class DeviceManagerADB(DeviceManager):
 
   # timeout is specified in seconds, and if no timeout is given, 
   # we will run until the script returns
-  def checkCmd(self, args, timeout=None):
+  def checkCmd(self, args, timeout=None, quiet=False):
     # If we are not root but have run-as, and we're trying to execute
     # a shell command then using run-as is the best we can do
     finalArgs = [self.adbPath]
@@ -752,7 +764,12 @@ class DeviceManagerADB(DeviceManager):
             proc.kill()
             raise DMError("Timeout exceeded for checkCmd call")
         return ret_code
-    return subprocess.check_call(finalArgs)
+    stdout = None
+    stderr = None
+    if quiet:
+      stdout = self.devNullFile
+      stderr = self.devNullFile
+    return subprocess.check_call(finalArgs, stdout=stdout, stderr=stderr)
 
   def checkCmdAs(self, args, timeout=None):
     if (self.useRunAs):
@@ -788,7 +805,7 @@ class DeviceManagerADB(DeviceManager):
         raise DMError("invalid adb path, or adb not executable: %s", self.adbPath)
 
     try:
-      self.checkCmd(["version"])
+      self.checkCmd(["version"], quiet=True)
     except os.error, err:
       raise DMError("unable to execute ADB (%s): ensure Android SDK is installed and adb is in your $PATH" % err)
     except subprocess.CalledProcessError:
@@ -825,6 +842,8 @@ class DeviceManagerADB(DeviceManager):
     response = response.rstrip()
     response = response.split(' ')
     if (response[0].find('uid=0') < 0 or response[1].find('gid=0') < 0):
+      if self.skipRoot:
+        return
       print "NOT running as root ", response[0].find('uid=0')
       raise DMError("not running as root")
 
@@ -897,7 +916,7 @@ class DeviceManagerADB(DeviceManager):
     # optimization for large directories.
     self.useZip = False
     if (self.isUnzipAvailable() and self.isLocalZipAvailable()):
-      print "will use zip to push directories"
+      #print "will use zip to push directories"
       self.useZip = True
     else:
       raise DMError("zip not available")

@@ -7,7 +7,8 @@ import socket
 import os
 import re
 import StringIO
-import Zeroconf
+
+from Zeroconf import Zeroconf, ServiceBrowser
 
 class FileError(Exception):
   " Signifies an error which occurs while doing a file operation."
@@ -457,7 +458,16 @@ class DeviceManager:
   @abstractmethod
   def installApp(self, appBundlePath, destPath=None):
     """
-    external function
+    Install an application from the bundle at the given device path.
+    returns:
+    success: output from agent for inst command
+    failure: None
+    """
+
+  @abstractmethod
+  def installLocalApp(self, appBundlePath, destPath=None):
+    """
+    Install an application from the bundle at the given local path.
     returns:
     success: output from agent for inst command
     failure: None
@@ -466,7 +476,7 @@ class DeviceManager:
   @abstractmethod
   def uninstallAppAndReboot(self, appName, installPath=None):
     """
-    external function
+    Uninstall the given application, then reboot the device.
     returns:
     success: True
     failure: None
@@ -608,6 +618,37 @@ class NetworkTools:
       print "Socket error trying to find open port"
 
     return seed
+
+class ZeroconfListener(object):
+    def __init__(self, hwid, evt):
+        self.hwid = hwid
+        self.evt = evt
+
+    # Format is 'SUTAgent [hwid:015d2bc2825ff206] [ip:10_242_29_221]._sutagent._tcp.local.'
+    def addService(self, zeroconf, type, name):
+        #print "Found _sutagent service broadcast:", name
+        if not name.startswith("SUTAgent"):
+            return
+
+        sutname = name.split('.')[0]
+        m = re.search('\[hwid:([^\]]*)\]', sutname)
+        if m is None:
+            return
+
+        hwid = m.group(1)
+
+        m = re.search('\[ip:([0-9_]*)\]', sutname)
+        if m is None:
+            return
+
+        ip = m.group(1).replace("_", ".")
+        
+        if self.hwid == hwid:
+            self.ip = ip
+            self.evt.set()
+
+    def removeService(self, zeroconf, type, name):
+        pass
 
 def _pop_last_line(file):
   '''

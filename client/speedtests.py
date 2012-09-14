@@ -24,7 +24,7 @@ import urllib2
 import zipfile
 
 from get_latest import GetLatestTinderbox
-from mozdevice import DroidADB, DroidSUT
+from mozdevice import DroidADB, DroidSUT, DroidConnectByHWID
 
 if platform.system() == 'Windows':
     import _winreg
@@ -310,10 +310,16 @@ class BrowserController(object):
         self.AppSourceStamp = ini.get('App', 'SourceStamp')
 
 class AndroidBrowserController(BrowserController):
-    def __init__(self, os_name, browser_name, package='org.mozilla.fennec'):
+    def __init__(self, os_name, browser_name, package='org.mozilla.fennec', activity='.App', hwid=None):
         super(AndroidBrowserController, self).__init__(os_name, browser_name, "default", None)
         self.browserPackage = config.get_str('android', browser_name + '_package', package)
-        self.dm = DroidADB(packageName=package)
+        self.browserActivity = config.get_str('android', browser_name + '_activity', activity)
+        if hwid is None:
+            hwid = os.getenv("DM_HWID")
+        if hwid is None:
+            self.dm = DroidADB(packageName=package, skipRoot=True)
+        else:
+            self.dm = DroidConnectByHWID(hwid, packageName=package, skipRoot=True)
 
     def cmd_line(self, url):
         pass
@@ -345,7 +351,7 @@ class AndroidBrowserController(BrowserController):
             
             #print "ADB Launch command line: %s" % (cmdline)
             self.launch_time = datetime.datetime.now()
-            return self.dm.launchApplication(self.browserPackage, ".App", "android.intent.action.VIEW", url=url)
+            return self.dm.launchApplication(self.browserPackage, self.browserActivity, "android.intent.action.VIEW", url=url)
         except:
             traceback.print_exc()
             return False
@@ -368,9 +374,13 @@ class AndroidBrowserController(BrowserController):
         # the killProcess implementaiton is not ideal; requires root or run-as
         #self.dm.killProcess(self.browserPackage, forceKill=True)
 
-        self.dm.shell(["am", "force-stop", self.browserPackage], None)
+        needRoot = False
+        if type(self.dm) is DroidSUT:
+            needRoot = True
+
+        self.dm.shell(["am", "force-stop", self.browserPackage], None, root=needRoot)
         time.sleep(1)
-        self.dm.shell(["am", "kill", self.browserPackage], None)
+        self.dm.shell(["am", "kill", self.browserPackage], None, root=needRoot)
 
         pid = self.getBrowserPid()
         count = 0
@@ -589,12 +599,12 @@ class WinLatestTinderboxFxBrowserController(LatestTinderboxFxBrowserController):
         finally:
             os.chdir(cwd)
 
-class AndroidTinderboxFxAdbBrowserController(AndroidAdbBrowserController):
+class AndroidTinderboxFxBrowserController(AndroidBrowserController):
     INSTALL_SUBDIR = 'speedtests_fennec_tb'
 
     def __init__(self, os_name, browser_name, branch='mozilla-central'):
         # explicitly not using super()
-        AndroidAdbBrowserController.__init__(self, os_name, browser_name)
+        AndroidBrowserController.__init__(self, os_name, browser_name)
 
         # stuff from LatestTinderboxFxBrowserController.__init__
         self.base_install_dir = os.path.join("/tmp", config.client)
@@ -629,13 +639,13 @@ class AndroidTinderboxFxAdbBrowserController(AndroidAdbBrowserController):
         self.parse_app_ini(os.path.join(install_path, "application.ini"))
 
         # now install the apk
-        subprocess.call("adb install -r '" + apkpath + "'", shell=True)
-        return True
+        return self.dm.installLocalApp(apkpath)
 
     def clean_up(self):
         # leave the browser on there for easier testing.  no reason to nuke it, especially since
         # we're keeping the prefs.
-        #subprocess.call("adb shell pm uninstall -k " + self.browserPackage, shell=True)
+        # XXX and especially since SUT forces a reboot on uninstall
+        # self.dm.uninstallAppAndReboot(self.browserPackage)
         return True
 
 class LinuxLatestFxBrowserController(LatestFxBrowserController):
@@ -801,9 +811,9 @@ class BrowserRunner(object):
             return [
                 AndroidBrowserController(os_str, 'firefox'),
                 #AndroidLatestFxAdbBrowserController(os_str, 'nightly'),
-                AndroidTinderboxFxAdbBrowserController(os_str, 'tinderbox'),
-                AndroidAdbBrowserController(os_str, 'browser', 'com.google.android.browser'),
-                AndroidAdbBrowserController(os_str, 'chrome', 'com.android.chrome')
+                AndroidTinderboxFxBrowserController(os_str, 'tinderbox'),
+                AndroidBrowserController(os_str, 'browser', 'com.google.android.browser'),
+                AndroidBrowserController(os_str, 'chrome', 'com.android.chrome', activity='com.google.android.apps.chrome.Main')
                    ]
         else:
             raise Exception("Unrecognized platform '%s'" % (os_str))
@@ -947,6 +957,7 @@ class TestRunnerRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 self.end_headers()
                 self.wfile.write(data)
         else:
+            print "Invalid URL request: " + self.path
             self.send_response(404)
 
     def do_POST(self):

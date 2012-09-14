@@ -45,7 +45,7 @@ class DeviceManagerSUT(DeviceManager):
   # The error would be set where appropriate--so sendCMD() could set socket errors,
   # pushFile() and other file-related commands could set filesystem errors, etc.
 
-  def __init__(self, host, port = 20701, retrylimit = 5, deviceRoot = None):
+  def __init__(self, host, port = 20701, retrylimit = 5, deviceRoot = None, **kwargs):
     self.host = host
     self.port = port
     self.retrylimit = retrylimit
@@ -996,6 +996,29 @@ class DeviceManagerSUT(DeviceManager):
 
     if (self.debug >= 3): print "results: " + str(result)
     return result
+
+  """
+  Installs the local application onto the device
+  Application bundle - path to the application bundle on the local system
+  Destination - destination directory of where application should be
+                installed to (optional)
+  Returns None for success, or output if known failure
+  """
+  # external function
+  # returns:
+  #  success: output from agent for inst command
+  #  failure: None
+  def installLocalApp(self, localPath, destPath=None):
+    tmpDir = self.getTempDir()
+    devicePath = tmpDir + "/" + os.path.basename(localPath)
+    print "Pushing %s -> %s" % (localPath, devicePath)
+    ok = self.pushFile(localPath, devicePath)
+    if not ok:
+      return False
+
+    ok = self.installApp(devicePath, destPath)
+    self.removeFile(devicePath)
+    return ok
 
   """
   Installs the application onto the device
