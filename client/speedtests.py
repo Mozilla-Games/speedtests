@@ -661,7 +661,7 @@ class WinLatestFxBrowserController(LatestFxBrowserController):
 
 class MacLatestFxBrowserController(LatestFxBrowserController):
 
-    ARCHIVE_FX_PATH = 'Nightly.app/Contents/MacOS/firefox'
+    ARCHIVE_FX_PATH = 'FirefoxNightly.app/Contents/MacOS/firefox'
     INSTALLER_CLASS = fxinstall.FirefoxMacInstaller
 
 class IEController(BrowserController):
@@ -1018,7 +1018,7 @@ class TestRunnerRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         return
 
 
-MAX_TEST_TIME = datetime.timedelta(seconds=60*10)
+MAX_TEST_TIME = datetime.timedelta(seconds=60*15)
         
 def main():
     from optparse import OptionParser

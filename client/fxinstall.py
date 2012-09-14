@@ -109,8 +109,8 @@ class FirefoxMacInstaller(FirefoxInstaller):
         print 'Mounting volume...'
         os.system('hdid %s' % filename)
         print 'Copying...'
-        target_dir = os.path.join(self.install_path, 'Nightly.app')
-        shutil.copytree('/Volumes/Nightly/Nightly.app/', target_dir)
+        target_dir = os.path.join(self.install_path, 'FirefoxNightly.app')
+        shutil.copytree('/Volumes/Nightly/FirefoxNightly.app/', target_dir)
         print 'Unmounting...'
         os.system('umount /Volumes/Nightly')
 
