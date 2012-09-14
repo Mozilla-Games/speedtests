@@ -845,9 +845,18 @@ class BrowserRunner(object):
         except KeyError:
             sys.stderr.write('Unknown platform "%s".\n' % platform_system)
             sys.exit(errno.EOPNOTSUPP)
-        self.browser_iter = BrowserRunner.BrowserControllerIter(self.browsers, browser_names)
+        self.browser_names = browser_names
         self.current_controller = None
         self.lock = threading.Lock()
+        self.reset()
+
+    def reset(self):
+        self.lock.acquire()
+        if self.current_controller:
+            self.current_controller.terminate()
+        self.current_controller = None
+        self.browser_iter = BrowserRunner.BrowserControllerIter(self.browsers, self.browser_names)
+        self.lock.release()
 
     def find_browser(self, browsername):
         for b in self.browsers:
@@ -1039,6 +1048,15 @@ def main():
                      help='override detected platform')
     parser.add_option('--port', dest='local_port', type='int', action='store',
                      help='override local_port')
+    parser.add_option('--cycles', dest='cycles', type='int', default=1, action='store',
+                      help='number of cycles to run, default 1, -1 to run forever')
+    parser.add_option('--forever', dest='cycles', const=-1, action='store_const',
+                      help='run forever')
+    parser.add_option('--nap_after', dest='nap_after', type='int', default=0, action='store',
+                      help='take a break after this many cycles (0=never)')
+    parser.add_option('--nap_time', dest='nap_time', type='int', default=15*60, action='store',
+                      help='duration of nap, in seconds')
+
     (options, args) = parser.parse_args()
 
     config.read(options.testmode, options.noresults, options.ignore, options.config_file)
@@ -1125,37 +1143,48 @@ def main():
     server_thread = threading.Thread(target=trs.serve_forever)
     server_thread.daemon = True
     server_thread.start()
-    start = datetime.datetime.now()
-    print 'Launching first browser...'
-    br.launch_next_browser()
-    while not evt.is_set():
-        if br.browser_running():
-            if evt.is_set():
-                # evt may have been set while we were waiting for the lock in
-                # browser_running().
-                break
-            if br.execution_time() > MAX_TEST_TIME:
-                print 'Test has taken too long; starting next test.'
+
+    cycle_count = 0
+
+    while options.cycles == -1 or cycle_count < options.cycles:
+        start = datetime.datetime.now()
+        print '==== Starting test cycle %d ====' % (cycle_count+1)
+        br.launch_next_browser()
+        while not evt.is_set():
+            if br.browser_running():
+                if evt.is_set():
+                    # evt may have been set while we were waiting for the lock in
+                    # browser_running().
+                    break
+                if br.execution_time() > MAX_TEST_TIME:
+                    print 'Test has taken too long; starting next test.'
+                    br.next_test()
+            else:
+                print 'Browser isn\'t running!'
                 br.next_test()
-        else:
-            print 'Browser isn\'t running!'
-            br.next_test()
-        evt.wait(5)
+            evt.wait(5)
+        end = datetime.datetime.now()
+        br.reset()
+        print ''
+        print '==== Done! ===='
+
+        if not config.testmode:
+            report = results.SpeedTestReport(trs.results)
+            print
+            print 'Start: %s' % start
+            print 'Duration: %s' % (end - start)
+            print 'Client: %s' % config.local_ip
+            print
+            print report.report()
+
+        cycle_count = cycle_count + 1
+
+        if options.nap_after > 0 and cycle_count > 0 and cycle_count % options.nap_after == 0:
+            print "Napping for %d seconds..." % (options.nap_time)
+            time.sleep(options.nap_time)
+
     trs.shutdown()
     server_thread.join()
-    end = datetime.datetime.now()
-    print ''
-    print 'Done!'
-
-    if not config.testmode:
-        report = results.SpeedTestReport(trs.results)
-        print
-        print 'Start: %s' % start
-        print 'Duration: %s' % (end - start)
-        print 'Client: %s' % config.local_ip
-        print
-        print report.report()
-
 
 if __name__ == '__main__':
     main()
