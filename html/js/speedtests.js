@@ -6,8 +6,8 @@ var SpeedTests = function() {
 
   var loadingNextTest = false;
   var all_results = [];
-  var hasError = false;
-  var startTime = null;
+  var hasError = true;
+  var startTime = new Date();
   var lastReportTime = null;
   
   var isoDateTime = function (d) {

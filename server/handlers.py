@@ -325,16 +325,16 @@ class TestResults(object):
             vars = {}
             if start:
                 vars['start'] = start[0]
-                wheres.append('teststart >= $start')
+                wheres.append('date(teststart) >= date($start)')
             if end:
                 vars['end'] = end[0]
                 # if just a date is passed in (as opposed to a full datetime),
                 # we want it to be *inclusive*, i.e., returning all results
                 # on that date.
                 if re.match('\d{4}-\d{2}-\d{2}$', vars['end']):
-                    wheres.append('date(teststart) <= $end')
+                    wheres.append('date(teststart) <= date($end)')
                 else:
-                    wheres.append('teststart <= $end')
+                    wheres.append('date(teststart) < date($end)')
             if client:
                 client_wheres = []
                 try:

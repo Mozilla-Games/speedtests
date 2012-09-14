@@ -943,7 +943,10 @@ class TestRunnerHTTPServer(BaseHTTPServer.HTTPServer):
         if signing_key:
             self.signer = jwt.jws.HmacSha(key=signing_key,
                                           key_id=config.local_ip)
-    
+
+    def reset(self):
+        self.results = collections.defaultdict(lambda: collections.defaultdict(list))
+
     def standard_web_data(self):
         return {'ip': config.local_ip, 'client': config.client}
 
@@ -1173,6 +1176,7 @@ def main():
             evt.wait(5)
         end = datetime.datetime.now()
         br.reset()
+        trs.reset()
         print ''
         print '==== Done! ===='
 
