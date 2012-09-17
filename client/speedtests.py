@@ -1024,10 +1024,10 @@ class TestRunnerRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 print
             else:
                 if response['result'] == 'ok':
-                    print 'Results submitted to server.'
+                    print '[%s] Results submitted to server.' % (testname)
                 else:
-                    print '**ERROR sending results to server: %s' % \
-                        response['error']
+                    print '[%s] **ERROR sending results to server: %s' % \
+                        (testname, response['error'])
         self.send_response(200)
         self.end_headers()
         self.wfile.write('<html></html>')
@@ -1175,19 +1175,19 @@ def main():
                 br.next_test()
             evt.wait(5)
         end = datetime.datetime.now()
-        br.reset()
-        trs.reset()
-        print ''
-        print '==== Done! ===='
-
         if not config.testmode:
             report = results.SpeedTestReport(trs.results)
             print
             print 'Start: %s' % start
             print 'Duration: %s' % (end - start)
-            print 'Client: %s' % config.local_ip
+            print 'Client: %s' % config.client
             print
             print report.report()
+
+        br.reset()
+        trs.reset()
+        evt.clear()
+        print '==== Cycle done! ===='
 
         cycle_count = cycle_count + 1
 

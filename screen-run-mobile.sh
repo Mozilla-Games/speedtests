@@ -21,7 +21,7 @@ if [ $# == 0 ] ; then
   run_device gndev android-galaxy-nexus-jb
   run_device s3 android-s3-ics
   run_device s3-mali android-s3-mali-ics
-  run_device n7 android-neux-s7-jb
+  run_device n7 android-nexus-7-jb
 
   echo Created all screens.
 else
