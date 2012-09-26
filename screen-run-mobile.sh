@@ -11,11 +11,15 @@ function run_device {
       --nap_time 900 \
       --client $CLIENT ; \
     echo Done, hit enter to exit && read"
+  sleep 1
 }
 
 if [ $# == 0 ] ; then 
-  # start the server
-  screen /bin/bash -i -c 'cd server && screen -X title server && python server.py 8888; echo Done, hit enter to exit && read'
+  if [ "$NO_SERVER" != "" ] ; then
+    # start the server
+    screen /bin/bash -i -c 'cd server && screen -X title server && python server.py 8888; echo Done, hit enter to exit && read'
+    sleep 1
+  fi
 
   # and then the clients
   run_device gndev android-galaxy-nexus-jb
