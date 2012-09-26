@@ -1,0 +1,31 @@
+[speedtests]
+server_url = http://SELF_IP:8888/api/
+test_base_url = http://SELF_IP:8888/
+local_test_base_path = 
+
+[linux]
+firefox = /home/vladimir/firefox/firefox
+firefox_args = -no-remote -P speedtest
+tinderbox_args = -no-remote -P speedtest
+nightly_args = -no-remote -P speedtest
+tinderbox_suffix = tinderbox
+nightly_suffix = nightly
+chrome = /usr/bin/chromium-browser
+
+[android]
+reboot_after = 5
+nap_after = 15
+nap_time = 900
+browsers = firefox tinderbox
+firefox_package = org.mozilla.firefox
+tinderbox_package = org.mozilla.fennec
+nightly_package = org.mozilla.fennec
+tinderbox_suffix = tinderbox
+nightly_suffix = nightly
+
+[windows]
+firefox_args = -no-remote -P speedtest
+tinderbox_args = -no-remote -P speedtest
+nightly_args = -no-remote -P speedtest
+tinderbox_suffix = tinderbox
+nightly_suffix = nightly
