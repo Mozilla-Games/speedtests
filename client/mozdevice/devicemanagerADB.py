@@ -640,22 +640,19 @@ class DeviceManagerADB(DeviceManager):
   #  failure: None
   def reboot(self, wait = False):
     ret = self.runCmd(["reboot"]).stdout.read()
-    if (not wait):
+    if not wait:
       return "Success"
     countdown = 40
-    while (countdown > 0):
-      countdown
+    while countdown > 0:
+      countdown = countdown + 1
       try:
-        self.checkCmd(["wait-for-device", "shell", "ls", "/sbin"])
+        self.checkCmd(["wait-for-device", "shell", "echo", "device is alive"])
         return ret
       except:
-        try:
-          if not self.skipRoot:
-            self.checkCmd(["root"])
-        except:
-          time.sleep(1)
-          print "couldn't get root"
-    return "Success"
+        time.sleep(1)
+        print "Failed to wait for device, trying again"
+
+    return False
 
   def installLocalApp(self, localPath, destPath=None):
     return self.runCmd(["install", "-r", localPath]).stdout.read()
