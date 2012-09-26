@@ -2,6 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this file,
 # You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import SocketServer
 import BaseHTTPServer
 import cgi
 import collections
@@ -22,6 +23,7 @@ import traceback
 import urllib
 import urllib2
 import zipfile
+import StringIO
 
 from get_latest import GetLatestTinderbox
 from mozdevice import DroidADB, DroidSUT, DroidConnectByHWID
@@ -121,6 +123,13 @@ class Config(object):
     def get_str(self, section, param, default=None):
         try:
             val = self.cfg.get(section, param)
+        except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
+            val = default
+        return val
+
+    def get_int(self, section, param, default=None):
+        try:
+            val = int(self.cfg.get(section, param))
         except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
             val = default
         return val
@@ -318,16 +327,11 @@ class BrowserController(object):
         self.AppSourceStamp = ini.get('App', 'SourceStamp')
 
 class AndroidBrowserController(BrowserController):
-    def __init__(self, os_name, browser_name, package='org.mozilla.fennec', activity='.App', hwid=None):
+    def __init__(self, os_name, browser_name, package='org.mozilla.fennec', activity='.App'):
         super(AndroidBrowserController, self).__init__(os_name, browser_name, "default", None)
         self.browserPackage = config.get_str('android', browser_name + '_package', package)
         self.browserActivity = config.get_str('android', browser_name + '_activity', activity)
-        if hwid is None:
-            hwid = os.getenv("DM_HWID")
-        if hwid is None:
-            self.dm = DroidADB(packageName=package, skipRoot=True)
-        else:
-            self.dm = DroidConnectByHWID(hwid, packageName=package, skipRoot=True)
+        self.dm = config.android_dm
 
     def cmd_line(self, url):
         pass
@@ -366,6 +370,7 @@ class AndroidBrowserController(BrowserController):
 
     def getBrowserPid(self):
         result = self.dm.processExist(self.browserPackage)
+        #print "getBrowserPid -> ", str(result)
         if result is not None:
             return result
         return -1
@@ -386,9 +391,13 @@ class AndroidBrowserController(BrowserController):
         if type(self.dm) is DroidSUT:
             needRoot = True
 
-        self.dm.shell(["am", "force-stop", self.browserPackage], None, root=needRoot)
+        out = StringIO.StringIO()
+        self.dm.shell(["am", "force-stop", self.browserPackage], out, root=needRoot)
+        print "force-stop:", out.getvalue()
         time.sleep(1)
+        out = StringIO.StringIO()
         self.dm.shell(["am", "kill", self.browserPackage], None, root=needRoot)
+        print "kill:", out.getvalue()
 
         pid = self.getBrowserPid()
         count = 0
@@ -921,22 +930,31 @@ class BrowserRunner(object):
                 self.evt.set()
                 self.lock.release()
                 return
-            self.current_controller.set_test_urls(self.test_urls)
-            self.current_controller.init_browser()
-            if self.current_controller.browser_exists():
-                print 'Launching %s...' % self.current_controller.browser_name
-                if self.current_controller.next_test():
-                    break
-                else:
-                    print 'Failed to launch browser.'
+
+            try:
+                self.current_controller.set_test_urls(self.test_urls)
+                self.current_controller.init_browser()
+                if self.current_controller.browser_exists():
+                    print 'Launching %s...' % self.current_controller.browser_name
+                    if self.current_controller.next_test():
+                        break
+                    else:
+                        print 'Failed to launch browser.'
+            except:
+                print 'Failed to launch or initialize browser.'
+                traceback.print_exc()
         self.lock.release()
 
 
-class TestRunnerHTTPServer(BaseHTTPServer.HTTPServer):
+class TestRunnerHTTPServer(SocketServer.ThreadingMixIn, BaseHTTPServer.HTTPServer):
     
     def __init__(self, server_address, RequestHandlerClass, browser_runner,
                  signing_key=None):
         BaseHTTPServer.HTTPServer.__init__(self, server_address, RequestHandlerClass)
+
+        daemon_threads = True
+        allow_reuse_address = True
+
         self.browser_runner = browser_runner
         self.results = collections.defaultdict(lambda: collections.defaultdict(list))
         self.signer = None
@@ -955,6 +973,11 @@ class TestRunnerHTTPServer(BaseHTTPServer.HTTPServer):
         print 'Exception happened during processing of request from', client_address
         traceback.print_exc() # XXX But this goes to stderr!
         print '-'*40
+
+        exc_type, exc_value, exc_tb = sys.exc_info()
+        if exc_value is not None and str(exc_value).find("Errno"):
+            # ignore
+            return
 
         # must use os._exit, otherwise this won't actually exit (sys.exit is
         # implemented by throwing an exception)
@@ -1063,10 +1086,12 @@ def main():
                       help='number of cycles to run, default 1, -1 to run forever')
     parser.add_option('--forever', dest='cycles', const=-1, action='store_const',
                       help='run forever')
-    parser.add_option('--nap_after', dest='nap_after', type='int', default=0, action='store',
+    parser.add_option('--nap_after', dest='nap_after', type='int', action='store',
                       help='take a break after this many cycles (0=never)')
-    parser.add_option('--nap_time', dest='nap_time', type='int', default=15*60, action='store',
+    parser.add_option('--nap_time', dest='nap_time', type='int', action='store',
                       help='duration of nap, in seconds')
+    parser.add_option('--reboot_after', dest='reboot_after', type='int', action='store',
+                      help='reboot device after this many cycles (0=never)')
 
     (options, args) = parser.parse_args()
 
@@ -1084,7 +1109,26 @@ def main():
 
     if options.platform:
         config.platform = options.platform
-    
+
+    config.nap_after = config.get_int(config.platform, 'nap_after', 0)
+    config.nap_time = config.get_int(config.platform, 'nap_time', 0)
+    config.reboot_after = config.get_int(config.platform, 'reboot_after', 0)
+
+    if options.nap_after:
+        config.nap_after = options.nap_after
+    if options.nap_time:
+        config.nap_time = options.nap_time
+    if options.reboot_after:
+        config.reboot_after = options.reboot_after
+
+    # If we're on Android, try to connect to the device with a global devicemanager
+    if config.platform == "android":
+        hwid = os.getenv("DM_HWID")
+        if hwid is None:
+            config.android_dm = DroidADB(skipRoot=True)
+        else:
+            config.android_dm = DroidConnectByHWID(hwid, skipRoot=True)
+
     def get_browser_arg():
         try:
             browser = args[1]
@@ -1158,42 +1202,63 @@ def main():
     cycle_count = 0
 
     while options.cycles == -1 or cycle_count < options.cycles:
-        start = datetime.datetime.now()
-        print '==== Starting test cycle %d ====' % (cycle_count+1)
-        br.launch_next_browser()
-        while not evt.is_set():
-            if br.browser_running():
-                if evt.is_set():
-                    # evt may have been set while we were waiting for the lock in
-                    # browser_running().
-                    break
-                if br.execution_time() > MAX_TEST_TIME:
-                    print 'Test has taken too long; starting next test.'
+        try:
+            start = datetime.datetime.now()
+            print '==== Starting test cycle %d ====' % (cycle_count+1)
+            br.launch_next_browser()
+            while not evt.is_set():
+                if br.browser_running():
+                    if evt.is_set():
+                        # evt may have been set while we were waiting for the lock in
+                        # browser_running().
+                        break
+                    if br.execution_time() > MAX_TEST_TIME:
+                        print 'Test has taken too long; starting next test.'
+                        br.next_test()
+                else:
+                    print 'Browser isn\'t running!'
                     br.next_test()
-            else:
-                print 'Browser isn\'t running!'
-                br.next_test()
-            evt.wait(5)
-        end = datetime.datetime.now()
-        if not config.testmode:
-            report = results.SpeedTestReport(trs.results)
-            print
-            print 'Start: %s' % start
-            print 'Duration: %s' % (end - start)
-            print 'Client: %s' % config.client
-            print
-            print report.report()
-
-        br.reset()
-        trs.reset()
-        evt.clear()
-        print '==== Cycle done! ===='
-
-        cycle_count = cycle_count + 1
-
-        if options.nap_after > 0 and cycle_count > 0 and cycle_count % options.nap_after == 0:
-            print "Napping for %d seconds..." % (options.nap_time)
-            time.sleep(options.nap_time)
+                evt.wait(5)
+            end = datetime.datetime.now()
+            if not config.testmode:
+                report = results.SpeedTestReport(trs.results)
+                print
+                print 'Start: %s' % start
+                print 'Duration: %s' % (end - start)
+                print 'Client: %s' % config.client
+                print
+                print report.report()
+    
+            br.reset()
+            trs.reset()
+            evt.clear()
+            print '==== Cycle done! ===='
+    
+            cycle_count = cycle_count + 1
+    
+            if config.nap_after > 0 and cycle_count % config.nap_after == 0:
+                print "Napping for %d seconds..." % (config.nap_time)
+                time.sleep(config.nap_time)
+    
+            if config.reboot_after > 0 and cycle_count % config.reboot_after == 0:
+                print "Rebooting..."
+                ok = config.android_dm.reboot(True)
+                if ok is False:
+                    print "Rebooting failed! Output: %s\n" % (str(out))
+                    break
+                # Wait for the network to come back up!
+                time.sleep(45)
+        except:
+            print "Cycle failed! Exception:"
+            traceback.print_exc()
+            print "Rebooting if on Android, otherwise just starting over..."
+            if config.platform == "android":
+                ok = config.android_dm.reboot(True)
+                if ok is False:
+                    print "Rebooting failed! Output: %s\n" % (str(out))
+                    break
+                # Wait for the network to come back up!
+                time.sleep(45)
 
     trs.shutdown()
     server_thread.join()
