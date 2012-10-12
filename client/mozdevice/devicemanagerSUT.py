@@ -589,6 +589,14 @@ class DeviceManagerSUT(DeviceManager):
 
     return True
 
+  def killPackageProcess(self, pkgname):
+    try:
+      self.runCmds([{ 'cmd': 'killpackage ' + pkgname }])
+    except AgentError:
+      return False
+
+    return True
+
   # external function
   # returns:
   #  success: tmpdir, string

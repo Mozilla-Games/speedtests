@@ -47,6 +47,19 @@ def find_local_port():
     s.close()
     return local_port
 
+def createDeviceManager(**kwargs):
+    hwid = os.getenv("DM_HWID")
+    dm = None
+    if hwid is None:
+        dm = DroidADB(skipRoot=True, **kwargs)
+    else:
+        dm = DroidConnectByHWID(hwid, skipRoot=True, **kwargs)
+    if dm is None:
+        raise Exception("Failed to create device manager!")
+    # do something to make sure it's alive
+    dm.getInfo("id")
+    return dm
+
 class Config(object):
     DEFAULT_CONF_FILE = 'speedtests.conf'
     
@@ -331,7 +344,7 @@ class AndroidBrowserController(BrowserController):
         super(AndroidBrowserController, self).__init__(os_name, browser_name, "default", None)
         self.browserPackage = config.get_str('android', browser_name + '_package', package)
         self.browserActivity = config.get_str('android', browser_name + '_activity', activity)
-        self.dm = config.android_dm
+        self.dm = createDeviceManager(packageName=package)
 
     def cmd_line(self, url):
         pass
@@ -387,17 +400,21 @@ class AndroidBrowserController(BrowserController):
         # the killProcess implementaiton is not ideal; requires root or run-as
         #self.dm.killProcess(self.browserPackage, forceKill=True)
 
-        needRoot = False
-        if type(self.dm) is DroidSUT:
-            needRoot = True
+        print "Trying killPackageProcess"
+        self.dm.killPackageProcess(self.browserPackage)
 
-        out = StringIO.StringIO()
-        self.dm.shell(["am", "force-stop", self.browserPackage], out, root=needRoot)
-        print "force-stop:", out.getvalue()
-        time.sleep(1)
-        out = StringIO.StringIO()
-        self.dm.shell(["am", "kill", self.browserPackage], None, root=needRoot)
-        print "kill:", out.getvalue()
+        if False:
+            needRoot = False
+            if type(self.dm) is DroidSUT:
+                needRoot = True
+
+            out = StringIO.StringIO()
+            self.dm.shell(["am", "force-stop", self.browserPackage], out, root=needRoot)
+            print "force-stop:", out.getvalue()
+            time.sleep(1)
+            out = StringIO.StringIO()
+            self.dm.shell(["am", "kill", self.browserPackage], None, root=needRoot)
+            print "kill:", out.getvalue()
 
         pid = self.getBrowserPid()
         count = 0
@@ -986,6 +1003,7 @@ class TestRunnerHTTPServer(SocketServer.ThreadingMixIn, BaseHTTPServer.HTTPServe
 class TestRunnerRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     
     def do_GET(self):
+        print "Handling GET '%s'..." % (self.path)
         if self.path.startswith(config.local_test_base_path):
             try:
                 url = config.server_html_url + self.path[len(config.local_test_base_path):]
@@ -1002,8 +1020,10 @@ class TestRunnerRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         else:
             print "Invalid URL request: " + self.path
             self.send_response(404)
+        print "...done (GET)."
 
     def do_POST(self):
+        print "Handling POST '%s'..." % (self.path)
         length = int(self.headers.getheader('content-length'))
         web_data = json.loads(self.rfile.read(length))
 
@@ -1014,6 +1034,7 @@ class TestRunnerRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write('<html></html>')
             self.server.browser_runner.next_test()
+            print "...done. (skipped)"
             return
 
         if config.ignore:
@@ -1056,9 +1077,11 @@ class TestRunnerRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.wfile.write('<html></html>')
         self.server.browser_runner.next_test()
 
-    def log_message(self, format, *args):
-        """ Suppress log output. """
-        return
+        print "...done (POST)."
+
+#    def log_message(self, format, *args):
+#        """ Suppress log output. """
+#        return
 
 
 MAX_TEST_TIME = datetime.timedelta(seconds=60*15)
@@ -1120,14 +1143,6 @@ def main():
         config.nap_time = options.nap_time
     if options.reboot_after:
         config.reboot_after = options.reboot_after
-
-    # If we're on Android, try to connect to the device with a global devicemanager
-    if config.platform == "android":
-        hwid = os.getenv("DM_HWID")
-        if hwid is None:
-            config.android_dm = DroidADB(skipRoot=True)
-        else:
-            config.android_dm = DroidConnectByHWID(hwid, skipRoot=True)
 
     def get_browser_arg():
         try:
@@ -1218,7 +1233,7 @@ def main():
                 else:
                     print 'Browser isn\'t running!'
                     br.next_test()
-                evt.wait(5)
+                evt.wait(60)
             end = datetime.datetime.now()
             if not config.testmode:
                 report = results.SpeedTestReport(trs.results)
@@ -1229,9 +1244,6 @@ def main():
                 print
                 print report.report()
     
-            br.reset()
-            trs.reset()
-            evt.clear()
             print '==== Cycle done! ===='
     
             cycle_count = cycle_count + 1
@@ -1242,23 +1254,26 @@ def main():
     
             if config.reboot_after > 0 and cycle_count % config.reboot_after == 0:
                 print "Rebooting..."
-                ok = config.android_dm.reboot(True)
-                if ok is False:
-                    print "Rebooting failed! Output: %s\n" % (str(out))
-                    break
+                ok = createDeviceManager().reboot()
+                if not ok:
+                    print "WARNING: Reboot failed!"
                 # Wait for the network to come back up!
                 time.sleep(45)
         except:
             print "Cycle failed! Exception:"
             traceback.print_exc()
-            print "Rebooting if on Android, otherwise just starting over..."
+            print "Rebooting if we can on Android, otherwise just starting over..."
             if config.platform == "android":
-                ok = config.android_dm.reboot(True)
-                if ok is False:
-                    print "Rebooting failed! Output: %s\n" % (str(out))
-                    break
+                ok = createDeviceManager().reboot()
+                if not ok:
+                    print "WARNING: Reboot failed!"
                 # Wait for the network to come back up!
                 time.sleep(45)
+        finally:
+            br.reset()
+            trs.reset()
+            evt.clear()
+
 
     trs.shutdown()
     server_thread.join()

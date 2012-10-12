@@ -420,6 +420,16 @@ class DeviceManagerADB(DeviceManager):
 
     return didKillProcess
 
+  def killPackageProcess(self, pkgname):
+    self.runCmd(["shell", "am", "force-stop", pkgname])
+    time.sleep(1)
+    self.runCmd(["shell", "am", "kill", pkgname])
+    procs = self.getProcessList()
+    for (pid, name, user) in procs:
+      if name == pkgname:
+        return False
+    return True
+
   # external function
   # returns:
   #  success: filecontents
@@ -729,6 +739,7 @@ class DeviceManagerADB(DeviceManager):
       args.insert(1, "run-as")
       args.insert(2, self.packageName)
     finalArgs.extend(args)
+    print "runCmd: ", finalArgs
     return subprocess.Popen(finalArgs, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
   def runCmdAs(self, args):
@@ -749,6 +760,7 @@ class DeviceManagerADB(DeviceManager):
       args.insert(1, "run-as")
       args.insert(2, self.packageName)
     finalArgs.extend(args)
+    print "checkCmd: ", finalArgs
     if timeout:
         timeout = int(timeout)
         proc = subprocess.Popen(finalArgs)
