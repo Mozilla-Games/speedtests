@@ -950,7 +950,10 @@ class BrowserRunner(object):
 
             try:
                 self.current_controller.set_test_urls(self.test_urls)
-                self.current_controller.init_browser()
+                if not self.current_controller.init_browser():
+                    print 'Failed to init %s, skipping...' % self.current_controller.browser_name
+                    continue
+
                 if self.current_controller.browser_exists():
                     print 'Launching %s...' % self.current_controller.browser_name
                     if self.current_controller.next_test():
