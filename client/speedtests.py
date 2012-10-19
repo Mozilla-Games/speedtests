@@ -199,7 +199,7 @@ class BrowserController(object):
         return True
 
     def init_browser(self):
-        pass
+        return True
             
     def cmd_line(self, url):
         return (self.cmd,) + self.cmd_args + self.args_tuple + (url,)
@@ -350,7 +350,7 @@ class AndroidBrowserController(BrowserController):
         pass
 
     def init_browser(self):
-        pass
+        return True
 
     def browser_exists(self):
         # XXX fixme to check
@@ -435,7 +435,7 @@ class AndroidAdbBrowserController(BrowserController):
         pass
 
     def init_browser(self):
-        pass
+        return True
 
     def browser_exists(self):
         # XXX fixme to check
