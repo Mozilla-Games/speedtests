@@ -1,0 +1,3 @@
+
+Launch:   browser start.html?testUrl=/tests/foo/index.html&resultserver=server_ip&client=name
+

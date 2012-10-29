@@ -7,7 +7,6 @@ import datetime
 import json
 import os
 import re
-import speedtests
 import templeton.handlers
 import urllib2
 import web
