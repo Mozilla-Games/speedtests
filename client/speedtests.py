@@ -31,6 +31,26 @@ from BrowserController import *
 import results
 
 
+#
+# The RequestHandler here has one job -- to get a "test done" post from
+# the test and to continue on to the next test.  It doesn't forward --
+# tests themselves should be loaded from a real HTTP server.
+#
+# Note that this communication channel could be turned into something else,
+# for example WebSockets based, but using POST/GET is the simplest and
+# most widely supported.
+#
+# Test invocation goes like this:
+#
+# - Framework invokes browser with one-time test URL, which hits this request
+#   handler and redirects to the actual test.  This lets the framework rewrite
+#   also rewrite the test URL based on the user agent, if needed.
+# - Test URL executes.  When it finishes, it does two XHR requests:
+# - One XHR to the results server (passed in query params to test in special _speedtests parameter)
+# - One XHR to the speedtests framework (handled below); this indicates that the test is done, and that
+#   the framework can continue to the next test.
+#
+# This is mainly so that we can get notified that the test was actually loaded.
 class TestRunnerRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     
     def do_GET(self):
