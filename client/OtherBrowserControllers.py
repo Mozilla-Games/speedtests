@@ -1,4 +1,5 @@
 import platform
+import tempfile
 
 if platform.system() == 'Windows':
     import _winreg
