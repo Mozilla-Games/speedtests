@@ -15,7 +15,7 @@ from OtherBrowserControllers import *
 
 class BrowserRunner(object):
     @classmethod
-    def browsers_drawin(cls):
+    def browsers_Darwin(cls):
         from Carbon import Folder, Folders
         lib_path = Folder.FSFindFolder(Folders.kUserDomain,
                                        Folders.kDomainLibraryFolderType,
