@@ -95,7 +95,7 @@ class BrowserRunner(object):
 
     @classmethod
     def browsers_Android(cls):
-        os_name = 'osx'
+        os_name = 'android'
         return [
             AndroidFirefoxBrowserController(os_name, 'firefox'),
             #AndroidLatestFxAdbBrowserController(os_name, 'nightly'),
