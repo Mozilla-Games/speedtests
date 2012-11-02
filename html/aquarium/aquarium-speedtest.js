@@ -10,7 +10,7 @@ var AquariumSpeedtest = {
 };
 
 AquariumSpeedtest.init = function() {
-  SpeedTests.init();
+  SpeedTests.init("webgl-aquarium");
   this.startTime = (new Date()).getTime();
 };
 
@@ -38,26 +38,19 @@ AquariumSpeedtest.fpsUpdate = function(avg) {
     sorted.sort(function(a,b) { if (a<b) return -1; if (a>b) return 1; return 0; });
     var median = sorted[Math.floor(numFrames / 2)];
 
-    var result = {
-      value: average,
-      raw: {
-        testDescription: "WebGL Aquarium",
-        testResult: average,
-        min: sorted[0],
-        max: sorted[numFrames-1],
-        median: median,
-        displayWidth: window.innerWidth,
-        displayHeight: window.innerHeight
-      }
+    var extra = {
+      testDescription: "WebGL Aquarium",
+      testResult: average,
+      min: sorted[0],
+      max: sorted[numFrames-1],
+      median: median,
     };
 
     this.submitted = true;
 
     var testName = "webgl-aquarium";
-    SpeedTests.recordResults(testName, result);
-    SpeedTests.nextTest(testName);
-
-    return;
+    SpeedTests.recordResult(average, extra);
+    SpeedTests.finish();
   }
 };
 
