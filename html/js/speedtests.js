@@ -5,6 +5,8 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 var SpeedTests = function() {
+  // wait at most this many seconds for server submissions to complete
+  var SERVER_SUBMIT_TIMEOUT_SECONDS = 30;
 
   // helper -- use built-in atob if it exists, otherwise use the js.
   var decode_base64 = window.atob || function js_decode_base64(s) {
@@ -24,6 +26,32 @@ var SpeedTests = function() {
     return r;
   };
 
+  var encode_base64 = window.btoa || function js_encode_base64(data) {
+    var b64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
+    var o1, o2, o3, h1, h2, h3, h4, bits, i = 0, ac = 0, enc = "", tmp_arr = [];
+    if (!data) return data;
+
+    do { // pack three octets into four hexets
+      o1 = data.charCodeAt(i++);
+      o2 = data.charCodeAt(i++);
+      o3 = data.charCodeAt(i++);
+
+      bits = o1 << 16 | o2 << 8 | o3;
+
+      h1 = bits >> 18 & 0x3f;
+      h2 = bits >> 12 & 0x3f;
+      h3 = bits >> 6 & 0x3f;
+      h4 = bits & 0x3f;
+
+      // use hexets to index into b64, and append result to encoded string
+      tmp_arr[ac++] = b64.charAt(h1) + b64.charAt(h2) + b64.charAt(h3) + b64.charAt(h4);
+    } while (i < data.length);
+
+    enc = tmp_arr.join('');
+    var r = data.length % 3;
+    return (r ? enc.slice(0, r - 3) : enc) + '==='.slice(r || 3);
+  };
+
   // grab the URL params so that we have them handy; we'll only really care
   // about the _benchconfig param
   var urlParams = {};
@@ -41,17 +69,22 @@ var SpeedTests = function() {
   var obj = {
     loadTime: null,  // when the script was loaded
     startTime: null, // when init() was called
-    config: null,    // _benchconfig from query, or null
+    config: {},      // _benchconfig from query
     name: null,      // the test, as passed to init
+    finished: false, // are we all done? if so, none of the calls do anything
 
     results: [],     // the results
     periodicValues: [], // accumulated periodic values
 
-    init: function(name) {
+    init: function(name, config) {
       if (obj.name != null)
         console.warning("speedtests: test '" + obj.name + "' already called init()! [new name given: '" + name + "']");
 
-      obj.name = testname;
+      // for testing
+      if (config)
+        obj.config = config;
+
+      obj.name = name;
       obj.startTime = new Date();
     },
 
@@ -60,15 +93,19 @@ var SpeedTests = function() {
     // be the name of the sub-test.  'extra' is a JSON object of extra
     // values to be stored along with this data.
     recordSubResult: function(subname, value, extra) {
+      if (obj.finished) return;
+
       var r = { name: subname, value: value };
       if (extra)
         r.extra = extra;
-      results.push(r);
+      obj.results.push(r);
     },
 
     // Helper for the result for the entire test suite.
     // Uses the test suite name as the result name.
     recordResult: function(value, extra) {
+      if (obj.finished) return;
+
       return obj.recordSubResult(obj.name, value, extra);
     },
 
@@ -76,10 +113,14 @@ var SpeedTests = function() {
     // a framerate, record a value.  record[Sub]PeriodicResult() must be
     // called to actually commit it, and to reset the periodic values.
     periodicResultValue: function(value) {
+      if (obj.finished) return;
+
       obj.periodicValues.push(value);
     },
 
     recordSubPeriodicResult: function(subname, extra) {
+      if (obj.finished) return;
+
       if (obj.periodicValues.length == 0) {
         console.error("recordPeriodicResult: no periodicResultValue calls!");
         obj.periodicValues = [];
@@ -99,121 +140,114 @@ var SpeedTests = function() {
       return obj.recordSubPeriodicResult(obj.name, extra);
     },
 
+    // Called when the test is finished running.
     finish: function() {
+      if (obj.finished) return;
+
       if (obj.name == null) {
         console.error("speedtests: test called finish(), but never called init!");
         return;
       }
 
-      
-    },
+      obj.finishTime = new Date();
+
+      // we're done with this test.  We need to a) send the results to the results server;
+      // and b) send the client runner a "test done" notification
+
+      var resultServerObject = {
+        browserInfo: {
+          ua: navigator.userAgent,
+          width: window.innerWidth,
+          height: window.innerHeight,
+          screenWidth: window.screen.width,
+          screenHeight: window.screen.height
+        },
+        config: obj.config,
+        loadTime: obj.loadTime.getTime(),
+        startTime: obj.startTime.getTime(),
+        finishTime: obj.finishTime.getTime(),
+
+        results: obj.results
+      };
+
+      var resultsStr = encode_base64(JSON.stringify(resultServerObject));
+
+      function sendResults(server, resultTarget) {
+        if (!server) {
+          if (resultTarget)
+            SpeedTests[resultTarget + "Done"] = true;
+          return;
+        }
+
+        // We're not going to do XHR, because we want to cross-origin our way
+        // to victory (and to not caring about servers or CORS support).
+        // So, JSONP time.
+        var script = document.createElement("script");
+        var src = server + "?";
+        if (resultTarget)
+          src += "target=" + resultTarget + "&";
+        src += "data=" + resultsStr;
+
+        if (obj.config.debug)
+          console.log("sendResults: " + src);
+        script.setAttribute("type", "text/javascript");
+        script.setAttribute("src", src);
+        document.body.appendChild(script);
+
+        // not used
+        if (false) {
+          var req = new XMLHttpRequest();
+          req.open("GET", "http://" + server + "/api/post-results", false);
+          req.onreadystatechange = function() {
+            if (req.readyState != 4) return;
+            if (resultTarget) {
+              SpeedTests[resultTarget + "Done"] = true;
+              if (req.status != 200)
+                SpeedTests[resultTarget + "Error"] = req.status + " -- " + req.responseText;
+            }
+          };
+          req.send(resultsStr);
+        }
+      }
+
+      // send the results to the server and the runner
+      if (obj.config) {
+        sendResults(obj.config.resultServer, "serverSend");
+        sendResults(obj.config.runnerServer, "runnerSend");
+      }
+
+      var count = 0;
+      function waitForResults() {
+        if (SpeedTests["serverSendDone"] &&
+            SpeedTests["runnerSendDone"])
+        {
+          // finished
+          document.location = "about:blank";
+          // if we can; might exit the browser, which would be nice.
+          window.close();
+          return;
+        }
+
+        if (++count > 20) {
+          alert("SpeedTests: failed to send results to server, waited 10 seconds for response!");
+          return;
+        }
+
+        setTimeout(waitForResults, 500);
+      }
+
+      setTimeout(waitForResults, 500);
+    }
   };
 
   obj.loadTime = new Date();
-  if ('_benchconfig' in urlParams)
-    obj.config = JSON.parse(decode_base64('_benchconfig'));
+  if ('_benchconfig' in urlParams) {
+    obj.config = JSON.parse(decode_base64(urlParams['_benchconfig']));
+    if (!('clientName' in obj.config)) {
+      console.log.error("benchconfig missing clientName!");
+      obj.config = {};
+    }
+  }
 
   return obj;
 }();
-
-var SpeedTestsOld = function() {
-
-  var loadingNextTest = false;
-  var all_results = [];
-  var hasError = true;
-  var startTime = new Date();
-  var lastReportTime = null;
-  
-  var isoDateTime = function (d) {
-    function pad(n) { return n < 10 ? '0' + n : n; }
-    return d.getUTCFullYear() + '-'
-         + pad(d.getUTCMonth()+1) + '-'
-         + pad(d.getUTCDate()) + ' '
-         + pad(d.getUTCHours()) + ':'
-         + pad(d.getUTCMinutes()) + ':'
-         + pad(d.getUTCSeconds());
-  };
-
-  var recordResults = function (testname, results) {
-    if (startTime == null) {
-      alert("startTime is null -- SpeedTests.init was not called");
-    }
-
-    results.browser_width = window.innerWidth;
-    results.browser_height = window.innerHeight;
-    results.teststart = isoDateTime(startTime);
-    if (results['error'])
-      hasError = true;
-    all_results.push(results);
-  };
-
-  var getSearchParams = function() {
-    var params = document.location.search.slice(1).split("&");
-    var args = new Object();
-    for (var p = 0; p < params.length; p++) {
-      var l = params[p].split("=");
-      for (var i = 0; i < l.length; i++) {
-        l[i] = decodeURIComponent(l[i]);
-      }
-      if (l.length != 2)
-        continue;
-      args[l[0]] = l[1];
-    }
-    return args;
-  };
-  
-  return {
-    init: function() {
-      startTime = new Date();
-      hasError = false;
-    },
-    getSearchParams: getSearchParams,
-    isoDateTime: isoDateTime,
-    recordResults: recordResults,
-    periodicRecordResults: function (testname, resultFunc) {
-      var now = new Date();
-      var etms = now - startTime;
-      if (lastReportTime == null || now - lastReportTime > 5000) {
-        lastReportTime = now;
-        var results = resultFunc();
-        results.etms = etms;
-        recordResults(testname, results);
-      }
-      return etms;
-    },
-    nextTest: function (testname) {
-      if (loadingNextTest) {
-        return;
-      }
-      loadingNextTest = true;
-      var searchParams = getSearchParams();
-      if (!searchParams.ip) {
-        alert("Can't submit test results: no local IP provided.");
-        return;
-      }
-      if (!searchParams.port) {
-        alert("Can't submit test results: no local port provided.");
-        return;
-      }
-      var bodyobj = { testname: testname,
-                      ip: searchParams.ip,
-                      client: searchParams.client,
-                      results: all_results,
-                      test_skipped: all_results.length == 0 || all_results[0].test_skipped == true,
-                      ua: navigator.userAgent,
-                      error: hasError };
-      if (searchParams.buildid)
-        bodyobj.buildid = searchParams.buildid;
-      if (searchParams.geckoversion)
-        bodyobj.geckoversion = searchParams.geckoversion;
-      var body = JSON.stringify(bodyobj);
-      var req = new XMLHttpRequest();
-      req.open("POST", "http://" + searchParams.ip + ":" + searchParams.port + "/", false);
-      req.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-      req.setRequestHeader("Content-length", body.length);
-      req.setRequestHeader("Connection", "close");
-      req.send(body);
-    }
-  };
-}();
-

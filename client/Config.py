@@ -18,31 +18,6 @@ class Config(object):
     
     def __init__(self):
         self.cfg = None
-        self.sixtyfour_bit = False
-        self.local_port = 8111
-        self.server_html_url = 'http://brasstacks.mozilla.com/speedtests'
-        self.server_api_url = 'http://brasstacks.mozilla.com/speedtests/api'
-        self.local_test_base_path = ''
-        self.ignore = False
-        self.platform = platform.system()
-        self.verbose = False
-
-    @property
-    def local_test_base_url(self):
-        #return self.server_html_url + self.local_test_base_path
-        # IE has issues loading pages from localhost, so we'll use the
-        # external IP.
-        return 'http://%s:%d%s' % (self.local_ip, self.local_port, self.local_test_base_path)
-
-    def read(self, testmode=False, noresults=False, ignore=False,
-             conf_file=None):
-        self.testmode = testmode
-        self.noresults = noresults
-        self.ignore = ignore
-        if not conf_file:
-            conf_file = Config.DEFAULT_CONF_FILE
-        self.cfg = ConfigParser.ConfigParser()
-        self.cfg.read(conf_file)
 
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -54,40 +29,46 @@ class Config(object):
             print "Using localhost as local IP, hope that's ok!"
             #raise Exception("Couldn't find local IP!")
 
+        defaults = dict()
+        defaults['64bit'] = "False"
+        defaults['local_port'] = 0
+        defaults['results_server'] = None
+        #defaults['platform'] = platform.system()
+        defaults['client'] = self.local_ip
+
+        self.defaults = defaults
+
+        self.ignore = False
+        self.verbose = False
+        self.platform = platform.system()
+
+    def read(self, noresults=False, ignore=False,
+             conf_file=None):
+        self.noresults = noresults
+        self.ignore = ignore
+        if not conf_file:
+            conf_file = Config.DEFAULT_CONF_FILE
+
+        if not os.path.exists(conf_file):
+            raise Exception("Config file '" + conf_file + "' not found!")
+
+        self.cfg = ConfigParser.ConfigParser(self.defaults)
+        self.cfg.read(conf_file)
+
+        self.sixtyfour_bit = self.cfg.getboolean('speedtests', '64bit')
+        self.local_port = self.cfg.getint('speedtests', 'local_port')
+        self.client = self.get_str('speedtests', 'client')
+        self.results_server = self.cfg.get('speedtests', 'results_server')
+
         try:
-            self.sixtyfour_bit = self.cfg.getboolean('speedtests', '64bit')
+            self.test_base_url = self.cfg.get('speedtests', 'test_base_url').rstrip('/')
         except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
-            pass
-        
-        try:
-            self.local_port = self.cfg.getint('speedtests', 'local_port')
-        except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
+            print "test_base_url must be specified in config file!"
+            raise
+
+        if not self.local_port:
             self.local_port = find_local_port()
             print "Using port %d" % (self.local_port)
-        
-        try:
-            self.server_html_url = self.cfg.get('speedtests', 'test_base_url').rstrip('/').replace("SELF_IP", self.local_ip)
-        except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
-            pass
-
-        try:
-            self.server_api_url = self.cfg.get('speedtests', 'server_url').rstrip('/').replace("SELF_IP", self.local_ip)
-        except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
-            self.server_api_url = self.server_html_url + '/api'
-
-        try:
-            self.server_results_url = self.cfg.get('speedtests', 'server_results_url').rstrip('/').replace("SELF_IP", self.local_ip) + '/'
-        except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
-            self.server_results_url = self.server_api_url + '/testresults/'
-
-        try:
-            self.platform = self.cfg.get('speedtests', 'platform')
-        except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
-            pass
-
-        self.client = self.get_str('speedtests', 'client')
-        if self.client is None:
-            self.client = self.local_ip
 
     def get_str(self, section, param, default=None):
         try:

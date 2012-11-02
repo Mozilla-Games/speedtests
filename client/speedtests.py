@@ -4,6 +4,7 @@
 
 import SocketServer
 import BaseHTTPServer
+import base64
 import cgi
 import collections
 import ConfigParser
@@ -22,6 +23,7 @@ import time
 import traceback
 import urllib
 import urllib2
+import urlparse
 import zipfile
 import StringIO
 
@@ -55,77 +57,32 @@ class TestRunnerRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     
     def do_GET(self):
         print "Handling GET '%s'..." % (self.path)
-        if self.path.startswith(config.local_test_base_path):
-            try:
-                url = config.server_html_url + self.path[len(config.local_test_base_path):]
-                u = urllib2.urlopen(url)
-            except urllib2.HTTPError, e:
-                self.send_response(e.getcode())
-            else:
-                data = u.read()
-                self.send_response(200)
-                for header, value in u.info().items():
-                    self.send_header(header, value)
-                self.end_headers()
-                self.wfile.write(data)
-        else:
-            print "Invalid URL request: " + self.path
-            self.send_response(404)
-        print "...done (GET)."
 
-    def do_POST(self):
-        print "Handling POST '%s'..." % (self.path)
-        length = int(self.headers.getheader('content-length'))
-        web_data = json.loads(self.rfile.read(length))
+        o = urlparse.urlparse(self.path)
+        q = urlparse.parse_qs(o.query)
 
-        # if this was skipped, we've got nothing to do
-        if 'test_skipped' in web_data and web_data['test_skipped']:
-            print "Test was skipped."
-            self.send_response(200)
+        if o.path != "/submit-result":
+            self.send_error(404)
             self.end_headers()
-            self.wfile.write('<html></html>')
-            self.server.browser_runner.next_test()
-            print "...done. (skipped)"
             return
 
-        if config.ignore:
-            web_data['ignore'] = True
-        testname = web_data['testname']
-        self.server.results[self.server.browser_runner.browser_name()][testname].extend(web_data['results'])
-        if not config.testmode and not config.noresults:
-            web_data.update(self.server.standard_web_data())
-            if self.server.browser_runner.current_controller.AppSourceStamp:
-                web_data['sourcestamp'] = self.server.browser_runner.current_controller.AppSourceStamp
-            if self.server.browser_runner.current_controller.AppBuildID:
-                web_data['buildid'] = self.server.browser_runner.current_controller.AppBuildID
-            if self.server.browser_runner.current_controller.NameExtra:
-                web_data['name_extra'] = self.server.browser_runner.current_controller.NameExtra
+        target = q['target'][0]
+        data = json.loads(base64.b64decode(q['data'][0]))
+        #print target
+        #print data
 
-            raw_data = json.dumps(web_data)
-            content_type = 'application/json; charset=utf-8'
-
-            req = urllib2.Request(config.server_results_url, raw_data)
-            req.add_header('Content-Type', content_type)
-            req.add_header('Content-Length', len(raw_data))
-
-            try:
-                response = json.loads(urllib2.urlopen(req).read())
-            except (urllib2.URLError, urllib2.HTTPError):
-                print '**ERROR sending results to server:'
-                traceback.print_exc()
-                print
-            else:
-                if response['result'] == 'ok':
-                    print '[%s] Results submitted to server.' % (testname)
-                else:
-                    print '[%s] **ERROR sending results to server: %s' % \
-                        (testname, response['error'])
         self.send_response(200)
+        self.send_header("Content-type", "text/javascript")
         self.end_headers()
-        self.wfile.write('<html></html>')
-        self.server.browser_runner.next_test()
 
-        print "...done (POST)."
+        self.wfile.write('SpeedTests["%s" + "Done"] = true;' % (target))
+
+            # if self.server.browser_runner.current_controller.AppSourceStamp:
+            #     web_data['sourcestamp'] = self.server.browser_runner.current_controller.AppSourceStamp
+            # if self.server.browser_runner.current_controller.AppBuildID:
+            #     web_data['buildid'] = self.server.browser_runner.current_controller.AppBuildID
+            # if self.server.browser_runner.current_controller.NameExtra:
+            #     web_data['name_extra'] = self.server.browser_runner.current_controller.NameExtra
 
 #    def log_message(self, format, *args):
 #        """ Suppress log output. """
@@ -145,9 +102,6 @@ class TestRunnerHTTPServer(SocketServer.ThreadingMixIn, BaseHTTPServer.HTTPServe
 
     def reset(self):
         self.results = collections.defaultdict(lambda: collections.defaultdict(list))
-
-    def standard_web_data(self):
-        return {'ip': config.local_ip, 'client': config.client}
 
     def handle_error(self, request, client_address):
         print '-'*40
@@ -172,7 +126,6 @@ def main():
     parser.add_option('-f', '--config', dest='config_file', type='string', action='store', default=None,
                       help='config file (default speedtests.conf)')
     parser.add_option('-t', '--test', dest='tests', action='append', default=[])
-    parser.add_option('--testmode', dest='testmode', action='store_true')
     parser.add_option('-n', '--noresults', dest='noresults',
                       action='store_true')
     parser.add_option('--ignore', dest='ignore', action='store_true',
@@ -196,7 +149,7 @@ def main():
 
     (options, args) = parser.parse_args()
 
-    config.read(options.testmode, options.noresults, options.ignore, options.config_file)
+    config.read(options.noresults, options.ignore, options.config_file)
 
     if options.client:
         config.client = options.client
@@ -237,20 +190,21 @@ def main():
         sys.exit(0)
     
     # start tests in specified browsers.  if none given, run all.
-    queryparams = []
-    queryparams.append("ip=%s" % (config.local_ip))
-    queryparams.append("port=%d" % (config.local_port))
-    queryparams.append("client=%s" % (urllib2.quote(config.client, '')))
 
-    if config.testmode:
-        queryparams.append('test=true')
+    # create a configuration object to pass to the tests
+    testconfig = dict()
+    testconfig["clientName"] = config.client
+    testconfig["runnerServer"] = "http://%s:%d/submit-result" % (config.local_ip, config.local_port)
+    testconfig["platform"] = config.platform
+    if not options.noresults:
+        testconfig["resultServer"] = config.results_server
 
-    url_prefix = config.local_test_base_url + '/start.html?' + "&".join(queryparams)
-    url_prefix += '&testUrl='
+    test_extra_params = "_benchconfig=" + base64.b64encode(json.dumps(testconfig))
+
     if not options.tests:
         print 'Getting test list from server...'
         try:
-            tests_url = config.server_api_url + '/testpaths/'
+            tests_url = config.test_base_url + '/testpaths/?' + test_extra_params
             print 'Getting test list from %s...' % tests_url
             options.tests = json.loads(urllib2.urlopen(tests_url).read())
         except urllib2.HTTPError, e:
@@ -260,11 +214,15 @@ def main():
             sys.stderr.write('Could not get test list: %s\n' % e.reason)
             sys.exit(e.reason.errno)
 
-    test_urls = map(lambda x: url_prefix + urllib2.quote(x.encode("utf-8")), options.tests)
-
-    if len(args) >= 1 and args[0] == 'load' and len(test_urls) > 1:
-        test_urls = test_urls[:1]
-
+    test_urls = []
+    for test in options.tests:
+        url = config.test_base_url + "/" + test
+        if '?' in url:
+            url = url + "&" + test_extra_params
+        else:
+            url = url + "?" + test_extra_params
+        test_urls.append(url)
+                        
     browsers = args
 
     conf_browsers = config.get_str(config.platform, "browsers")
@@ -299,14 +257,14 @@ def main():
                     br.next_test()
                 evt.wait(60)
             end = datetime.datetime.now()
-            if not config.testmode:
-                report = results.SpeedTestReport(trs.results)
-                print
-                print 'Start: %s' % start
-                print 'Duration: %s' % (end - start)
-                print 'Client: %s' % config.client
-                print
-                print report.report()
+
+            report = results.SpeedTestReport(trs.results)
+            print
+            print 'Start: %s' % start
+            print 'Duration: %s' % (end - start)
+            print 'Client: %s' % config.client
+            print
+            print report.report()
     
             print '==== Cycle done! ===='
     
