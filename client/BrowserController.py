@@ -4,6 +4,7 @@ import sys
 import platform
 import ConfigParser
 import subprocess
+import time
 
 from Config import config
 
