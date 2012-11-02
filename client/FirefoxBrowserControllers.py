@@ -150,12 +150,12 @@ class WinLatestTinderboxFxBrowserController(LatestTinderboxFxBrowserController):
         finally:
             os.chdir(cwd)
 
-class AndroidTinderboxFxBrowserController(AndroidBrowserController):
+class AndroidTinderboxFxBrowserController(AndroidFirefoxBrowserController):
     INSTALL_SUBDIR = 'speedtests_fennec_tb'
 
     def __init__(self, os_name, browser_name, branch='mozilla-central'):
         # explicitly not using super()
-        AndroidBrowserController.__init__(self, os_name, browser_name)
+        AndroidFirefoxBrowserController.__init__(self, os_name, browser_name)
 
         # stuff from LatestTinderboxFxBrowserController.__init__
         self.base_install_dir = os.path.join("/tmp", config.client)
@@ -191,13 +191,6 @@ class AndroidTinderboxFxBrowserController(AndroidBrowserController):
 
         # now install the apk
         return self.dm.installLocalApp(apkpath)
-
-    def clean_up(self):
-        # leave the browser on there for easier testing.  no reason to nuke it, especially since
-        # we're keeping the prefs.
-        # XXX and especially since SUT forces a reboot on uninstall
-        # self.dm.uninstallAppAndReboot(self.browserPackage)
-        return True
 
 class LinuxLatestFxBrowserController(LatestFxBrowserController):
 

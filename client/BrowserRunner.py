@@ -95,12 +95,13 @@ class BrowserRunner(object):
 
     @classmethod
     def browsers_Android(cls):
+        os_name = 'osx'
         return [
-            AndroidBrowserController(os_str, 'firefox'),
-            #AndroidLatestFxAdbBrowserController(os_str, 'nightly'),
-            AndroidTinderboxFxBrowserController(os_str, 'tinderbox'),
-            AndroidBrowserController(os_str, 'browser', 'com.google.android.browser'),
-            AndroidBrowserController(os_str, 'chrome', 'com.android.chrome', activity='com.google.android.apps.chrome.Main')
+            AndroidFirefoxBrowserController(os_name, 'firefox'),
+            #AndroidLatestFxAdbBrowserController(os_name, 'nightly'),
+            AndroidTinderboxFxBrowserController(os_name, 'tinderbox'),
+            AndroidBrowserController(os_name, 'browser', 'com.google.android.browser'),
+            AndroidChromeBrowserController(os_name, 'chrome', 'com.android.chrome', activity='com.google.android.apps.chrome.Main')
             ]
 
     @classmethod

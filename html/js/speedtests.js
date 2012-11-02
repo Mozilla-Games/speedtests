@@ -218,18 +218,28 @@ var SpeedTests = function() {
 
       var count = 0;
       function waitForResults() {
-        if (SpeedTests["serverSendDone"] &&
-            SpeedTests["runnerSendDone"])
-        {
+        var done = SpeedTests["serverSendDone"] && SpeedTests["runnerSendDone"];
+        var error = false;
+
+        if (++count > 20) {
+          done = true;
+          error = true;
+        }
+
+        if (done) {
           // finished
           document.location = "about:blank";
           // if we can; might exit the browser, which would be nice.
-          window.close();
-          return;
-        }
+          // XXX hack for Chrome to maximize our chances of closing this window/tab
+          setTimeout(function() {
+            window.open('', '_self', '');
+            window.close();
+          }, 0);
 
-        if (++count > 20) {
-          alert("SpeedTests: failed to send results to server, waited 10 seconds for response!");
+          if (error) {
+            alert("SpeedTests: failed to send results to server, waited 10 seconds for response!");
+          }
+
           return;
         }
 

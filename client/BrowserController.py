@@ -149,7 +149,8 @@ class BrowserController(object):
 
     def terminate(self):
         if self.proc:
-            print 'Terminating process...'
+            if config.verbose:
+                print "controller.terminate(), trying.."
             try:
                 self.proc.terminate()
             except:  #FIXME

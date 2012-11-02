@@ -1,3 +1,5 @@
+import traceback
+
 from Config import config
 from BrowserController import *
 from mozdevice import DroidADB, DroidSUT, DroidConnectByHWID
@@ -69,16 +71,23 @@ class AndroidBrowserController(BrowserController):
         return self.getBrowserPid() > 0
 
     def terminate(self):
-        print "Trying to terminate browser..."
+        if config.verbose:
+            print "controller.terminate(), trying.."
         pid = self.getBrowserPid()
         if pid < 0:
             return
 
         # the killProcess implementaiton is not ideal; requires root or run-as
         #self.dm.killProcess(self.browserPackage, forceKill=True)
+        #print "Trying killPackageProcess"
 
-        print "Trying killPackageProcess"
         self.dm.killPackageProcess(self.browserPackage)
+        if self.getBrowserPid() > 0:
+            self.dm.killProcess(self.browserPackage)
+        if self.getBrowserPid() > 0:
+            self.dm.shell(["kill", pid], None, root=True)
+        if self.getBrowserPid() > 0:
+            self.dm.shell(["kill", "-9", pid], None, root=True)
 
         if False:
             needRoot = False
@@ -103,77 +112,16 @@ class AndroidBrowserController(BrowserController):
                 raise Exception("Waited too long for browser to die!")
         self.clean_up()
 
-class AndroidAdbBrowserController(BrowserController):
-    def __init__(self, os_name, browser_name, package='org.mozilla.fennec'):
-        super(AndroidAdbBrowserController, self).__init__(os_name, browser_name, "default", None)
-        self.browserPackage = config.get_str('android', browser_name + '_package', package)
+class AndroidFirefoxBrowserController(AndroidBrowserController):
+    def __init__(self, os_name, browser_name, package='org.mozilla.fennec', activity='.App'):
+        super(AndroidFirefoxBrowserController, self).__init__(os_name, browser_name, package, activity)
 
-    def cmd_line(self, url):
-        pass
+    def clean_up(self):
+        self.dm.shell(["rm", "/data/data/" + self.browserPackage + "/files/mozilla/*.default/session*"], None, root=True)
 
-    def init_browser(self):
-        return True
+class AndroidChromeBrowserController(AndroidBrowserController):
+    def __init__(self, os_name, browser_name, package='org.mozilla.fennec', activity='.App'):
+        super(AndroidChromeBrowserController, self).__init__(os_name, browser_name, package, activity)
 
-    def browser_exists(self):
-        # XXX fixme to check
-        return True
-
-    def get_profile_archive_path(self, profile):
-        raise Exception("Can't get profile archive for Android fennec browser")
-
-    def archive_current_profiles(self):
-        raise Exception("Can't get profile archive for Android fennec browser")
-
-    def copy_profiles(self):
-        print "Skipping profile copy on Android"
-        return True
-
-    def launch(self, url=None):
-        try:
-            # simulate a press of the HOME button, to wake screen up if necessary
-            subprocess.check_call("adb shell input keyevent 3", shell=True)
-
-            if url is None:
-                url = "about:blank"
-            cmdline = "adb shell am start -a android.intent.action.VIEW -d '\"%s\"' %s" % (url, self.browserPackage)
-            #print "ADB Launch command line: %s" % (cmdline)
-            self.launch_time = datetime.datetime.now()
-            subprocess.check_call(cmdline, shell=True)
-            return True
-        except:
-            traceback.print_exc()
-            return False
-
-    def getBrowserPid(self):
-        try:
-            # grep -v is for chrome
-            result = subprocess.check_output("adb shell ps | grep %s | grep -v sandbox | tail -1" % self.browserPackage, shell=True)
-            result = result.split()
-            if result[0] == "USER":
-                return -1
-            return int(result[1])
-        except:
-            traceback.print_exc()
-            return -1
-
-    def running(self):
-        return self.getBrowserPid() > 0
-
-    def terminate(self):
-        pid = self.getBrowserPid()
-        if pid < 0:
-            return
-
-        subprocess.call("adb shell am force-stop %s" % (self.browserPackage), shell=True)
-        time.sleep(1)
-        subprocess.call("adb shell am kill %s" % (self.browserPackage), shell=True)
-
-        pid = self.getBrowserPid()
-        count = 0
-        while pid > 0:
-            time.sleep(2)
-            pid = self.getBrowserPid()
-            count += 1
-            if count == 20:
-                raise Exception("Waited too long for browser to die!")
-        self.clean_up()
+    def clean_up(self):
+        self.dm.shell(["rm", "/data/data/" + self.browserPackage + "/files/tab*"], None, root=True)

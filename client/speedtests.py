@@ -127,8 +127,10 @@ class TestRunnerRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header("Content-type", "text/javascript")
         self.end_headers()
-
         self.wfile.write('SpeedTests["%s" + "Done"] = true;' % (target))
+
+        # finish up, go on to the next test
+        self.server.browser_runner.next_test()
 
     def log_message(self, format, *args):
         """ Suppress log output. """
@@ -172,8 +174,8 @@ def main():
     parser.add_option('-f', '--config', dest='config_file', type='string', action='store', default=None,
                       help='config file (default speedtests.conf)')
     parser.add_option('-t', '--test', dest='tests', action='append', default=[])
-    parser.add_option('-n', '--noresults', dest='noresults',
-                      action='store_true')
+    parser.add_option('-n', '--noresults', dest='noresults', action='store_true')
+    parser.add_option('-v', '--verbose', dest='verbose', action='store_true')
     parser.add_option('--ignore', dest='ignore', action='store_true',
                       help='instruct server to ignore results')
     parser.add_option('--client', dest='client', type='string', action='store',
@@ -202,6 +204,9 @@ def main():
 
     if options.local_port:
         config.local_port = options.local_port
+
+    if options.verbose:
+        config.verbose = options.verbose
 
     if not options.client and not config.get_str('speedtests', 'client'):
         print "--client must be specified on command line or in config (we don't support ip-based clients here)"
@@ -323,10 +328,13 @@ def main():
                     print "WARNING: Reboot failed!"
                 # Wait for the network to come back up!
                 time.sleep(45)
+        except KeyboardInterrupt:
+            print "Interrupted!"
+            os._exit(1)
         except:
             print "Cycle failed! Exception:"
             traceback.print_exc()
-            if config.platform == "android":
+            if False and config.platform == "android":
                 print "(Android) rebooting if we can..."
                 ok = createDeviceManager().reboot()
                 if not ok:
