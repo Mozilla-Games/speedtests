@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <script type="text/javascript" src="js/speedtests.js"></script>
+
+  <script type="text/javascript">
+    window.addEventListener("load", function() {
+      SpeedTests.init("test-test");
+      setTimeout(function() {
+	SpeedTests.recordResult(100);
+	SpeedTests.finish();
+	document.body.appendChild(document.createTextNode("finished"));
+      }, 1000);
+    });
+  </script>
+</head>
+
+<body>
+  
+</body>
+</html>
+

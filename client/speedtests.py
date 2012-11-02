@@ -30,8 +30,49 @@ import StringIO
 from Config import config
 from BrowserRunner import *
 from BrowserController import *
-import results
 
+# global browser runner
+runner = None
+report = None
+
+class TestReport(object):
+    def __init__(self):
+        self.reset()
+
+    def reset(self):
+        self.results = dict()
+
+    def add_result(self, result):
+        browser = result['config']['browser']
+        if not browser in self.results:
+            self.results[browser] = []
+        self.results[browser].append(result)
+
+    def browser_info_equals(self, a, b):
+        keys = ["ua", "width", "height", "screenWidth", "screenHeight"]
+        for key in keys:
+            if a[key] != b[key]:
+                return False
+        return True
+
+    def show(self):
+        print "--- by browser:"
+        for browser in self.results.keys():
+            print "%s:" % (browser)
+            results = self.results[browser]
+            firstBrowserInfo = results[0]['browserInfo']
+
+            for resultset in results:
+                if not self.browser_info_equals(firstBrowserInfo, resultset['browserInfo']):
+                    print "Warning: browserInfo doesn't match"
+                for result in resultset['results']:
+                    print "     %s: %f" % (result['name'], result['value'])
+        print
+
+# Which browser is running the current test
+currentTestBrowser = None
+# The token we expect to see of the currently running test
+currentTestToken = None
 
 #
 # The RequestHandler here has one job -- to get a "test done" post from
@@ -54,9 +95,10 @@ import results
 #
 # This is mainly so that we can get notified that the test was actually loaded.
 class TestRunnerRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
-    
+
     def do_GET(self):
-        print "Handling GET '%s'..." % (self.path)
+        if config.verbose:
+            print "Handling GET '%s'..." % (self.path)
 
         o = urlparse.urlparse(self.path)
         q = urlparse.parse_qs(o.query)
@@ -68,25 +110,29 @@ class TestRunnerRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
         target = q['target'][0]
         data = json.loads(base64.b64decode(q['data'][0]))
+        token = data['config']['token']
+
         #print target
         #print data
 
+        if token != runner.get_current_test_token():
+            print "Got unexpected test token!"
+            os._exit(1)
+
+        # Record the result
+        global report
+        report.add_result(data)
+
+        # Send the response with the JS to set the flag to Done
         self.send_response(200)
         self.send_header("Content-type", "text/javascript")
         self.end_headers()
 
         self.wfile.write('SpeedTests["%s" + "Done"] = true;' % (target))
 
-            # if self.server.browser_runner.current_controller.AppSourceStamp:
-            #     web_data['sourcestamp'] = self.server.browser_runner.current_controller.AppSourceStamp
-            # if self.server.browser_runner.current_controller.AppBuildID:
-            #     web_data['buildid'] = self.server.browser_runner.current_controller.AppBuildID
-            # if self.server.browser_runner.current_controller.NameExtra:
-            #     web_data['name_extra'] = self.server.browser_runner.current_controller.NameExtra
-
-#    def log_message(self, format, *args):
-#        """ Suppress log output. """
-#        return
+    def log_message(self, format, *args):
+        """ Suppress log output. """
+        return
 
 
 class TestRunnerHTTPServer(SocketServer.ThreadingMixIn, BaseHTTPServer.HTTPServer):
@@ -214,57 +260,53 @@ def main():
             sys.stderr.write('Could not get test list: %s\n' % e.reason)
             sys.exit(e.reason.errno)
 
-    test_urls = []
-    for test in options.tests:
-        url = config.test_base_url + "/" + test
-        if '?' in url:
-            url = url + "&" + test_extra_params
-        else:
-            url = url + "?" + test_extra_params
-        test_urls.append(url)
-                        
     browsers = args
 
     conf_browsers = config.get_str(config.platform, "browsers")
     if browsers is None or len(browsers) == 0 and conf_browsers is not None:
         browsers = conf_browsers.split()
 
-    br = BrowserRunner(evt, browsers, test_urls, config.platform)
+    global runner
+    runner = BrowserRunner(evt, browsers, options.tests, testconfig)
     print 'Starting HTTP server...'
-    trs = TestRunnerHTTPServer(('', config.local_port), br)
+    trs = TestRunnerHTTPServer(('', config.local_port), runner)
     server_thread = threading.Thread(target=trs.serve_forever)
     server_thread.daemon = True
     server_thread.start()
 
     cycle_count = 0
 
+    global report
+    report = TestReport()
+
     while options.cycles == -1 or cycle_count < options.cycles:
         try:
             start = datetime.datetime.now()
             print '==== Starting test cycle %d ====' % (cycle_count+1)
-            br.launch_next_browser()
+            report.reset()
+
+            runner.launch_next_browser()
             while not evt.is_set():
-                if br.browser_running():
+                if runner.browser_running():
                     if evt.is_set():
                         # evt may have been set while we were waiting for the lock in
                         # browser_running().
                         break
-                    if br.execution_time() > MAX_TEST_TIME:
+                    if runner.execution_time() > MAX_TEST_TIME:
                         print 'Test has taken too long; starting next test.'
-                        br.next_test()
+                        runner.next_test()
                 else:
-                    print 'Browser isn\'t running!'
-                    br.next_test()
-                evt.wait(60)
+                    #print 'Browser isn\'t running!'
+                    runner.next_test()
+                evt.wait(20)
             end = datetime.datetime.now()
 
-            report = results.SpeedTestReport(trs.results)
             print
             print 'Start: %s' % start
             print 'Duration: %s' % (end - start)
             print 'Client: %s' % config.client
             print
-            print report.report()
+            report.show()
     
             print '==== Cycle done! ===='
     
@@ -284,15 +326,15 @@ def main():
         except:
             print "Cycle failed! Exception:"
             traceback.print_exc()
-            print "Rebooting if we can on Android, otherwise just starting over..."
             if config.platform == "android":
+                print "(Android) rebooting if we can..."
                 ok = createDeviceManager().reboot()
                 if not ok:
                     print "WARNING: Reboot failed!"
                 # Wait for the network to come back up!
                 time.sleep(45)
         finally:
-            br.reset()
+            runner.reset()
             trs.reset()
             evt.clear()
 

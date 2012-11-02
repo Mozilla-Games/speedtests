@@ -93,7 +93,7 @@ class BrowserController(object):
         for p in self.profiles:
             profile_archive = self.get_profile_archive_path(p)
             if not os.path.exists(profile_archive):
-                print 'Warning: no archived profile'
+                #print 'Warning: no archived profile'
                 return True
             if os.path.exists(p['path']):
                 attempts = 0
@@ -128,7 +128,8 @@ class BrowserController(object):
             print 'Failed to copy profiles'
             return False
         cl = self.cmd_line(url)
-        print '  command line: %s...' % ' '.join(cl)
+        if config.verbose:
+            print '  command line: %s...' % ' '.join(cl)
         self.launch_time = datetime.datetime.now()
         self.proc = subprocess.Popen(cl)
         return True

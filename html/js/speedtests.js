@@ -247,6 +247,7 @@ var SpeedTests = function() {
       console.log.error("benchconfig missing clientName!");
       obj.config = {};
     }
+    obj.config.token = urlParams['_benchtoken'];
   }
 
   return obj;

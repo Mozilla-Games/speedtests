@@ -3,6 +3,9 @@ import os
 import sys
 import threading
 import traceback
+import json
+import base64
+import uuid
 
 from Config import config
 from BrowserController import *
@@ -117,7 +120,6 @@ class BrowserRunner(object):
         raise Exception("Unrecognized platform '%s'" % (os_str))
 
     class BrowserControllerIter(object):
-        
         def __init__(self, controllers, browser_names=[]):
             self.controllers = controllers
             self.browser_names = browser_names
@@ -134,16 +136,55 @@ class BrowserRunner(object):
                     raise
                 if not self.browser_names or n.browser_name in self.browser_names:
                     return n
-                   
-    def __init__(self, evt, browser_names=[], test_urls=[], platform_system=platform.system()):
+
+    class TestURLIter(object):
+        def __init__(self, tests, client, controller, baseconfig):
+            self.config = baseconfig.copy()
+            self.config['client'] = client
+            self.config['browser'] = controller.browser_name
+            if controller.AppSourceStamp:
+                self.config['browserSourceStamp'] = contoller.AppSourceStamp
+            if controller.AppBuildID:
+                self.config['browserBuildID'] = contoller.AppBuildID
+            if controller.NameExtra:
+                self.config['browserNameExtra'] = contoller.NameExtra
+
+            self.configstr = base64.b64encode(json.dumps(self.config))
+
+            self.test_iter = iter(tests)
+
+        def __iter__(self):
+            return self
+
+        def next(self):
+            while True:
+                try:
+                    test = self.test_iter.next()
+                except StopIteration:
+                    raise
+
+                url = config.test_base_url + "/" + test
+                if '?' in url:
+                    url = url + "&_benchconfig=" + self.configstr
+                else:
+                    url = url + "?_benchconfig=" + self.configstr
+
+                return url
+
+    def __init__(self, evt, browser_names, tests, testconfig):
         self.evt = evt
-        self.test_urls = test_urls
-        try:
-            self.browsers = BrowserRunner.browsers_by_os(platform_system)
-        except KeyError:
-            sys.stderr.write('Unknown platform "%s".\n' % platform_system)
-            sys.exit(errno.EOPNOTSUPP)
+        self.tests = tests
+        self.testconfig = testconfig
         self.browser_names = browser_names
+
+        platform = testconfig['platform']
+
+        try:
+            self.browsers = BrowserRunner.browsers_by_os(platform)
+        except KeyError:
+            sys.stderr.write('Unknown platform "%s".\n' % platform)
+            sys.exit(errno.EOPNOTSUPP)
+
         self.current_controller = None
         self.lock = threading.Lock()
         self.reset()
@@ -191,6 +232,12 @@ class BrowserRunner(object):
         self.lock.release()
         return browser_name
 
+    def get_current_test(self):
+        return self.current_test_url
+    
+    def get_current_test_token(self):
+        return self.current_test_token
+
     def next_test(self):
         if not self.current_controller:
             self.launch_next_browser()
@@ -199,9 +246,15 @@ class BrowserRunner(object):
 
         self.lock.acquire()
         try:
-            self.current_test_url = self.test_url_iter.next()
             if self.current_controller.running():
                 self.current_controller.terminate()
+
+            url = self.test_url_iter.next()
+            token = str(uuid.uuid4())
+
+            self.current_test_url = url + "&_benchtoken=" + token
+            self.current_test_token = token
+
             self.current_controller.launch(self.current_test_url)
         except StopIteration:
             need_to_launch = True
@@ -214,7 +267,7 @@ class BrowserRunner(object):
     def launch_next_browser(self):
         self.lock.acquire()
         if self.current_controller:
-            print 'Closing browser...'
+            #print 'Closing browser...'
             self.current_controller.terminate()
             print '%s test running time: %s' % (self.current_controller.browser_name, self.current_controller.execution_time())
 
@@ -230,7 +283,10 @@ class BrowserRunner(object):
 
             try:
                 self.current_test_url = None
-                self.test_url_iter = iter(self.test_urls)
+                self.test_url_iter = BrowserRunner.TestURLIter(self.tests,
+                                                               config.client,
+                                                               self.current_controller,
+                                                               self.testconfig)
 
                 if not self.current_controller.init_browser():
                     print 'Failed to init %s, skipping...' % self.current_controller.browser_name
