@@ -1,7 +1,12 @@
 [speedtests]
-server_url = http://SELF_IP:8888/api/
-test_base_url = http://SELF_IP:8888/
-local_test_base_path = 
+;; Required: the base URL where the tests can be found.
+;; If you need a quick local thing, consider running
+;; 'python -m SimpleHTTPServer 8080' in the html dir.
+test_base_url = http://localhost:8080/
+
+;; Only specify the results_server if you have a server to send results
+;; to; otherwise leave it commented out.
+;results_server = http://someserver:8888/api/
 
 [linux]
 firefox = /home/vladimir/firefox/firefox
