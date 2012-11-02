@@ -41,7 +41,11 @@ import lxml.html
 import re
 import sys
 import time
-from dateutil.parser import parse
+try:
+  from dateutil.parser import parse
+except:
+  pass
+
 from datetime import datetime
 
 ### platform information
