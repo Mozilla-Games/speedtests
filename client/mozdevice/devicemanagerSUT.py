@@ -164,8 +164,8 @@ class DeviceManagerSUT(DeviceManager):
 
     if not self._sock:
       try:
-        if self.debug >= 1:
-          print "reconnecting socket"
+        #if self.debug >= 1:
+        #  print "reconnecting socket"
         self._sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
       except socket.error, msg:
         self._sock = None
