@@ -166,8 +166,6 @@ class TestRunnerHTTPServer(SocketServer.ThreadingMixIn, BaseHTTPServer.HTTPServe
         # implemented by throwing an exception)
         os._exit(1)
 
-MAX_TEST_TIME = datetime.timedelta(seconds=60*15)
-        
 def main():
     from optparse import OptionParser
     parser = OptionParser()
@@ -297,7 +295,7 @@ def main():
                         # evt may have been set while we were waiting for the lock in
                         # browser_running().
                         break
-                    if runner.execution_time() > MAX_TEST_TIME:
+                    if runner.execution_time() > config.MAX_TEST_TIME:
                         print 'Test has taken too long; starting next test.'
                         runner.next_test()
                 else:

@@ -146,7 +146,7 @@ class BrowserController(object):
     def execution_time(self):
         if self.launch_time:
             return datetime.datetime.now() - self.launch_time
-        return MAX_TEST_TIME * 2
+        return config.MAX_TEST_TIME * 2
 
     def terminate(self):
         if self.proc:

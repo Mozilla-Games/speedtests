@@ -4,6 +4,7 @@ import sys
 import socket
 import time
 import traceback
+import datetime
 import ConfigParser
 
 def find_local_port():
@@ -15,7 +16,8 @@ def find_local_port():
 
 class Config(object):
     DEFAULT_CONF_FILE = 'speedtests.conf'
-    
+    MAX_TEST_TIME = datetime.timedelta(seconds=60*15)
+
     def __init__(self):
         self.cfg = None
 
