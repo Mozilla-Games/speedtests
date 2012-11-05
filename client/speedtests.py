@@ -49,10 +49,11 @@ class TestReport(object):
         self.results[browser].append(result)
 
     def browser_info_equals(self, a, b):
-        keys = ["ua", "width", "height", "screenWidth", "screenHeight"]
+        keys = ["ua", "screenWidth", "screenHeight"]
         for key in keys:
             if a[key] != b[key]:
                 return False
+
         return True
 
     def show(self):
@@ -65,6 +66,8 @@ class TestReport(object):
             for resultset in results:
                 if not self.browser_info_equals(firstBrowserInfo, resultset['browserInfo']):
                     print "Warning: browserInfo doesn't match"
+                    print "First: ", firstBrowserInfo
+                    print "Current: ", resultset['browserInfo']
                 for result in resultset['results']:
                     print "     %s: %f" % (result['name'], result['value'])
         print

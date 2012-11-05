@@ -3,6 +3,7 @@
 # You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import ConfigParser
+import time
 import datetime
 import json
 import os
@@ -10,6 +11,7 @@ import re
 import templeton.handlers
 import urllib2
 import web
+import base64
 from collections import defaultdict
 
 class DefaultConfigParser(ConfigParser.ConfigParser):
@@ -26,41 +28,23 @@ DEFAULT_CONF_FILE = 'speedtests_server.conf'
 cfg = DefaultConfigParser()
 
 cfg.read(DEFAULT_CONF_FILE)
-HTML_DIR = cfg.get_default('speedtests', 'html_dir', os.path.join('..', 'html'))
-PROXY_TO = cfg.get_default('speedtests', 'proxy', None)
-DB_HOST = cfg.get_default('speedtests', 'db_host', 'localhost')
-DB_NAME = cfg.get_default('speedtests', 'db_name', 'speedtests')
-DB_USER = cfg.get_default('speedtests', 'db_user', 'speedtests')
-DB_PASSWD = cfg.get_default('speedtests', 'db_passwd', 'speedtests')
-REQUIRE_SIGNED = cfg.get_default('speedtests', 'require_signed', False,
-                                 'getboolean')
-try:
-    CLIENT_KEYS = dict(cfg.items('client keys'))
-except ConfigParser.NoSectionError:
-    CLIENT_KEYS = {}
+DB_TYPE = cfg.get_default('server', 'db_type', 'sqlite')
+DB_NAME = cfg.get_default('server', 'db_name', 'speedtests.sqlite')
+DB_HOST = cfg.get_default('server', 'db_host', 'localhost')
+DB_USER = cfg.get_default('server', 'db_user', 'speedtests')
+DB_PASSWD = cfg.get_default('server', 'db_passwd', 'speedtests')
 
-if CLIENT_KEYS:
-    try:
-        import jwt
-    except ImportError:
-        pass  # FIXME: log this error!
 
-db = web.database(dbn='mysql', host=DB_HOST, db=DB_NAME, user=DB_USER,
-                  pw=DB_PASSWD)
+if DB_TYPE is 'sqlite':
+    dbargs = { 'dbn': DB_TYPE, 'db': DB_NAME }
+else:
+    dbargs = { 'dbn': DB_TYPE, 'db': DB_NAME, 'db': DB_NAME, 'host': DB_HOST, 'user': DB_USER, 'pw': DB_PASSWD }
+db = web.database(**dbargs)
 
-urls = ('/testresults/', 'TestResults',
-        '/params/', 'Params',
-        '/testpaths/', 'TestPaths',
-        '/testdetails/', 'TestDetails')
-
-def query_params():
-    params = {}
-    if web.ctx.query:
-        for q in web.ctx.query[1:].split('&'):
-            name, equals, value = q.partition('=')
-            if equals:
-                params[name] = value
-    return params
+urls = ('/testinfo/', 'TestInfo',
+        '/testresults/', 'TestResults',
+        '/testdetails/', 'TestDetails',
+        '/submit-result/', 'SubmitResult')
 
 # nuke everything but a-z A-Z 0-9 _ . , - and space'
 # at the very least it should be safe for sql (inside strings)
@@ -76,35 +60,13 @@ def simple_ascii_only(val):
     val = val.encode('ascii')
     return re.sub(r'[^a-zA-Z0-9_., -]', '', val)
 
-def test_paths():
-    """ List of relative paths of test index files. """
-    tests = []
-    for d in os.listdir(HTML_DIR):
-        if os.path.exists(os.path.join(HTML_DIR, d, "test-disabled")):
-            continue
-        for f in ('index.html', 'Default.html', 'default.html', 'run.html'):
-            if os.path.exists(os.path.join(HTML_DIR, d, f)):
-                tests.append(os.path.join(d, f))
-                break
-    tests.sort()
-    return tests
-
-
 def test_names():
-    tests = filter(lambda x: x != 'browser' and x != 'generic',
-                   map(lambda x: x['Tables_in_%s' % DB_NAME],
-                       db.query('show tables')))
+    tests = map(lambda x: x['testname'], db.query('SELECT DISTINCT testname FROM results'))
     tests.sort()
     return tests
 
-def generic_test_names():
-    tests = map(lambda x: x['testname'], db.query('select distinct testname from generic'))
-    tests.sort()
-    return tests
-
-
-def get_browser_id(web_data):
-    ua = web_data['ua'].lower()
+def get_browser_info(ua, extra_data):
+    ua = ua.lower()
     platform = 'unknown'
     geckover = 'n/a'
     buildid = 'unknown'
@@ -146,232 +108,193 @@ def get_browser_id(web_data):
             platform = 'linux'
         bver = m.group(2).strip()
     
-    wheredict = {
-        'browsername': bname,
-        'browserversion': bver,
+    browserinfo = {
+        'name': bname,
+        'version': bver,
         'platform': platform,
         'geckoversion': geckover,
         'buildid': buildid
         }
 
     # now allow for some overrides
-    for token in ['buildid', 'geckoversion', 'sourcestamp']:
-        if token in web_data:
-            wheredict[token] = web_data[token]
+    for token in ['buildid', 'geckoversion', 'sourcestamp', 'screenWidth', 'screenHeight']:
+        if token in extra_data:
+            browserinfo[token.lower()] = extra_data[token]
 
-    if 'name_extra' in web_data:
-        wheredict['browsername'] += "-" + web_data['name_extra']
+    if 'name_extra' in extra_data:
+        browserinfo['name'] += "-" + extra_data['name_extra']
 
-    browser = db.select('browser', where=web.db.sqlwhere(wheredict))
-    if not browser:
-        db.insert('browser', **wheredict)
-        browser = db.select('browser', where=web.db.sqlwhere(wheredict))
-    return browser[0].id
+    return browserinfo
+
+def get_browser_id(data):
+    browserinfo = get_browser_info(data['ua'], data)
+    browser = db.select('browsers', where=web.db.sqlwhere(browserinfo))
+    # work around some kind of stupid web.py bug or something.
+    # checking if browser causes browser[0] to fail afterwards
+    # if done directly on the iterator.
+    stupid = list(browser)
+    if stupid and len(stupid) > 0:
+        browser = stupid[0].id
+    else:
+        browser = db.insert('browsers', **browserinfo)
+    return browser
+
         
+class SubmitResult(object):
+    def GET(self):
+        args, body = templeton.handlers.get_request_parms()
+        # we ignore body, it should be empty; everything's done via GET
 
-class TestPaths(object):
+        target = args['target'][0]
+        data = json.loads(base64.b64decode(args['data'][0]))
+        
+        # the data object contains (see speedtests.js for 100% accurate info):
+        #   browserInfo: {ua, screenWidth, screenHeight}
+        #   config: the full config object that was passed to each test; this has details
+        #     like clientName and platform, which we'll need
+        #   loadTime: time to load the test
+        #   startTime: time that init() was called
+        #   finishTime: time that finish() was called
+        #   results: array of objects, each containing:
+        #     value: the actual final value of the test
+        #     raw: [optionally] the full set of periodic values
+        #     width: window.innerWidth at the time the result was recorded
+        #     height: window.innerHeight at the time the result was recorded
+        #     extra: an object containing any extra data the test returned
 
-    """ Paths of locally served tests. """
+        client = data['config']['clientName']
 
+        transaction = db.transaction()
+        try:
+            # get or create a browser_id
+            browser_id = get_browser_id(data['browserInfo'])
+            testtime = datetime.datetime.utcfromtimestamp(data['startTime'] / 1000.0)
+            # the replacement is needed for sqlite
+            testtime = testtime.isoformat().replace("T", " ")
+
+            # more than one result could have been submitted; it'll always be an array
+            for result in data['results']:
+                extrajson = None
+                error = False
+                if 'extra' in result:
+                    extrajson = json.dumps(result['raw'])
+                    error = result['raw']['error']
+
+                resultdata = {
+                    'testname': result['name'],
+                    'browser_id': browser_id,
+                    'client': client,
+                    'window_width': result['width'],
+                    'window_height': result['height'],
+                    'testtime': testtime,
+                    'result_value': result['value'],
+                    'extra_data': extrajson,
+                    'error': error
+                }
+
+                db.insert('results', **resultdata)
+        except:
+            transaction.rollback()
+            raise
+        else:
+            transaction.commit()
+
+        # Send the response with the JS to set the flag to Done
+        return 'SpeedTests["%s" + "Done"] = true;' % (target)
+
+class TestInfo(object):
     @templeton.handlers.json_response
     def GET(self):
-        return test_paths()
-
-
-class Params(object):
-
-    @templeton.handlers.json_response
-    def GET(self):
-        # XXX hack.  We don't use the other tests, so we don't bother querying them.
-        # Also the ips column might contain an actual name in our case.
-        generic_ips = map(lambda x: x['ip'], db.query('select distinct ip from generic'))
-        clients = [x[0].capitalize() for x in cfg.items('clients')]
-        match_ip = re.compile(r'^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$')
-        for x in generic_ips:
-            if not match_ip.match(x):
-                clients.append(x)
+        clients = map(lambda row: row['client'], db.query('SELECT DISTINCT client FROM results'))
         clients.sort()
+        testnames = test_names()
 
-        testnames = test_names() + generic_test_names()
-        testnames.sort()
-
-        response = { 'clients': clients, 'testnames': testnames }
-
-        return response
-
+        return { 'clients': clients, 'testnames': testnames }
 
 class TestDetails(object):
-
     @templeton.handlers.json_response
     def GET(self):
         args, body = templeton.handlers.get_request_parms()
-        testids = simple_ascii_only(args.get('testids', None))
+        testids = args.get('testids', None)
         if testids is None:
             return None
         testids = map(lambda x: str(int(x)), testids[0].split(","))
         response = { }
-        rows = db.query("SELECT * FROM generic WHERE id IN (" + ",".join(testids) + ")");
+        rows = db.query("SELECT * FROM results WHERE id IN " + web.db.sqlquote(testids));
         for row in rows:
             record = dict(row)
             for k, v in record.iteritems():
                 if isinstance(v, datetime.datetime):
-                    record[k] = v.isoformat()
-            record['result_data'] = json.loads(record['result_data'])
+                    record[k] = time.mktime(v.timetuple()) * 1000
+            record['extra_data'] = json.loads(record['extra_data'])
             response[record['id']] = record
         return response
 
 class TestResults(object):
-
-    def proxy_request(self):
-        headers = {
-            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-            'Accept-Encoding': 'gzip, deflate'
-            }
-        # FIXME: Error logging
-        request = urllib2.Request(PROXY_TO, web.data(), headers)
-        response = urllib2.urlopen(request, timeout=120).read()
-
-    @templeton.handlers.json_response
-    def POST(self):
-        if PROXY_TO:
-            self.proxy_request()
-            return
-        content_type = web.ctx.env.get('CONTENT_TYPE', '')
-        if content_type == 'application/jwt':
-            token = jwt.decode(web.data(),
-                               signers=[jwt.jws.HmacSha(keydict=CLIENT_KEYS)])
-            if not token['valid']:
-                # JWT signature not valid
-                # FIXME: Log error!
-                return {'result': 'error', 'error': 'invalid signature'}
-            web_data = token['payload']
-        elif REQUIRE_SIGNED:
-            return {'result': 'error', 'error': 'results must be signed'}
-        else:
-            web_data = json.loads(web.data())
-        print "POST: " + str(web_data)
-        if web_data.get('ignore'):
-            return {'result': 'ok'}
-        testname = web_data['testname']
-        machine_ip = web_data['ip']
-        machine_client = web_data['client']
-        browser_id = get_browser_id(web_data)
-        error = False
-        if 'error' in web_data and web_data['error'] is not False:
-            error = True
-
-        for results in web_data['results']:
-            r = results
-            tablename = testname
-            if 'value' in results:
-                r = {}
-                r['browser_id'] = browser_id
-                r['ip'] = machine_client # not machine_ip
-                r['browser_height'] = results['browser_height']
-                r['browser_width'] = results['browser_width']
-                r['teststart'] = results['teststart']
-                r['testname'] = testname
-                r['error'] = error
-                r['result_value'] = results['value']
-                r['result_data'] = json.dumps(results['raw'])
-                tablename = 'generic'
-            else:
-                r['browser_id'] = browser_id
-                r['ip'] = machine_client
-            cols = {}
-            for k, v in r.iteritems():
-                cols[k.encode('ascii')] = v
-            # web.py is a piece of shit that builds up sql inserts/queries by adding
-            # strings together, so we can't just use db.insert because it's basically
-            # begging to be exploited (and gets any strings that have complicated things
-            # in them wrong
-            ###db.insert(tablename, **cols)
-
-            colkeys = cols.keys()
-            colvals = []
-            for i in range(len(colkeys)):
-                colvals.append(cols[colkeys[i]])
-            cursor = db.ctx.db.cursor()
-            sql_query = "INSERT INTO " + tablename + " (" + (",".join(colkeys)) + ") VALUES (" + (",".join(['%s'] * len(colkeys))) + ")";
-            cursor.execute(sql_query, tuple(colvals))
-            db.ctx.db.commit()
-            cursor.close()
-
-        return {'result': 'ok'}
-
     @templeton.handlers.json_response
     def GET(self):
         args, body = templeton.handlers.get_request_parms()
-        tables = simple_ascii_only(args.get('testname', None))
+        testnames = simple_ascii_only(args.get('testname', None))
         start = simple_ascii_only(args.get('start', None))
         end = simple_ascii_only(args.get('end', None))
-        client = simple_ascii_only(args.get('client', None))
+        clients = simple_ascii_only(args.get('client', None))
         fullresults = simple_ascii_only(args.get('full', False))
-        gentests = generic_test_names()
-        if not tables:
-            tables = test_names() + gentests
-        for i in range(len(tables)):
-            if tables[i] in gentests:
-                tables[i] = ["generic", tables[i].encode('ascii')]
+
+        wheres = []
+        vars = {}
+        if start:
+            vars['start'] = start[0]
+            wheres.append('date(testtime) >= date($start)')
+
+        if end:
+            vars['end'] = end[0]
+            # if just a date is passed in (as opposed to a full datetime),
+            # we want it to be *inclusive*, i.e., returning all results
+            # on that date.
+            if re.match('\d{4}-\d{2}-\d{2}$', vars['end']):
+                wheres.append('date(testtime) <= date($end)')
+            else:
+                wheres.append('date(testtime) < date($end)')
+
+        if clients:
+            clients = clients[0].split(',')
+            wheres.append("client IN " + web.db.sqlquote(clients))
+
+        if testnames:
+            testnames = testnames[0].split(',')
+            wheres.append("testname IN " + web.db.sqlquote(testnames))
+
+        if len(wheres) == 0:
+            return dict()
 
         response = { 'browsers': {},
                      'results': defaultdict(list) }
-        for row in db.select('browser'):
-            response['browsers'][row['id']] = dict(row)
-        for t in tables:
-            wheres = []
-            vars = {}
-            if start:
-                vars['start'] = start[0]
-                wheres.append('date(teststart) >= date($start)')
-            if end:
-                vars['end'] = end[0]
-                # if just a date is passed in (as opposed to a full datetime),
-                # we want it to be *inclusive*, i.e., returning all results
-                # on that date.
-                if re.match('\d{4}-\d{2}-\d{2}$', vars['end']):
-                    wheres.append('date(teststart) <= date($end)')
-                else:
-                    wheres.append('date(teststart) < date($end)')
-            if client:
-                client_wheres = []
-                try:
-                    ips = [x.strip() for x in
-                           cfg.get('clients',client[0]).split(',')]
-                except ConfigParser.NoOptionError:
-                    ips = []
-                    
-                for i, ip in enumerate(ips):
-                    vars['ip%d' % i] = ip
-                    client_wheres.append('ip like $ip%d' % i)
 
-                if len(client_wheres) == 0:
-                    # note that we already applied simple_ascii_only to client, so this is safe
-                    client = client[0].split(",")
-                    wheres.append("ip in ('" + "','".join(client) + "')")
-                else:
-                    wheres.append('(' + ' OR '.join(client_wheres) + ')')
+        browserset = set()
 
-            tablename = t
-            testname = t
-            if type(t) is not str:
-                tablename = t[0]
-                testname = t[1]
-                wheres.append("testname = '%s'" % (testname))
+        result = db.select("results", vars, where=' AND '.join(map(lambda x: str(x), wheres)), order='testtime ASC')
+        for row in result:
+            record = dict(row)
+            browserset.add(record['browser_id'])
 
-            #print "WHERE", ' AND '.join(wheres)
+            for k, v in record.iteritems():
+                if isinstance(v, datetime.datetime):
+                    record[k] = time.mktime(v.timetuple()) * 1000
 
-            result = db.select(tablename, vars, where=' AND '.join(wheres), order='teststart ASC')
-            for row in result:
-                record = dict(row)
-                for k, v in record.iteritems():
-                    if isinstance(v, datetime.datetime):
-                        record[k] = v.isoformat()
-                # no need to send this with each line
-                record.pop('testname', False)
-                # and don't send the full data unless explicitly requested
-                if not fullresults:
-                    record.pop('result_data', False)
-                response['results'][testname].append(record)
+            # no need to send this with each line; we'll know it based on the key
+            testname = record.pop('testname', False)
+
+            # and don't send the full data unless explicitly requested
+            if not fullresults:
+                record.pop('extra_data', False)
+
+            if not testname in response['results']:
+                response['results'][testname] = list()
+            response['results'][testname].append(record)
+
+        result = db.query("SELECT * FROM browsers WHERE id IN " + web.db.sqlquote(list(browserset)))
+        for row in result:
+            record = dict(row)
+            response['browsers'][record['id']] = record
+
         return response

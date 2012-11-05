@@ -84,6 +84,10 @@ var SpeedTests = function() {
       if (config)
         setConfig(config);
 
+      if (!('_benchchild' in urlParams)) {
+      }
+
+
       window.moveTo(0, 0);
       window.resizeTo(obj.config.testWidth, obj.config.testHeight);
 
@@ -116,7 +120,10 @@ var SpeedTests = function() {
     recordSubResult: function(subname, value, extra) {
       if (obj.finished) return;
 
-      var r = { name: subname, value: value };
+      var r = { name: subname,
+                value: value,
+                width: window.innerWidth,
+                height: window.innerHeight };
       if (extra)
         r.extra = extra;
       obj.results.push(r);
@@ -150,7 +157,11 @@ var SpeedTests = function() {
 
       // simple median; in the future we can introduce some different mechanisms for this
       var value = obj.periodicValues[Math.floor(obj.periodicValues.length / 2)];
-      var r = { name: subname, value: value, raw: obj.periodicValues };
+      var r = { name: subname,
+                value: value,
+                raw: obj.periodicValues,
+                width: window.innerWidth,
+                height: window.innerHeight };
       obj.periodicValues = [];
       if (extra)
         r.extra = extra;
@@ -178,8 +189,6 @@ var SpeedTests = function() {
       var resultServerObject = {
         browserInfo: {
           ua: navigator.userAgent,
-          width: window.innerWidth,
-          height: window.innerHeight,
           screenWidth: window.screen.width,
           screenHeight: window.screen.height
         },
@@ -270,6 +279,12 @@ var SpeedTests = function() {
       setTimeout(waitForResults, 500);
     }
   };
+
+  if (!('_benchchild' in urlParams)) {
+    window.open(window.location + "&_benchchild=1", '_blank', 'titlebar,close,location');
+    window.location = "about:blank";
+    return;
+  }
 
   obj.loadTime = new Date();
   if ('_benchconfig' in urlParams) {

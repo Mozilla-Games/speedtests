@@ -1,16 +1,8 @@
-[speedtests]
+[server]
 # These are the defaults
-require_signed = False  # require results to be validly signed JWS messages
-html_dir = ../html      # location of tests and results HTML/JS/CSS
-proxy = None            # forward results onto this results server
-db_host = localhost     # for results server, location of results db
-
-[clients]
-# for results server, list all clients here in the form
-# <displayed name> = <IPs>
-# Multiple IPs can be specified in case machines change IPs.
-
-[client keys]
-# to support JWS authenticated messages from clients, place keys here in
-# the form <IP> = <key>
+db_type = sqlite             # sqlite, mysql
+db_name = speedtests.sqlite  # for sqlite
+#db_host = localhost         # if mysql
+#db_user = user              # if mysql
+#db_passwd = pass            # if mysql
 

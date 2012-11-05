@@ -57,7 +57,7 @@ ScoreDisplay.prototype.getTestRuns = function() {
 
   for (var i = 0; i < this.records.length; i++) {
     var record = this.records[i];
-    testStart = this.records[i].teststart;
+    testStart = new Date(this.records[i].testtime);
     if (!(testStart in byTestStart)) {
       byTestStart[testStart] = [];
     }
@@ -87,9 +87,9 @@ ScoreDisplay.prototype.getPoints = function() {
     browserId = runResult[0].browser_id;
     browser = this.browsers[browserId];
     score = this.getScore(runResult);
-    browserName = browser.browsername + ' ' + browser.browserversion;
+    browserName = browser.name + ' ' + browser.version;
     browserExtra = { time: testRuns[i][0], error: runResult[0].error };
-    if (browser.browsername.indexOf('Firefox') != -1) {
+    if (browser.name.indexOf('Firefox') != -1) {
       browserExtra['buildid'] = browser.buildid;
       browserExtra['sourcestamp'] = browser.sourcestamp;
     }
@@ -606,7 +606,7 @@ $(document).ready(function() {
   // Populate select boxes.
   $.ajax({
     type: 'GET',
-    url: 'api/params/',
+    url: 'api/testinfo/',
     success: function(data) {
       //console.log(data);
       for (var i = 0; i < data.testnames.length; i++) {

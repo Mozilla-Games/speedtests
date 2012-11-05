@@ -148,7 +148,7 @@ class BrowserRunner(object):
             if controller.AppBuildID:
                 self.config['browserBuildID'] = contoller.AppBuildID
             if controller.NameExtra:
-                self.config['browserNameExtra'] = contoller.NameExtra
+                self.config['browserNameExtra'] = controller.NameExtra
 
             self.configstr = base64.b64encode(json.dumps(self.config))
 
