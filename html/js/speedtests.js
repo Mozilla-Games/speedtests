@@ -280,16 +280,22 @@ var SpeedTests = function() {
     }
   };
 
-  if (!('_benchchild' in urlParams)) {
-    window.open(window.location + "&_benchchild=1", '_blank', 'titlebar,close,location');
-    window.location = "about:blank";
-    return;
-  }
-
   obj.loadTime = new Date();
   if ('_benchconfig' in urlParams) {
     obj.setConfig(JSON.parse(decode_base64(urlParams['_benchconfig'])));
     obj.config.token = urlParams['_benchtoken'];
+  }
+
+  // This is a hack; on desktop browsers, we want to open a popup so we can
+  // control the size.  But on Android & FFOS, we don't want to do this because
+  // the browser window will be full screen anyway, and we don't want to have
+  // to allow popups since it's more complicated there.
+  if ((obj.config.platform != 'android' && obj.config.platform != 'ffos') &&
+      !('_benchchild' in urlParams))
+  {
+    window.open(window.location + "&_benchchild=1", '_blank', 'titlebar,close,location');
+    window.location = "about:blank";
+    return;
   }
 
   return obj;
