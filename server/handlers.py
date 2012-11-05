@@ -12,6 +12,7 @@ import templeton.handlers
 import urllib2
 import web
 import base64
+import traceback
 from collections import defaultdict
 
 class DefaultConfigParser(ConfigParser.ConfigParser):
@@ -34,12 +35,29 @@ DB_HOST = cfg.get_default('server', 'db_host', 'localhost')
 DB_USER = cfg.get_default('server', 'db_user', 'speedtests')
 DB_PASSWD = cfg.get_default('server', 'db_passwd', 'speedtests')
 
-
 if DB_TYPE is 'sqlite':
     dbargs = { 'dbn': DB_TYPE, 'db': DB_NAME }
 else:
     dbargs = { 'dbn': DB_TYPE, 'db': DB_NAME, 'db': DB_NAME, 'host': DB_HOST, 'user': DB_USER, 'pw': DB_PASSWD }
 db = web.database(**dbargs)
+
+# let's just make things work if the db is empty
+try:
+    db.query('SELECT COUNT(*) FROM browsers')
+except:
+    schema_lines = "".join(open("schema.sql", "r").readlines()).split(";")
+    cursor = db.ctx.db.cursor()
+    for line in schema_lines:
+        cursor.execute(line)
+    db.ctx.db.commit()
+    cursor.close()
+    print "Initialized empty sqlite database."
+
+try:
+    db.query('SELECT COUNT(*) FROM browsers')
+except:
+    print "Tried to initialize empty database, but failed!"
+    raise
 
 urls = ('/testinfo/', 'TestInfo',
         '/testresults/', 'TestResults',
