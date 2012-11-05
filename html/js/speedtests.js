@@ -82,12 +82,33 @@ var SpeedTests = function() {
 
       // for testing
       if (config)
-        obj.config = config;
+        setConfig(config);
+
+      window.moveTo(0, 0);
+      window.resizeTo(obj.config.testWidth, obj.config.testHeight);
 
       obj.name = name;
       obj.startTime = new Date();
     },
 
+    setConfig: function(config) {
+      obj.config = config;
+      if (!('clientName' in obj.config)) {
+        console.log.error("benchconfig missing clientName!");
+        obj.config = {};
+      }
+
+      // some defaults
+      var defaults = {
+        'testWidth': 1024,
+        'testHeight': 768
+      };
+
+      for (var n in defaults) {
+        if (!(n in obj.config))
+          obj.config[n] = defaults[n];
+      }
+    },
 
     // Record a result from this test suite; the subname should
     // be the name of the sub-test.  'extra' is a JSON object of extra
@@ -252,11 +273,7 @@ var SpeedTests = function() {
 
   obj.loadTime = new Date();
   if ('_benchconfig' in urlParams) {
-    obj.config = JSON.parse(decode_base64(urlParams['_benchconfig']));
-    if (!('clientName' in obj.config)) {
-      console.log.error("benchconfig missing clientName!");
-      obj.config = {};
-    }
+    obj.setConfig(JSON.parse(decode_base64(urlParams['_benchconfig'])));
     obj.config.token = urlParams['_benchtoken'];
   }
 
