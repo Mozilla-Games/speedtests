@@ -144,11 +144,13 @@ class BrowserRunner(object):
             self.config['client'] = client
             self.config['browser'] = controller.browser_name
             if controller.AppSourceStamp:
-                self.config['browserSourceStamp'] = contoller.AppSourceStamp
+                self.config['browserSourceStamp'] = controller.AppSourceStamp
             if controller.AppBuildID:
-                self.config['browserBuildID'] = contoller.AppBuildID
+                self.config['browserBuildID'] = controller.AppBuildID
             if controller.NameExtra:
                 self.config['browserNameExtra'] = controller.NameExtra
+
+            #print json.dumps(self.config)
 
             self.configstr = base64.b64encode(json.dumps(self.config))
 

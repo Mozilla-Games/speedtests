@@ -1,3 +1,7 @@
+import shutil
+import urllib
+import zipfile
+
 from BrowserController import *
 from AndroidBrowserControllers import *
 from get_latest import GetLatestTinderbox

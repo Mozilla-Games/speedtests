@@ -251,14 +251,14 @@ def main():
     if not options.noresults:
         testconfig["resultServer"] = config.results_server
 
-    test_extra_params = "_benchconfig=" + base64.b64encode(json.dumps(testconfig))
-
     if not options.tests:
         print 'Getting test list from server...'
         try:
-            tests_url = config.test_base_url + '/testpaths/?' + test_extra_params
+            # pass the config to testpaths, so that it can do potentially useful things with that info
+            test_extra_params = "?_benchconfig=" + base64.b64encode(json.dumps(testconfig))
+            tests_url = config.test_base_url + '/testpaths/'
             print 'Getting test list from %s...' % tests_url
-            options.tests = json.loads(urllib2.urlopen(tests_url).read())
+            options.tests = json.loads(urllib2.urlopen(tests_url + test_extra_params).read())
         except urllib2.HTTPError, e:
             sys.stderr.write('Could not get test list: %s\n' % e)
             sys.exit(errno.EPERM)
@@ -324,9 +324,7 @@ def main():
     
             if config.reboot_after > 0 and cycle_count % config.reboot_after == 0:
                 print "Rebooting..."
-                ok = createDeviceManager().reboot()
-                if not ok:
-                    print "WARNING: Reboot failed!"
+                createDeviceManager().reboot()
                 # Wait for the network to come back up!
                 time.sleep(45)
         except KeyboardInterrupt:

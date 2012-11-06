@@ -200,6 +200,12 @@ var SpeedTests = function() {
         results: obj.results
       };
 
+      var extraBrowserInfo = ["browserNameExtra", "browserSourceStamp", "browserBuildID"];
+      for (var i = 0; i < extraBrowserInfo.length; ++i) {
+        if (extraBrowserInfo[i] in obj.config)
+          resultServerObject.browserInfo[extraBrowserInfo[i]] = obj.config[extraBrowserInfo[i]];
+      }
+
       var resultsStr = encode_base64(JSON.stringify(resultServerObject));
 
       function sendResults(server, resultTarget) {

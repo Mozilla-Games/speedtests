@@ -605,7 +605,7 @@ class DeviceManagerSUT(DeviceManager):
     try:
       data = self.runCmds([{ 'cmd': 'tmpd' }])
     except AgentError:
-      return None
+      data = "/data/local/tmp"
 
     return data.strip()
 

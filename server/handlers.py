@@ -134,13 +134,19 @@ def get_browser_info(ua, extra_data):
         'buildid': buildid
         }
 
-    # now allow for some overrides
-    for token in ['buildid', 'geckoversion', 'sourcestamp', 'screenWidth', 'screenHeight']:
+    # add some extra info bits
+    for token in ['screenWidth', 'screenHeight']:
         if token in extra_data:
             browserinfo[token.lower()] = extra_data[token]
 
-    if 'name_extra' in extra_data:
-        browserinfo['name'] += "-" + extra_data['name_extra']
+    for token in ['BuildID', 'SourceStamp']:
+        if ("browser" + token) in extra_data:
+            browserinfo[token.lower()] = extra_data["browser" + token]
+
+    if 'browserNameExtra' in extra_data:
+        browserinfo['name'] += "-" + extra_data['browserNameExtra']
+
+    #print json.dumps(browserinfo)
 
     return browserinfo
 
@@ -195,8 +201,9 @@ class SubmitResult(object):
                 extrajson = None
                 error = False
                 if 'extra' in result:
-                    extrajson = json.dumps(result['raw'])
-                    error = result['raw']['error']
+                    extrajson = json.dumps(result['extra'])
+                    if 'error' in result['extra']:
+                        error = result['extra']['error']
 
                 resultdata = {
                     'testname': result['name'],
