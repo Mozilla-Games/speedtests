@@ -68,6 +68,8 @@ class LatestTinderboxFxBrowserController(BrowserController):
     AppSourceRepository = None
     AppSourceStamp = None
 
+    last_download_url = None
+
     def __init__(self, os_name, browser_name, profiles, base_install_dir, branch='mozilla-central'):
         self.base_install_dir = os.path.join(base_install_dir, config.client)
         self.branch = branch
@@ -89,22 +91,33 @@ class LatestTinderboxFxBrowserController(BrowserController):
             return False
 
         try:
-            shutil.rmtree(install_path)
+            if self.last_download_url is None:
+                shutil.rmtree(install_path)
+                os.makedirs(install_path)
         except:
             pass
 
-        os.makedirs(install_path)
+        if not os.path.exists(install_path):
+            print "! failed to create temp dir path: %s" % install_path
+            return False
+
+        destfile = os.path.join(install_path, basename)
 
         try:
-            print "Fetching " + latest_url + "..."
-            urllib.urlretrieve(latest_url, os.path.join(install_path, basename))
+            if latest_url == self.last_download_url and os.path.exists(destfile):
+                print "Skipping fetching " + latest_url + ", already have it"
+            else:
+                print "Fetching " + latest_url + "..."
+                urllib.urlretrieve(latest_url, destfile)
+                self.last_download_url = latest_url
         except:
             print 'Failed to get latest tinderbox build'
             if config.verbose:
                 traceback.print_exc()
+            self.last_download_url = None
             return False
 
-        appini = self.prepare_archived_build(install_path, os.path.join(install_path, basename))
+        appini = self.prepare_archived_build(install_path, destfile)
         if appini is None:
             print 'Failed to get application.ini!'
             return False
@@ -156,6 +169,7 @@ class WinLatestTinderboxFxBrowserController(LatestTinderboxFxBrowserController):
 
 class AndroidTinderboxFxBrowserController(AndroidFirefoxBrowserController):
     INSTALL_SUBDIR = 'speedtests_fennec_tb'
+    last_download_url = None
 
     def __init__(self, os_name, browser_name, branch='mozilla-central'):
         # explicitly not using super()
@@ -169,10 +183,15 @@ class AndroidTinderboxFxBrowserController(AndroidFirefoxBrowserController):
         install_path = os.path.join(self.base_install_dir, self.INSTALL_SUBDIR)
 
         try:
-            shutil.rmtree(install_path)
+            if self.last_download_url is None:
+                shutil.rmtree(install_path)
+                os.makedirs(install_path)
         except:
             pass
-        os.makedirs(install_path)
+
+        if not os.path.exists(install_path):
+            print "! failed to create temp dir path: %s" % install_path
+            return False
 
         latest = GetLatestTinderbox(self.branch, "android", app='mobile', app_short='fennec')
         latest_url = latest.latest_build_url()
@@ -181,11 +200,17 @@ class AndroidTinderboxFxBrowserController(AndroidFirefoxBrowserController):
         apkpath = os.path.join(install_path, basename)
 
         try:
-            print "Fetching " + latest_url + "..."
-            urllib.urlretrieve(latest_url, apkpath)
+            if latest_url == self.last_download_url and os.path.exists(apkpath):
+                print "Skipping fetching " + latest_url + ", already have it"
+            else:
+                print "Fetching " + latest_url + "..."
+                urllib.urlretrieve(latest_url, apkpath)
+                self.last_download_url = latest_url
         except Exception as e:
             print 'Failed to get latest tinderbox build'
-            print e
+            if config.verbose:
+                traceback.print_exc()
+            self.last_download_url = None
             return False
 
         # pull out app.ini and parse it

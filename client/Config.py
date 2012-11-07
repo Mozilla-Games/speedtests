@@ -41,7 +41,7 @@ class Config(object):
         self.defaults = defaults
 
         self.ignore = False
-        self.verbose = False
+        self.verbose = 0
         self.platform = platform.system()
 
     def read(self, noresults=False, ignore=False,

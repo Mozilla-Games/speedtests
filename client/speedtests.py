@@ -100,7 +100,7 @@ currentTestToken = None
 class TestRunnerRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
     def do_GET(self):
-        if config.verbose:
+        if config.verbose > 1:
             print "Handling GET '%s'..." % (self.path)
 
         o = urlparse.urlparse(self.path)
@@ -176,7 +176,7 @@ def main():
                       help='config file (default speedtests.conf)')
     parser.add_option('-t', '--test', dest='tests', action='append', default=[])
     parser.add_option('-n', '--noresults', dest='noresults', action='store_true')
-    parser.add_option('-v', '--verbose', dest='verbose', action='store_true')
+    parser.add_option('-v', '--verbose', dest='verbose', action='count')
     parser.add_option('--ignore', dest='ignore', action='store_true',
                       help='instruct server to ignore results')
     parser.add_option('--client', dest='client', type='string', action='store',

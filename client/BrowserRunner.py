@@ -278,6 +278,9 @@ class BrowserRunner(object):
             # Try to grab the next browser to test; if none left,
             # we're done.
             try:
+                if self.current_controller:
+                    print '* %s: done.\n' % self.current_controller.browser_name
+
                 self.current_controller = self.browser_iter.next()
             except StopIteration:
                 self.evt.set()
@@ -285,6 +288,9 @@ class BrowserRunner(object):
                 return
 
             try:
+                browser_name = self.current_controller.browser_name
+                print '* %s: initializing...' % browser_name
+
                 self.current_test_url = None
                 self.test_url_iter = BrowserRunner.TestURLIter(self.tests,
                                                                config.client,
@@ -292,14 +298,14 @@ class BrowserRunner(object):
                                                                self.testconfig)
 
                 if not self.current_controller.init_browser():
-                    print 'Failed to init %s, skipping...' % self.current_controller.browser_name
+                    print '! Failed to init %s, skipping...' % browser_name
                     continue
 
                 if not self.current_controller.browser_exists():
-                    print "Browser %s doesn't exist, skipping..." % self.current_controller.browser_name
+                    print "! Browser %s doesn't exist, skipping..." % browser_name
                     continue
 
-                print 'Launching %s...' % self.current_controller.browser_name
+                print '* %s: launching...' % browser_name
                 self.lock.release()
                 self.next_test()
                 return

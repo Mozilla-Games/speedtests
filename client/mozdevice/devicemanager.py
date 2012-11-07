@@ -78,6 +78,8 @@ class DeviceManager:
     success: directory structure that we created
     failure: None
     """
+    if (self.dirExists(filename)):
+      return filename
     parts = filename.split('/')
     name = ""
     for part in parts:
