@@ -189,12 +189,14 @@ def main():
                       help='number of cycles to run, default 1, -1 to run forever')
     parser.add_option('--forever', dest='cycles', const=-1, action='store_const',
                       help='run forever')
-    parser.add_option('--nap_after', dest='nap_after', type='int', action='store',
+    parser.add_option('--nap-after', dest='nap_after', type='int', action='store',
                       help='take a break after this many cycles (0=never)')
-    parser.add_option('--nap_time', dest='nap_time', type='int', action='store',
+    parser.add_option('--nap-time', dest='nap_time', type='int', action='store',
                       help='duration of nap, in seconds')
-    parser.add_option('--reboot_after', dest='reboot_after', type='int', action='store',
+    parser.add_option('--reboot-after', dest='reboot_after', type='int', action='store',
                       help='reboot device after this many cycles (0=never)')
+    parser.add_option('--include-dev-builds', dest='include_dev_builds', action='store_true',
+                      help='Include developer builds in browsers lists (specifically for Android Firefox)')
 
     (options, args) = parser.parse_args()
 
@@ -208,6 +210,9 @@ def main():
 
     if options.verbose:
         config.verbose = options.verbose
+
+    if options.include_dev_builds:
+        config.include_dev_builds = True
 
     if not options.client and not config.get_str('speedtests', 'client'):
         print "--client must be specified on command line or in config (we don't support ip-based clients here)"

@@ -37,6 +37,7 @@ class Config(object):
         defaults['results_server'] = None
         #defaults['platform'] = platform.system()
         defaults['client'] = self.local_ip
+        defaults['include_dev_builds'] = "False"
 
         self.defaults = defaults
 
@@ -61,6 +62,7 @@ class Config(object):
         self.local_port = self.cfg.getint('speedtests', 'local_port')
         self.client = self.get_str('speedtests', 'client')
         self.results_server = self.cfg.get('speedtests', 'results_server')
+        self.include_dev_builds = self.cfg.getboolean('speedtests', 'include_dev_builds')
 
         try:
             self.test_base_url = self.cfg.get('speedtests', 'test_base_url').rstrip('/')

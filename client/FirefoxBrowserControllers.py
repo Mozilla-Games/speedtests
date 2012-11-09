@@ -173,7 +173,7 @@ class AndroidTinderboxFxBrowserController(AndroidFirefoxBrowserController):
 
     def __init__(self, os_name, browser_name, branch='mozilla-central'):
         # explicitly not using super()
-        AndroidFirefoxBrowserController.__init__(self, os_name, browser_name)
+        AndroidFirefoxBrowserController.__init__(self, os_name, browser_name, package='org.mozilla.fennec')
 
         # stuff from LatestTinderboxFxBrowserController.__init__
         self.base_install_dir = os.path.join("/tmp", config.client)

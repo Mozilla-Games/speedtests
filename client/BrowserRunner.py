@@ -96,13 +96,16 @@ class BrowserRunner(object):
     @classmethod
     def browsers_Android(cls):
         os_name = 'android'
-        return [
-            AndroidFirefoxBrowserController(os_name, 'firefox'),
+        browsers = [
+            AndroidFirefoxBrowserController(os_name, 'firefox', package='org.mozilla.firefox'),
             #AndroidLatestFxAdbBrowserController(os_name, 'nightly'),
             AndroidTinderboxFxBrowserController(os_name, 'tinderbox'),
             AndroidBrowserController(os_name, 'browser', 'com.google.android.browser'),
-            AndroidChromeBrowserController(os_name, 'chrome', 'com.android.chrome', activity='com.google.android.apps.chrome.Main')
+            AndroidChromeBrowserController(os_name, 'chrome')
             ]
+        if config.include_dev_builds:
+            browsers.append(AndroidFirefoxBrowserController(os_name, 'fennec_' + os.getenv('USER'), package='org.mozilla.fennec_' + os.getenv('USER')))
+        return browsers
 
     @classmethod
     def browsers_by_os(cls, os_str):

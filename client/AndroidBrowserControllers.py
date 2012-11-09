@@ -113,14 +113,14 @@ class AndroidBrowserController(BrowserController):
         self.clean_up()
 
 class AndroidFirefoxBrowserController(AndroidBrowserController):
-    def __init__(self, os_name, browser_name, package='org.mozilla.fennec', activity='.App'):
+    def __init__(self, os_name, browser_name, package='org.mozilla.firefox', activity='.App'):
         super(AndroidFirefoxBrowserController, self).__init__(os_name, browser_name, package, activity)
 
     def clean_up(self):
         self.dm.shell(["rm", "/data/data/" + self.browserPackage + "/files/mozilla/*.default/session*"], None, root=True)
 
 class AndroidChromeBrowserController(AndroidBrowserController):
-    def __init__(self, os_name, browser_name, package='org.mozilla.fennec', activity='.App'):
+    def __init__(self, os_name, browser_name, package='com.android.chrome', activity='com.google.android.apps.chrome.Main'):
         super(AndroidChromeBrowserController, self).__init__(os_name, browser_name, package, activity)
 
     def clean_up(self):
