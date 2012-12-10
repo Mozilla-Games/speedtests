@@ -67,6 +67,15 @@ class BrowserRunner(object):
         app_data = os.getenv('APPDATA')
         local_app_data = os.getenv('LOCALAPPDATA')
         program_files = os.getenv('PROGRAMFILES')
+
+        # try to find Chrome
+        chromepath = os.path.join(local_app_data, 'Google\\Chrome\\Application\\chrome.exe')
+        if not os.path.exists(chromepath):
+            chromepath = os.path.join(user_profile, 'Local Settings\\Application Data\\Google\\Chrome\\Application\\chrome.exe')
+        if not os.path.exists(chromepath):
+            chromepath = os.path.join(program_files, 'Google\\Chrome\\Application\\chrome.exe')
+        # if chromepath still isn't valid that's fine, it'll just get disabled in BrowserController
+
         return [
                BrowserController(os_name, 'firefox',
                                [{'path': os.path.join(app_data, 'Mozilla\\Firefox'), 'archive': 'windows.zip'}],
@@ -77,9 +86,8 @@ class BrowserRunner(object):
                                                      [{'path': os.path.join(app_data, 'Mozilla\\Firefox'), 'archive': 'windows.zip'}],
                                                      os.getenv('TEMP'), "mozilla-central"),
                BrowserController(os_name, 'chrome',
-                               [{'path': os.path.join(local_app_data, 'Google\\Chrome\\User Data'), 'archive': 'windows.zip'}],
-                                 os.path.join(program_files, 'Google\\Chrome\\Application\\chrome.exe'))
-                               #os.path.join(user_profile, 'Local Settings\\Application Data\\Google\\Chrome\\Application\\chrome.exe'))
+                                 [{'path': os.path.join(local_app_data, 'Google\\Chrome\\User Data'), 'archive': 'windows.zip'}],
+                                 chromepath)
 
                # don't care about these
                # BrowserController(os_name, 'safari',
