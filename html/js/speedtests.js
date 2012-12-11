@@ -52,6 +52,17 @@ var SpeedTests = function() {
     return (r ? enc.slice(0, r - 3) : enc) + '==='.slice(r || 3);
   };
 
+  var ISODateString = function(d) {
+    d = d || new Date();
+    function pad(n) {return n<10 ? '0'+n : n}
+    return d.getUTCFullYear()+'-'
+      + pad(d.getUTCMonth()+1)+'-'
+      + pad(d.getUTCDate())+'T'
+      + pad(d.getUTCHours())+':'
+      + pad(d.getUTCMinutes())+':'
+      + pad(d.getUTCSeconds())+'Z'
+  };
+
   // grab the URL params so that we have them handy; we'll only really care
   // about the _benchconfig param
   var urlParams = {};
@@ -200,6 +211,12 @@ var SpeedTests = function() {
         results: obj.results
       };
 
+      var cubeResult = {
+        "type": "result",
+        "time": ISODateString(obj.finishTime),
+        "data": resultServerObject
+      };
+
       var extraBrowserInfo = ["browserNameExtra", "browserSourceStamp", "browserBuildID"];
       for (var i = 0; i < extraBrowserInfo.length; ++i) {
         if (extraBrowserInfo[i] in obj.config)
@@ -250,11 +267,26 @@ var SpeedTests = function() {
       if (obj.config) {
         sendResults(obj.config.resultServer, "serverSend");
         sendResults(obj.config.runnerServer, "runnerSend");
+
+        SpeedTests["cubeSendDone"] = false;
+        if (obj.config.cubeServer && "WebSocket" in window) {
+          var ws = new WebSocket(obj.config.cubeServer);
+          ws.onopen = function() {
+            ws.send(JSON.stringify(cubeResult));
+            ws.close();
+            SpeedTests["cubeSendDone"] = true;
+          };
+          ws.onerror = function(error) {
+            console.log("ws error", error);
+          };
+        } else {
+          SpeedTests["cubeSendDone"] = true;
+        }
       }
 
       var count = 0;
       function waitForResults() {
-        var done = SpeedTests["serverSendDone"] && SpeedTests["runnerSendDone"];
+        var done = SpeedTests["serverSendDone"] && SpeedTests["runnerSendDone"] && SpeedTests["cubeSendDone"];
         var error = false;
 
         if (++count > 20) {

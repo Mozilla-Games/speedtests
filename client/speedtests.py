@@ -255,6 +255,7 @@ def main():
     testconfig["platform"] = config.platform
     if not options.noresults:
         testconfig["resultServer"] = config.results_server
+        testconfig["cubeServer"] = config.cube_results_server
 
     if not options.tests:
         print 'Getting test list from server...'

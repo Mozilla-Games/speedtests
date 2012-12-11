@@ -38,6 +38,7 @@ class Config(object):
         #defaults['platform'] = platform.system()
         defaults['client'] = self.local_ip
         defaults['include_dev_builds'] = "False"
+        defaults['cube_results_server'] = None
 
         self.defaults = defaults
 
@@ -62,6 +63,7 @@ class Config(object):
         self.local_port = self.cfg.getint('speedtests', 'local_port')
         self.client = self.get_str('speedtests', 'client')
         self.results_server = self.cfg.get('speedtests', 'results_server')
+        self.cube_results_server = self.cfg.get('speedtests', 'cube_results_server')
         self.include_dev_builds = self.cfg.getboolean('speedtests', 'include_dev_builds')
 
         try:
