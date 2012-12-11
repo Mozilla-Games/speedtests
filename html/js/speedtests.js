@@ -203,18 +203,11 @@ var SpeedTests = function() {
           screenWidth: window.screen.width,
           screenHeight: window.screen.height
         },
+        client: obj.config.clientName,
         config: obj.config,
         loadTime: obj.loadTime.getTime(),
         startTime: obj.startTime.getTime(),
-        finishTime: obj.finishTime.getTime(),
-
-        results: obj.results
-      };
-
-      var cubeResult = {
-        "type": "result",
-        "time": ISODateString(obj.finishTime),
-        "data": resultServerObject
+        finishTime: obj.finishTime.getTime()
       };
 
       var extraBrowserInfo = ["browserNameExtra", "browserSourceStamp", "browserBuildID"];
@@ -223,7 +216,9 @@ var SpeedTests = function() {
           resultServerObject.browserInfo[extraBrowserInfo[i]] = obj.config[extraBrowserInfo[i]];
       }
 
+      resultServerObject.results = obj.results;
       var resultsStr = encode_base64(JSON.stringify(resultServerObject));
+      delete resultServerObject.results;
 
       function sendResults(server, resultTarget) {
         if (!server) {
@@ -263,17 +258,36 @@ var SpeedTests = function() {
         }
       }
 
-      // send the results to the server and the runner
+      // send the results to the server
       if (obj.config) {
         sendResults(obj.config.resultServer, "serverSend");
-        sendResults(obj.config.runnerServer, "runnerSend");
 
+        // for cube, we split up each individual result in its own notification
         SpeedTests["cubeSendDone"] = false;
         if (obj.config.cubeServer && "WebSocket" in window) {
+          var cubeResult = {
+            "type": "result",
+            "time": ISODateString(obj.finishTime)
+          };
+
           var ws = new WebSocket(obj.config.cubeServer);
           ws.onopen = function() {
-            ws.send(JSON.stringify(cubeResult));
+            // prep for cube results
+            for (var i = 0; i < obj.results.length; ++i) {
+              var r = obj.results[i];
+              for (var prop in r)
+                resultServerObject[prop] = r[prop];
+              cubeResult.data = resultServerObject;
+
+              ws.send(JSON.stringify(cubeResult));
+              
+              for (var prop in r)
+                delete resultServerObject[prop];
+            }
+
             ws.close();
+          };
+          ws.onclose = function() {
             SpeedTests["cubeSendDone"] = true;
           };
           ws.onerror = function(error) {
@@ -285,8 +299,9 @@ var SpeedTests = function() {
       }
 
       var count = 0;
+      var waitForRunnerSend = false;
       function waitForResults() {
-        var done = SpeedTests["serverSendDone"] && SpeedTests["runnerSendDone"] && SpeedTests["cubeSendDone"];
+        var done = SpeedTests["serverSendDone"] && SpeedTests["cubeSendDone"] && (waitForRunnerSend ? SpeedTests["runnerSendDone"] : true);
         var error = false;
 
         if (++count > 20) {
@@ -294,7 +309,11 @@ var SpeedTests = function() {
           error = true;
         }
 
-        if (done) {
+        if (done && !waitForRunnerSend) {
+          sendResults(obj.config.runnerServer, "runnerSend");
+          waitForRunnerSend = true;
+        } else if (done) {
+
           // finished
           document.location = "about:blank";
           // if we can; might exit the browser, which would be nice.
