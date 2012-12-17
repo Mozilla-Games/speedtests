@@ -318,7 +318,6 @@ class BrowserRunner(object):
 
                 print '* %s: launching...' % browser_name
                 self.lock.release()
-                self.next_test()
                 return
 
             except:
