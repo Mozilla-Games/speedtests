@@ -262,7 +262,7 @@ def main():
         try:
             # pass the config to testpaths, so that it can do potentially useful things with that info
             test_extra_params = "?_benchconfig=" + base64.b64encode(json.dumps(testconfig))
-            tests_url = config.test_base_url + '/testpaths/'
+            tests_url = config.test_base_url + '/testpaths'
             print 'Getting test list from %s...' % tests_url
             options.tests = json.loads(urllib2.urlopen(tests_url + test_extra_params).read())
         except urllib2.HTTPError, e:
