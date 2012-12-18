@@ -39,11 +39,9 @@ AquariumSpeedtest.fpsUpdate = function(avg) {
     var median = sorted[Math.floor(numFrames / 2)];
 
     var extra = {
-      testDescription: "WebGL Aquarium",
-      testResult: average,
       min: sorted[0],
       max: sorted[numFrames-1],
-      median: median,
+      median: median
     };
 
     this.submitted = true;

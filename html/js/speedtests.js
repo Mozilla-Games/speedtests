@@ -73,7 +73,7 @@ var SpeedTests = function() {
     decode = function (s) { return decodeURIComponent(s.replace(pl, " ")); },
     query  = window.location.search.substring(1);
 
-    while (match = search.exec(query))
+    while ((match = search.exec(query)) != null)
       urlParams[decode(match[1])] = decode(match[2]);
   })();
 
@@ -167,10 +167,20 @@ var SpeedTests = function() {
       }
 
       // simple median; in the future we can introduce some different mechanisms for this
-      var value = obj.periodicValues[Math.floor(obj.periodicValues.length / 2)];
+      var pv = obj.periodicValues;
+      pv.sort(function(a,b) { if (a<b) return -1; if (a>b) return 1; return 0; });
+
+      // take the average as the value, but provide min/max/median
+      var avg = 0;
+      for (var i = 0; i < pv.length; ++i)
+        avg += pv[i];
+      avg = avg / pv.length;
+
       var r = { name: subname,
-                value: value,
-                raw: obj.periodicValues,
+                value: avg,
+                min: pv[0],
+                max: pv[pv.length-1],
+                median: pv[Math.floor(pv.length / 2)],
                 width: window.innerWidth,
                 height: window.innerHeight };
       obj.periodicValues = [];
@@ -181,6 +191,15 @@ var SpeedTests = function() {
 
     recordPeriodicResult: function(method) {
       return obj.recordSubPeriodicResult(obj.name, extra);
+    },
+
+    recordError: function(name, message) {
+      name = name || obj.name;
+      var r = { name: name,
+                error: true };
+      if (message)
+        r.message = message;
+      obj.results.push(r);
     },
 
     // Called when the test is finished running.
@@ -194,6 +213,10 @@ var SpeedTests = function() {
 
       obj.finishTime = new Date();
 
+      // if we're just testing, don't post anything
+      if (obj.config.testing)
+        return;
+
       // we're done with this test.  We need to a) send the results to the results server;
       // and b) send the client runner a "test done" notification
 
@@ -204,21 +227,27 @@ var SpeedTests = function() {
           screenHeight: window.screen.height
         },
         client: obj.config.clientName,
-        config: obj.config,
+        browser: obj.config.browser,
         loadTime: obj.loadTime.getTime(),
         startTime: obj.startTime.getTime(),
         finishTime: obj.finishTime.getTime()
       };
 
       var extraBrowserInfo = ["browserNameExtra", "browserSourceStamp", "browserBuildID"];
+      var extraBrowserTarget = ["nameExtra", "sourceStamp", "buildID"];
       for (var i = 0; i < extraBrowserInfo.length; ++i) {
         if (extraBrowserInfo[i] in obj.config)
-          resultServerObject.browserInfo[extraBrowserInfo[i]] = obj.config[extraBrowserInfo[i]];
+          resultServerObject.browserInfo[extraBrowserTarget[i]] = obj.config[extraBrowserInfo[i]];
       }
 
+      // We want to send a few extra things to the non-cube destinations;
+      // since we don't need/want these in mongodb.  Create their json string
+      // up front.
+      resultServerObject.config = obj.config;
       resultServerObject.results = obj.results;
       var resultsStr = encode_base64(JSON.stringify(resultServerObject));
       delete resultServerObject.results;
+      delete resultServerObject.config;
 
       function sendResults(server, resultTarget) {
         if (!server) {
@@ -341,13 +370,16 @@ var SpeedTests = function() {
   if ('_benchconfig' in urlParams) {
     obj.setConfig(JSON.parse(decode_base64(urlParams['_benchconfig'])));
     obj.config.token = urlParams['_benchtoken'];
+  } else {
+    obj.setConfig({ clientName: 'test', testing: true });
   }
 
   // This is a hack; on desktop browsers, we want to open a popup so we can
   // control the size.  But on Android & FFOS, we don't want to do this because
   // the browser window will be full screen anyway, and we don't want to have
   // to allow popups since it's more complicated there.
-  if ((obj.config.platform != 'android' && obj.config.platform != 'ffos') &&
+  if (!obj.config.testing &&
+      (obj.config.platform != 'android' && obj.config.platform != 'ffos') &&
       !('_benchchild' in urlParams))
   {
     window.open(window.location + "&_benchchild=1", '_blank', 'titlebar,close,location');
