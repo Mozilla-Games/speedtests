@@ -5,6 +5,7 @@ import socket
 import time
 import traceback
 import datetime
+import logging
 import ConfigParser
 
 def find_local_port():
@@ -18,26 +19,29 @@ class Config(object):
     DEFAULT_CONF_FILE = 'speedtests.conf'
     MAX_TEST_TIME = datetime.timedelta(seconds=60*15)
 
-    def __init__(self):
-        self.cfg = None
-
+    @classmethod
+    def GetLocalIP(cls):
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             s.connect(('8.8.8.8', 80))
-            self.local_ip = s.getsockname()[0]
+            local_ip = s.getsockname()[0]
             s.close()
+            return local_ip
         except:
-            self.local_ip = '127.0.0.1'
-            print "Using localhost as local IP, hope that's ok!"
-            #raise Exception("Couldn't find local IP!")
+            logging.warn("Using 127.0.0.1 as local IP.  Hope that's OK!")
+            return '127.0.0.1'
+
+    def __init__(self):
+        self.cfg = None
+
+        self.local_ip = self.GetLocalIP()
 
         defaults = dict()
         defaults['64bit'] = "False"
         defaults['local_port'] = 0
-        defaults['results_server'] = None
-        #defaults['platform'] = platform.system()
         defaults['client'] = self.local_ip
         defaults['include_dev_builds'] = "False"
+        defaults['results_server'] = None
         defaults['cube_results_server'] = None
 
         self.defaults = defaults
