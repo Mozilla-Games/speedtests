@@ -178,10 +178,14 @@ class BrowserRunner(object):
                     raise
 
                 url = config.test_base_url + "/" + test
+                if not test.endswith("/"):
+                    url += "/"
+
                 if '?' in url:
-                    url = url + "&_benchconfig=" + self.configstr
+                    url += "&_benchconfig=" + self.configstr
                 else:
                     url = url + "?_benchconfig=" + self.configstr
+                url += "&_bench_name=" + test
 
                 return url
 
@@ -265,8 +269,9 @@ class BrowserRunner(object):
 
             url = self.test_url_iter.next()
             token = str(uuid.uuid4())
+            run_uuid = "RUN-" + str(uuid.uuid4())
 
-            self.current_test_url = url + "&_benchtoken=" + token
+            self.current_test_url = url + "&_benchtoken=" + token + "&_run_uuid=" + run_uuid
             self.current_test_token = token
 
             self.current_controller.launch(self.current_test_url)
