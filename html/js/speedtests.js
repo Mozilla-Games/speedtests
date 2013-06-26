@@ -204,7 +204,25 @@ var SpeedTests = function() {
     },
 
     // Called when the test is finished running.
+    // Argument indicates if this is the final run.
+    // Usage:  SpeedTests.finish([isFinal], [callback]);
     finish: function() {
+      var isFinal;
+      var callback;
+      if (arguments.length == 0) {
+        isFinal = true;
+      } else if (arguments.length == 1) {
+        if (typeof(arguments[0]) == 'function') {
+          isFinal = true;
+          callback = arguments[0];
+        } else {
+          isFinal = arguments[0];
+        }
+      } else if (arguments.length >= 2) {
+        isFinal = arguments[0];
+        callback = arguments[1];
+      }
+
       if (obj.finished) return;
 
       if (obj.name == null) {
@@ -346,10 +364,17 @@ var SpeedTests = function() {
           error = true;
         }
 
-        if (done && !waitForRunnerSend) {
+        if (done && isFinal && !waitForRunnerSend) {
           sendResults(obj.config.runnerServer, "runnerSend");
           waitForRunnerSend = true;
         } else if (done) {
+          if (!isFinal) {
+            console.log("Finished iteration.");
+            if (callback)
+              callback();
+            return;
+          }
+          console.log("Finished run.");
 
           // finished
           document.location = "about:blank";
