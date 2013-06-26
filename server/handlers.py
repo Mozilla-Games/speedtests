@@ -169,6 +169,7 @@ def get_bench_run(config, browser_id):
     run = db.select('runs', where=web.db.sqlwhere({'uuid':run_uuid}))
     run = list(run)
     if run and len(run) > 0:
+        run = run[0]
         # verify that existing run and new run matches on other info.
         if run.browser_id != browser_id:
             logging.warn("Browser mismatch: run=%s db=%s got=%s" % (run_uuid, run.browser_id, browser_id))
