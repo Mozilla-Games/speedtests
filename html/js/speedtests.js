@@ -108,6 +108,7 @@ var SpeedTests = function() {
 
     setConfig: function(config) {
       obj.config = config;
+      console.log("setConfig:", config);
       if (!('clientName' in obj.config)) {
         console.log.error("benchconfig missing clientName!");
         obj.config = {};
@@ -289,7 +290,14 @@ var SpeedTests = function() {
 
       // send the results to the server
       if (obj.config) {
-        sendResults(obj.config.resultServer, "serverSend");
+        var waitBeforeSendResults = 0;
+        if (obj.config.debug) {
+            waitBeforeSendResults = 10000;
+            console.log("Sending results: " + JSON.stringify(obj.results));
+        }
+        setTimeout(function () {
+            sendResults(obj.config.resultServer, "serverSend");
+        }, waitBeforeSendResults);
 
         // for cube, we split up each individual result in its own notification
         SpeedTests["cubeSendDone"] = false;
@@ -370,6 +378,8 @@ var SpeedTests = function() {
   if ('_benchconfig' in urlParams) {
     obj.setConfig(JSON.parse(decode_base64(urlParams['_benchconfig'])));
     obj.config.token = urlParams['_benchtoken'];
+    obj.config.run_uuid = urlParams['_run_uuid'];
+    obj.config.bench_name = urlParams['_bench_name'];
   } else {
     obj.setConfig({ clientName: 'test', testing: true });
   }
