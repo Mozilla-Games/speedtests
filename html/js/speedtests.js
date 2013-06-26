@@ -87,6 +87,11 @@ var SpeedTests = function() {
     results: [],     // the results
     periodicValues: [], // accumulated periodic values
 
+    // Clear all recorded results.
+    resetResults: function() {
+        obj.results = [];
+    },
+
     init: function(name, config) {
       if (obj.name != null)
         console.warning("speedtests: test '" + obj.name + "' already called init()! [new name given: '" + name + "']");
