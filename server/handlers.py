@@ -13,6 +13,7 @@ import urllib2
 import web
 import base64
 import traceback
+import logging
 from collections import defaultdict
 
 class DefaultConfigParser(ConfigParser.ConfigParser):
@@ -156,14 +157,52 @@ def get_browser_id(data):
     # work around some kind of stupid web.py bug or something.
     # checking if browser causes browser[0] to fail afterwards
     # if done directly on the iterator.
-    stupid = list(browser)
-    if stupid and len(stupid) > 0:
-        browser = stupid[0].id
-    else:
-        browser = db.insert('browsers', **browserinfo)
-    return browser
+    browser = list(browser)
+    if browser and len(browser) > 0:
+        return browser[0].id
+    return db.insert('browsers', **browserinfo)
 
-        
+def get_bench_run(config, browser_id):
+    run_uuid = config['run_uuid']
+    client = config['client']
+    bench_name = config['bench_name']
+    run = db.select('runs', where=web.db.sqlwhere({'uuid':run_uuid}))
+    run = list(run)
+    if run and len(run) > 0:
+        # verify that existing run and new run matches on other info.
+        if run.browser_id != browser_id:
+            logging.warn("Browser mismatch: run=%s db=%s got=%s" % (run_uuid, run.browser_id, browser_id))
+            return
+        if run.client != client:
+            logging.warn("Client mismatch: run=%s db=%s got=%s" % (run_uuid, run.client, client))
+            return
+        if run.bench_name != bench_name:
+            logging.warn("Bench mismatch: run=%s db=%s got=%s" % (run_uuid, run.bench_name, bench_name))
+            return
+    else:
+        db.insert('runs',
+            uuid=run_uuid,
+            browser_id=browser_id,
+            client=client,
+            bench_name=bench_name,
+            start_time=datetime.datetime.now().isoformat().replace("T", " ")
+        )
+    return run_uuid
+
+def get_bench_iteration(config, run_uuid):
+    # search for the highest 'iter' among existing iterations for this run.
+    iterations = db.select('iterations', where=web.db.sqlwhere({'run_uuid':run_uuid}))
+    iterations = list(iterations)
+    def cmp_iterations(a, b):
+        return cmp(a.iter, b.iter)
+    iterations.sort(cmp_iterations)
+    iter_no = 1
+    if len(iterations) > 0:
+        iter_no = iterations[-1].iter + 1
+    # insert new iteartion entry
+    iter_id = db.insert('iterations', run_uuid=run_uuid, iter=iter_no)
+    return iter_id
+
 class SubmitResult(object):
     def GET(self):
         args, body = templeton.handlers.get_request_parms()
@@ -171,6 +210,7 @@ class SubmitResult(object):
 
         target = args['target'][0]
         data = json.loads(base64.b64decode(args['data'][0]))
+        logging.warn("KVKV: " + json.dumps(data));
         
         # the data object contains (see speedtests.js for 100% accurate info):
         #   browserInfo: {ua, screenWidth, screenHeight}
@@ -196,6 +236,12 @@ class SubmitResult(object):
             # the replacement is needed for sqlite
             testtime = testtime.isoformat().replace("T", " ")
 
+            # get or create a run for this data.
+            run_uuid = get_bench_run(data['config'], browser_id)
+
+            # get or create an iteration for this data.
+            iter_id = get_bench_iteration(data['config'], run_uuid)
+
             # more than one result could have been submitted; it'll always be an array
             for result in data['results']:
                 extrajson = None
@@ -217,7 +263,17 @@ class SubmitResult(object):
                     'error': error
                 }
 
+                scoredata = {
+                    'iteration_id': iter_id,
+                    'test_name': result['name'],
+                    'score': result['value'],
+                    'window_width': result['width'],
+                    'window_height': result['height'],
+                    'extra_data': extrajson
+                }
+
                 db.insert('results', **resultdata)
+                db.insert('scores', **scoredata);
         except:
             transaction.rollback()
             raise
