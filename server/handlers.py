@@ -211,7 +211,6 @@ class SubmitResult(object):
 
         target = args['target'][0]
         data = json.loads(base64.b64decode(args['data'][0]))
-        logging.warn("KVKV: " + json.dumps(data));
         
         # the data object contains (see speedtests.js for 100% accurate info):
         #   browserInfo: {ua, screenWidth, screenHeight}
@@ -252,18 +251,6 @@ class SubmitResult(object):
                     if 'error' in result['extra']:
                         error = result['extra']['error']
 
-                resultdata = {
-                    'testname': result['name'],
-                    'browser_id': browser_id,
-                    'client': client,
-                    'window_width': result['width'],
-                    'window_height': result['height'],
-                    'testtime': testtime,
-                    'result_value': result['value'],
-                    'extra_data': extrajson,
-                    'error': error
-                }
-
                 scoredata = {
                     'iteration_id': iter_id,
                     'test_name': result['name'],
@@ -273,7 +260,6 @@ class SubmitResult(object):
                     'extra_data': extrajson
                 }
 
-                db.insert('results', **resultdata)
                 db.insert('scores', **scoredata);
         except:
             transaction.rollback()

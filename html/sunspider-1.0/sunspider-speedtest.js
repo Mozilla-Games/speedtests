@@ -2,7 +2,8 @@
 var SunspiderSpeedtest = {
   startTime: 0,
   iteration: 0,
-  numIterations: 2
+  numIterations: 2,
+  subScores: {}
 };
 
 SunspiderSpeedtest.parseIteration = function (url) {
@@ -35,12 +36,45 @@ SunspiderSpeedtest.init = function () {
 SunspiderSpeedtest.recordSubScore = function (name, score) {
     console.log("Recording sub result " + name + " => " + score);
     SpeedTests.recordSubResult(name, new Number(score).valueOf());
+    this.subScores[name] = score;
+};
+
+SunspiderSpeedtest.recordSubScore = function (name, score) {
+    console.log("Recording sub result " + name + " => " + score);
+    this.subScores[name] = score;
+    SpeedTests.recordSubResult(name, new Number(score).valueOf());
+};
+
+SunspiderSpeedtest.recordSectionAndTotalScores = function () {
+    var self = this;
+    var scoreNames = Object.getOwnPropertyNames(self.subScores);
+    var total = 0;
+    var sectionTotals = {};
+    scoreNames.forEach(function (name) {
+        var score = self.subScores[name];
+        total += score;
+        var section = name.substr(0, name.indexOf('-'));
+        if (sectionTotals[section] === undefined)
+            sectionTotals[section] = 0;
+        sectionTotals[section] += score;
+    });
+    var sectionNames = Object.getOwnPropertyNames(sectionTotals);
+    sectionNames.forEach(function (section) {
+        var secTotal = sectionTotals[section];
+        self.recordSubScore("section-" + section, secTotal);
+    });
+    self.recordSubScore("total", total);
 };
 
 SunspiderSpeedtest.finishIteration = function (callback) {
+    var self = this;
     if (SpeedTests.results.length > 0) {
         console.log("Finishing iteration " + this.iteration);
+        // Calculate and add section and total scores.
+        self.recordSectionAndTotalScores();
+
         SpeedTests.finish(false, function () {
+            self.subScores = {};
             SpeedTests.resetResults();
             callback();
         });
@@ -50,16 +84,7 @@ SunspiderSpeedtest.finishIteration = function (callback) {
     }
 };
 
-SunspiderSpeedtest.recordSunspiderScore = function (score) {
-    console.log("Recorded overall sunspider score!");
-    SpeedTests.recordSubResult('Sunspider', new Number(score).valueOf());
-    var nextURL = this.nextIterationURL(window.document.URL);
-    if (!nextURL) {
-        SpeedTests.finish();
-        return;
-    }
-
-    SpeedTests.finish(false, function () {
-        window.location = nextURL;
-    });
+SunspiderSpeedtest.finish = function () {
+    this.recordSectionAndTotalScores();
+    SpeedTests.finish(true);
 };
