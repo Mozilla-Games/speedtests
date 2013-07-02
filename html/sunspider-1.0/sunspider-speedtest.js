@@ -3,7 +3,13 @@ var SunspiderSpeedtest = {
   startTime: 0,
   iteration: 0,
   numIterations: 2,
-  subScores: {}
+  subScores: []
+};
+
+SunspiderSpeedtest.latestScoreObject = function () {
+    if (this.subScores.length == 0)
+        return undefined;
+    return this.subScores[this.subScores.length - 1];
 };
 
 SunspiderSpeedtest.parseIteration = function (url) {
@@ -35,23 +41,19 @@ SunspiderSpeedtest.init = function () {
 
 SunspiderSpeedtest.recordSubScore = function (name, score) {
     console.log("Recording sub result " + name + " => " + score);
-    SpeedTests.recordSubResult(name, new Number(score).valueOf());
-    this.subScores[name] = score;
-};
-
-SunspiderSpeedtest.recordSubScore = function (name, score) {
-    console.log("Recording sub result " + name + " => " + score);
-    this.subScores[name] = score;
-    SpeedTests.recordSubResult(name, new Number(score).valueOf());
+    this.latestScoreObject()[name] = score;
 };
 
 SunspiderSpeedtest.recordSectionAndTotalScores = function () {
     var self = this;
-    var scoreNames = Object.getOwnPropertyNames(self.subScores);
+    var scores = self.latestScoreObject();
+    if (!scores)
+        return;
+    var scoreNames = Object.getOwnPropertyNames(scores);
     var total = 0;
     var sectionTotals = {};
     scoreNames.forEach(function (name) {
-        var score = self.subScores[name];
+        var score = scores[name];
         total += score;
         var section = name.substr(0, name.indexOf('-'));
         if (sectionTotals[section] === undefined)
@@ -66,25 +68,55 @@ SunspiderSpeedtest.recordSectionAndTotalScores = function () {
     self.recordSubScore("total", total);
 };
 
-SunspiderSpeedtest.finishIteration = function (callback) {
-    var self = this;
-    if (SpeedTests.results.length > 0) {
-        console.log("Finishing iteration " + this.iteration);
-        // Calculate and add section and total scores.
-        self.recordSectionAndTotalScores();
+SunspiderSpeedtest.finishIteration = function () {
+    // Calculate and add section and total scores.
+    if (this.subScores.length > 0)
+        this.recordSectionAndTotalScores();
+    this.subScores.push({});
+};
 
-        SpeedTests.finish(false, function () {
-            self.subScores = {};
-            SpeedTests.resetResults();
-            callback();
+SunspiderSpeedtest.calculateFinalScores = function () {
+    // Collect list of scores by test
+    var listScores = {};
+    this.subScores.forEach(function (scores) {
+        Object.getOwnPropertyNames(scores).forEach(function (name) {
+            if (!listScores[name])
+                listScores[name] = [];
+            listScores[name].push(scores[name]);
         });
-    } else {
-        // Just finished warmup run.
-        callback();
-    }
+    });
+
+    // Calculate mean and standard deviation, and record.
+    Object.getOwnPropertyNames(listScores).forEach(function (name) {
+        var count = listScores[name].length;
+        var sum = 0;
+        listScores[name].forEach(function (score) {
+            sum += score;
+        });
+        var mean = sum / count;
+
+        var sumdiffsq = 0;
+        listScores[name].forEach(function (score) {
+            sumdiffsq += Math.pow(Math.abs(mean - score), 2);
+        });
+        var variance = sumdiffsq / (count - 1);
+        var dev = Math.sqrt(variance);
+
+        SpeedTests.recordSubResult(name, mean, {deviation:dev});
+    });
 };
 
 SunspiderSpeedtest.finish = function () {
     this.recordSectionAndTotalScores();
-    SpeedTests.finish(true);
+    this.calculateFinalScores();
+    console.log("Finishing iteration " + this.iteration);
+    var url = this.nextIterationURL(window.document.URL);
+    if (!url) {
+        SpeedTests.finish(true);
+        return;
+    }
+
+    SpeedTests.finish(false, function () {
+        window.location = url;
+    });
 };

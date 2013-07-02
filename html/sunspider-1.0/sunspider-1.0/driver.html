@@ -75,13 +75,12 @@ function reallyNext()
         testFrame.contentDocument.write(testContents[testIndex]);
         testFrame.contentDocument.close();
     } else if (++currentRepeat < repeatCount) {
-        SunspiderSpeedtest.finishIteration(function () {
-            console.log("Running next iteration.");
-            testIndex = 0;
-            testFrame.contentDocument.open();
-            testFrame.contentDocument.write(testContents[testIndex]);
-            testFrame.contentDocument.close();
-        });
+        SunspiderSpeedtest.finishIteration();
+        console.log("Running next iteration: " + currentRepeat);
+        testIndex = 0;
+        testFrame.contentDocument.open();
+        testFrame.contentDocument.write(testContents[testIndex]);
+        testFrame.contentDocument.close();
     } else {
         SunspiderSpeedtest.finish();
         // finish();
