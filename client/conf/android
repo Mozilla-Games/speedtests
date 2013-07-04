@@ -1,0 +1,44 @@
+[speedtests]
+;; Required: the base URL where the tests can be found.
+;; If you need a quick local thing, consider running
+;; 'python -m SimpleHTTPServer 8080' in the html dir.
+test_base_url = file:///mnt/sdcard/html/
+
+;; Only specify the results_server if you have a server to send results
+;; to; otherwise leave it commented out.  You can run 'python server.py 8080'
+;; in the server dir to both get a results server and a test server.
+;; (Don't start the SimpleHTTPServer in that case!)
+results_server = http://192.168.1.2:8080/api/submit-result/
+local_ip = 192.168.1.2
+
+client = perfy
+
+[linux]
+firefox = /usr/bin/firefox
+firefox_args = -no-remote -P speedtest
+tinderbox_args = -no-remote -P speedtest
+nightly_args = -no-remote -P speedtest
+tinderbox_suffix = tinderbox
+nightly_suffix = nightly
+chrome = /usr/bin/chromium-browser
+
+[android]
+reboot_after = 20
+nap_after = 15
+nap_time = 900
+browsers = nightly
+firefox_package = org.mozilla.firefox
+tinderbox_package = org.mozilla.fennec
+nightly_package = org.mozilla.fennec
+;;firefox_package = org.mozilla.fennec_jmaher
+;;tinderbox_package = org.mozilla.fennec_jmaher
+;;nightly_package = org.mozilla.fennec_jmaher
+tinderbox_suffix = tinderbox
+nightly_suffix = nightly
+
+[windows]
+firefox_args = -no-remote -P speedtest
+tinderbox_args = -no-remote -P speedtest
+nightly_args = -no-remote -P speedtest
+tinderbox_suffix = tinderbox
+nightly_suffix = nightly

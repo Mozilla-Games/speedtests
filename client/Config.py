@@ -34,12 +34,11 @@ class Config(object):
     def __init__(self):
         self.cfg = None
 
-        self.local_ip = self.GetLocalIP()
-
         defaults = dict()
+	defaults['local_ip'] = self.GetLocalIP()
         defaults['64bit'] = "False"
         defaults['local_port'] = 0
-        defaults['client'] = self.local_ip
+        defaults['client'] = defaults['local_ip']
         defaults['include_dev_builds'] = "False"
         defaults['results_server'] = None
         defaults['cube_results_server'] = None
@@ -65,6 +64,7 @@ class Config(object):
 
         self.sixtyfour_bit = self.cfg.getboolean('speedtests', '64bit')
         self.local_port = self.cfg.getint('speedtests', 'local_port')
+        self.local_ip = self.cfg.get('speedtests', 'local_ip')
         self.client = self.get_str('speedtests', 'client')
         self.results_server = self.cfg.get('speedtests', 'results_server')
         self.cube_results_server = self.cfg.get('speedtests', 'cube_results_server')
