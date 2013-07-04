@@ -41,13 +41,13 @@ class DroidMixin(object):
         acmd.extend([extraTypeParam, str(key), str(val)])
 
     if url:
-      acmd.extend(["-d", url])
+      acmd.extend(["-d", url.replace('&', '\\&')])
 
     # shell output not that interesting and debugging logs should already
     # show what's going on here... so just create an empty memory buffer
     # and ignore
     shellOutput = StringIO.StringIO()
-    if self.shell(acmd, shellOutput) == 0:
+    if self.shell(acmd, shellOutput, root=True) == 0:
       return True
 
     return False
@@ -88,6 +88,12 @@ class DroidSUT(DeviceManagerSUT, DroidMixin):
 
 def DroidConnectByHWID(hwid, timeout=30, **kwargs):
   """Try to connect to the given device by waiting for it to show up using mDNS with the given timeout."""
+
+  import re
+  if re.match('[0-9]+.[0-9]+.[0-9]+.[0-9]+', hwid):
+    print "Connected via SUT to %s" % (hwid)
+    return DroidSUT(hwid, **kwargs)
+
   nt = NetworkTools()
   local_ip = nt.getLanIp()
 

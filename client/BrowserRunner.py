@@ -178,8 +178,9 @@ class BrowserRunner(object):
                     raise
 
                 url = config.test_base_url + "/" + test
-                if not test.endswith("/"):
-                    url += "/"
+# TODO: figure out a method for making this optional, it fails when we are loading from the local storage on android
+#                if not test.endswith("/"):
+#                    url += "/"
 
                 if '?' in url:
                     url += "&_benchconfig=" + self.configstr
