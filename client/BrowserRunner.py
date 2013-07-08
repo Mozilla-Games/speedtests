@@ -106,6 +106,7 @@ class BrowserRunner(object):
         os_name = 'android'
         browsers = [
             AndroidFirefoxBrowserController(os_name, 'firefox', package='org.mozilla.firefox'),
+            AndroidFirefoxBrowserController(os_name, 'nightly', package='org.mozilla.fennec'),
             #AndroidLatestFxAdbBrowserController(os_name, 'nightly'),
             AndroidTinderboxFxBrowserController(os_name, 'tinderbox'),
             AndroidBrowserController(os_name, 'browser', 'com.google.android.browser'),
@@ -177,7 +178,7 @@ class BrowserRunner(object):
                 except StopIteration:
                     raise
 
-                url = config.test_base_url + "/" + test
+                url = config.test_base_url + "/" + test + "/index.html"
 # TODO: figure out a method for making this optional, it fails when we are loading from the local storage on android
 #                if not test.endswith("/"):
 #                    url += "/"
