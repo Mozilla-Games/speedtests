@@ -3,9 +3,54 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+import ConfigParser
+import web
+
+class DefaultConfigParser(ConfigParser.ConfigParser):
+
+    def get_default(self, section, option, default, func='get'):
+        try:
+            return getattr(cfg, func)(section, option)
+        except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
+            return default
+
+DEFAULT_CONF_FILE = 'speedtests_server.conf'
+cfg = DefaultConfigParser()
+
+cfg.read(DEFAULT_CONF_FILE)
+DB_TYPE = cfg.get_default('server', 'db_type', 'sqlite')
+DB_NAME = cfg.get_default('server', 'db_name', 'speedtests.sqlite')
+DB_HOST = cfg.get_default('server', 'db_host', 'localhost')
+DB_USER = cfg.get_default('server', 'db_user', 'speedtests')
+DB_PASSWD = cfg.get_default('server', 'db_passwd', 'speedtests')
+
+if DB_TYPE is 'sqlite':
+    dbargs = { 'dbn': DB_TYPE, 'db': DB_NAME }
+else:
+    dbargs = { 'dbn': DB_TYPE, 'db': DB_NAME, 'db': DB_NAME, 'host': DB_HOST, 'user': DB_USER, 'pw': DB_PASSWD }
+db = web.database(**dbargs)
+
+# let's just make things work if the db is empty
+try:
+    db.query('SELECT COUNT(*) FROM browsers')
+except:
+    schema_lines = "".join(open("schema.sql", "r").readlines()).split(";")
+    cursor = db.ctx.db.cursor()
+    for line in schema_lines:
+        cursor.execute(line)
+    db.ctx.db.commit()
+    cursor.close()
+    print "Initialized empty sqlite database."
+
+try:
+    db.query('SELECT COUNT(*) FROM browsers')
+except:
+    print "Tried to initialize empty database, but failed!"
+    raise
+
 # TODO: load these from options, scores from db
 platform = 'android'
-benchmarks = ['aquarium', 'octane', 'sunspider-1.0']
+benchmarks = ['webgl-aquarium', 'octane', 'sunspider']
 scores = {
   'firefox': [21, 10, 32],
   'nightly': [33, 11, 22]
