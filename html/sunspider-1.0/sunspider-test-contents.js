@@ -29,7 +29,7 @@ var testContents = [ "<!DOCTYPE html>\n\
 -->\n\
 \n\
 <title>SunSpider 3d-cube</title>\n\
-<link rel=\"stylesheet\" href=\"../sunspider.css\">\n\
+<link rel=\"stylesheet\" href=\"sunspider.css\">\n\
 </head>\n\
 \n\
 <body>\n\
@@ -447,7 +447,7 @@ record(_sunSpiderInterval);\n\
 -->\n\
 \n\
 <title>SunSpider 3d-morph</title>\n\
-<link rel=\"stylesheet\" href=\"../sunspider.css\">\n\
+<link rel=\"stylesheet\" href=\"sunspider.css\">\n\
 </head>\n\
 \n\
 <body>\n\
@@ -573,7 +573,7 @@ record(_sunSpiderInterval);\n\
 -->\n\
 \n\
 <title>SunSpider 3d-raytrace</title>\n\
-<link rel=\"stylesheet\" href=\"../sunspider.css\">\n\
+<link rel=\"stylesheet\" href=\"sunspider.css\">\n\
 </head>\n\
 \n\
 <body>\n\
@@ -1083,7 +1083,7 @@ record(_sunSpiderInterval);\n\
 -->\n\
 \n\
 <title>SunSpider access-binary-trees</title>\n\
-<link rel=\"stylesheet\" href=\"../sunspider.css\">\n\
+<link rel=\"stylesheet\" href=\"sunspider.css\">\n\
 </head>\n\
 \n\
 <body>\n\
@@ -1199,7 +1199,7 @@ record(_sunSpiderInterval);\n\
 -->\n\
 \n\
 <title>SunSpider access-fannkuch</title>\n\
-<link rel=\"stylesheet\" href=\"../sunspider.css\">\n\
+<link rel=\"stylesheet\" href=\"sunspider.css\">\n\
 </head>\n\
 \n\
 <body>\n\
@@ -1332,7 +1332,7 @@ record(_sunSpiderInterval);\n\
 -->\n\
 \n\
 <title>SunSpider access-nbody</title>\n\
-<link rel=\"stylesheet\" href=\"../sunspider.css\">\n\
+<link rel=\"stylesheet\" href=\"sunspider.css\">\n\
 </head>\n\
 \n\
 <body>\n\
@@ -1569,7 +1569,7 @@ record(_sunSpiderInterval);\n\
 -->\n\
 \n\
 <title>SunSpider access-nsieve</title>\n\
-<link rel=\"stylesheet\" href=\"../sunspider.css\">\n\
+<link rel=\"stylesheet\" href=\"sunspider.css\">\n\
 </head>\n\
 \n\
 <body>\n\
@@ -1678,7 +1678,7 @@ record(_sunSpiderInterval);\n\
 -->\n\
 \n\
 <title>SunSpider bitops-3bit-bits-in-byte</title>\n\
-<link rel=\"stylesheet\" href=\"../sunspider.css\">\n\
+<link rel=\"stylesheet\" href=\"sunspider.css\">\n\
 </head>\n\
 \n\
 <body>\n\
@@ -1781,7 +1781,7 @@ record(_sunSpiderInterval);\n\
 -->\n\
 \n\
 <title>SunSpider bitops-bits-in-byte</title>\n\
-<link rel=\"stylesheet\" href=\"../sunspider.css\">\n\
+<link rel=\"stylesheet\" href=\"sunspider.css\">\n\
 </head>\n\
 \n\
 <body>\n\
@@ -1874,7 +1874,7 @@ record(_sunSpiderInterval);\n\
 -->\n\
 \n\
 <title>SunSpider bitops-bitwise-and</title>\n\
-<link rel=\"stylesheet\" href=\"../sunspider.css\">\n\
+<link rel=\"stylesheet\" href=\"sunspider.css\">\n\
 </head>\n\
 \n\
 <body>\n\
@@ -1972,7 +1972,7 @@ record(_sunSpiderInterval);\n\
 -->\n\
 \n\
 <title>SunSpider bitops-nsieve-bits</title>\n\
-<link rel=\"stylesheet\" href=\"../sunspider.css\">\n\
+<link rel=\"stylesheet\" href=\"sunspider.css\">\n\
 </head>\n\
 \n\
 <body>\n\
@@ -2077,7 +2077,7 @@ record(_sunSpiderInterval);\n\
 -->\n\
 \n\
 <title>SunSpider controlflow-recursive</title>\n\
-<link rel=\"stylesheet\" href=\"../sunspider.css\">\n\
+<link rel=\"stylesheet\" href=\"sunspider.css\">\n\
 </head>\n\
 \n\
 <body>\n\
@@ -2172,7 +2172,7 @@ record(_sunSpiderInterval);\n\
 -->\n\
 \n\
 <title>SunSpider crypto-aes</title>\n\
-<link rel=\"stylesheet\" href=\"../sunspider.css\">\n\
+<link rel=\"stylesheet\" href=\"sunspider.css\">\n\
 </head>\n\
 \n\
 <body>\n\
@@ -2661,7 +2661,7 @@ record(_sunSpiderInterval);\n\
 -->\n\
 \n\
 <title>SunSpider crypto-md5</title>\n\
-<link rel=\"stylesheet\" href=\"../sunspider.css\">\n\
+<link rel=\"stylesheet\" href=\"sunspider.css\">\n\
 </head>\n\
 \n\
 <body>\n\
@@ -3016,7 +3016,7 @@ record(_sunSpiderInterval);\n\
 -->\n\
 \n\
 <title>SunSpider crypto-sha1</title>\n\
-<link rel=\"stylesheet\" href=\"../sunspider.css\">\n\
+<link rel=\"stylesheet\" href=\"sunspider.css\">\n\
 </head>\n\
 \n\
 <body>\n\
@@ -3307,7 +3307,7 @@ record(_sunSpiderInterval);\n\
 -->\n\
 \n\
 <title>SunSpider date-format-tofte</title>\n\
-<link rel=\"stylesheet\" href=\"../sunspider.css\">\n\
+<link rel=\"stylesheet\" href=\"sunspider.css\">\n\
 </head>\n\
 \n\
 <body>\n\
@@ -3671,7 +3671,7 @@ record(_sunSpiderInterval);\n\
 -->\n\
 \n\
 <title>SunSpider date-format-xparb</title>\n\
-<link rel=\"stylesheet\" href=\"../sunspider.css\">\n\
+<link rel=\"stylesheet\" href=\"sunspider.css\">\n\
 </head>\n\
 \n\
 <body>\n\
@@ -4154,7 +4154,7 @@ record(_sunSpiderInterval);\n\
 -->\n\
 \n\
 <title>SunSpider math-cordic</title>\n\
-<link rel=\"stylesheet\" href=\"../sunspider.css\">\n\
+<link rel=\"stylesheet\" href=\"sunspider.css\">\n\
 </head>\n\
 \n\
 <body>\n\
@@ -4323,7 +4323,7 @@ record(_sunSpiderInterval);\n\
 -->\n\
 \n\
 <title>SunSpider math-partial-sums</title>\n\
-<link rel=\"stylesheet\" href=\"../sunspider.css\">\n\
+<link rel=\"stylesheet\" href=\"sunspider.css\">\n\
 </head>\n\
 \n\
 <body>\n\
@@ -4431,7 +4431,7 @@ record(_sunSpiderInterval);\n\
 -->\n\
 \n\
 <title>SunSpider math-spectral-norm</title>\n\
-<link rel=\"stylesheet\" href=\"../sunspider.css\">\n\
+<link rel=\"stylesheet\" href=\"sunspider.css\">\n\
 </head>\n\
 \n\
 <body>\n\
@@ -4553,7 +4553,7 @@ record(_sunSpiderInterval);\n\
 -->\n\
 \n\
 <title>SunSpider regexp-dna</title>\n\
-<link rel=\"stylesheet\" href=\"../sunspider.css\">\n\
+<link rel=\"stylesheet\" href=\"sunspider.css\">\n\
 </head>\n\
 \n\
 <body>\n\
@@ -6337,7 +6337,7 @@ record(_sunSpiderInterval);\n\
 -->\n\
 \n\
 <title>SunSpider string-base64</title>\n\
-<link rel=\"stylesheet\" href=\"../sunspider.css\">\n\
+<link rel=\"stylesheet\" href=\"sunspider.css\">\n\
 </head>\n\
 \n\
 <body>\n\
@@ -6537,7 +6537,7 @@ record(_sunSpiderInterval);\n\
 -->\n\
 \n\
 <title>SunSpider string-fasta</title>\n\
-<link rel=\"stylesheet\" href=\"../sunspider.css\">\n\
+<link rel=\"stylesheet\" href=\"sunspider.css\">\n\
 </head>\n\
 \n\
 <body>\n\
@@ -6690,7 +6690,7 @@ record(_sunSpiderInterval);\n\
 -->\n\
 \n\
 <title>SunSpider string-tagcloud</title>\n\
-<link rel=\"stylesheet\" href=\"../sunspider.css\">\n\
+<link rel=\"stylesheet\" href=\"sunspider.css\">\n\
 </head>\n\
 \n\
 <body>\n\
@@ -7024,7 +7024,7 @@ record(_sunSpiderInterval);\n\
 -->\n\
 \n\
 <title>SunSpider string-unpack-code</title>\n\
-<link rel=\"stylesheet\" href=\"../sunspider.css\">\n\
+<link rel=\"stylesheet\" href=\"sunspider.css\">\n\
 </head>\n\
 \n\
 <body>\n\
@@ -7168,7 +7168,7 @@ record(_sunSpiderInterval);\n\
 -->\n\
 \n\
 <title>SunSpider string-validate-input</title>\n\
-<link rel=\"stylesheet\" href=\"../sunspider.css\">\n\
+<link rel=\"stylesheet\" href=\"sunspider.css\">\n\
 </head>\n\
 \n\
 <body>\n\
