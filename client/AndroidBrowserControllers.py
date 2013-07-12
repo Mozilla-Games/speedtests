@@ -1,5 +1,6 @@
 import traceback
-
+import re
+	
 from Config import config
 from BrowserController import *
 from mozdevice import DroidADB, DroidSUT, DroidConnectByHWID
@@ -25,6 +26,10 @@ class AndroidBrowserController(BrowserController):
         self.browserActivity = config.get_str('android', browser_name + '_activity', activity)
         self.dm = createDeviceManager(packageName=package)
 
+        self.remoteProfile = "%s/profile" % self.dm.getDeviceRoot()
+        #TODO: pull this in from the conf file, we might want to specify something custom
+        self.localProfile = "android_profile"
+
     def cmd_line(self, url):
         pass
 
@@ -42,10 +47,29 @@ class AndroidBrowserController(BrowserController):
         raise Exception("Can't get profile archive for Android fennec browser")
 
     def copy_profiles(self):
-        print "Skipping profile copy on Android"
+        try:
+            self.dm.pushDir(self.localProfile, self.remoteProfile)
+        except:
+            return False
+        return True
+
+    def copy_tests(self):
+        if re.match('file:\/\/\/.*', config.test_base_url):
+            try:
+                self.dm.pushDir(os.path.join('..', 'html'), '/mnt/sdcard/html')
+            except:
+                return False
         return True
 
     def launch(self, url=None):
+        if not self.copy_profiles():
+            print "ERROR: unable to copy profile, terminating test"
+            return False
+
+        if not self.copy_tests():
+            print "ERROR: unable to copy the tests to the local device, terminating test"
+            return False
+
         try:
             # simulate a press of the HOME button, to wake screen up if necessary
             self.dm.shell(["input", "keyevent", "3"], None)
@@ -55,7 +79,9 @@ class AndroidBrowserController(BrowserController):
             
             #print "ADB Launch command line: %s" % (cmdline)
             self.launch_time = datetime.datetime.now()
-            return self.dm.launchApplication(self.browserPackage, self.browserActivity, "android.intent.action.VIEW", url=url)
+            extras = {}
+            extras['args'] = ' '.join(['-profile', self.remoteProfile])
+            return self.dm.launchApplication(self.browserPackage, self.browserActivity, "android.intent.action.VIEW", extras=extras, url=url)
         except:
             traceback.print_exc()
             return False
@@ -78,10 +104,7 @@ class AndroidBrowserController(BrowserController):
             return
 
         # the killProcess implementaiton is not ideal; requires root or run-as
-        #self.dm.killProcess(self.browserPackage, forceKill=True)
-        #print "Trying killPackageProcess"
-
-        self.dm.killPackageProcess(self.browserPackage)
+        self.dm.killProcess(self.browserPackage, forceKill=True)
         if self.getBrowserPid() > 0:
             self.dm.killProcess(self.browserPackage)
         if self.getBrowserPid() > 0:

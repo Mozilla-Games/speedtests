@@ -3,121 +3,159 @@
 # You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import StringIO
+import re
 import threading
 
 from Zeroconf import Zeroconf, ServiceBrowser
 from devicemanager import ZeroconfListener, NetworkTools
 from devicemanagerADB import DeviceManagerADB
 from devicemanagerSUT import DeviceManagerSUT
+from devicemanager import DMError
 
 class DroidMixin(object):
-  """Mixin to extend DeviceManager with Android-specific functionality"""
+    """Mixin to extend DeviceManager with Android-specific functionality"""
 
-  def launchApplication(self, appName, activityName, intent, url=None,
-                        extras=None):
-    """
-    Launches an Android application
-    returns:
-    success: True
-    failure: False
-    """
-    # only one instance of an application may be running at once
-    if self.processExist(appName):
-      return False
+    def _getExtraAmStartArgs(self):
+        return []
 
-    acmd = [ "am", "start", "-W", "-n", "%s/%s" % (appName, activityName)]
+    def launchApplication(self, appName, activityName, intent, url=None,
+                          extras=None, failIfRunning=True):
+        """
+        Launches an Android application
 
-    if intent:
-      acmd.extend(["-a", intent])
+        :param appName: Name of application (e.g. `com.android.chrome`)
+        :param activityName: Name of activity to launch (e.g. `.Main`)
+        :param intent: Intent to launch application with
+        :param url: URL to open
+        :param extras: Dictionary of extra arguments to launch application with
+        :param failIfRunning: Raise an exception if instance of application is already running
+        """
 
-    if extras:
-      for (key, val) in extras.iteritems():
-        if type(val) is int:
-          extraTypeParam = "--ei"
-        elif type(val) is bool:
-          extraTypeParam = "--ez"
-        else:
-          extraTypeParam = "--es"
-        acmd.extend([extraTypeParam, str(key), str(val)])
+        # If failIfRunning is True, we throw an exception here. Only one
+        # instance of an application can be running at once on Android,
+        # starting a new instance may not be what we want depending on what
+        # we want to do
+        if failIfRunning and self.processExist(appName):
+            raise DMError("Only one instance of an application may be running "
+                          "at once")
 
-    if url:
-      acmd.extend(["-d", url.replace('&', '\\&')])
+        acmd = [ "am", "start" ] + self._getExtraAmStartArgs() + \
+            ["-W", "-n", "%s/%s" % (appName, activityName)]
 
-    # shell output not that interesting and debugging logs should already
-    # show what's going on here... so just create an empty memory buffer
-    # and ignore
-    shellOutput = StringIO.StringIO()
-    if self.shell(acmd, shellOutput, root=True) == 0:
-      return True
+        if intent:
+            acmd.extend(["-a", intent])
 
-    return False
+        if extras:
+            for (key, val) in extras.iteritems():
+                if type(val) is int:
+                    extraTypeParam = "--ei"
+                elif type(val) is bool:
+                    extraTypeParam = "--ez"
+                else:
+                    extraTypeParam = "--es"
+                acmd.extend([extraTypeParam, str(key), str(val)])
 
-  def launchFennec(self, appName, intent="android.intent.action.VIEW",
-                   mozEnv=None, extraArgs=None, url=None):
-    """
-    Convenience method to launch Fennec on Android with various debugging
-    arguments
-    WARNING: FIXME: This would go better in mozrunner. Please do not
-    use this method if you are not comfortable with it going away sometime
-    in the near future
-    returns:
-    success: True
-    failure: False
-    """
-    extras = {}
+        if url:
+            acmd.extend(["-d", url])
 
-    if mozEnv:
-      # mozEnv is expected to be a dictionary of environment variables: Fennec
-      # itself will set them when launched
-      for (envCnt, (envkey, envval)) in enumerate(mozEnv.iteritems()):
-        extras["env" + str(envCnt)] = envkey + "=" + envval
+        # shell output not that interesting and debugging logs should already
+        # show what's going on here... so just create an empty memory buffer
+        # and ignore (except on error)
+        shellOutput = StringIO.StringIO()
+        if self.shell(acmd, shellOutput) == 0:
+            return
 
-    # Additional command line arguments that fennec will read and use (e.g.
-    # with a custom profile)
-    if extraArgs:
-      extras['args'] = " ".join(extraArgs)
+        shellOutput.seek(0)
+        raise DMError("Unable to launch application (shell output: '%s')" % shellOutput.read())
 
-    return self.launchApplication(appName, ".App", intent, url=url,
-                                  extras=extras)
+    def launchFennec(self, appName, intent="android.intent.action.VIEW",
+                     mozEnv=None, extraArgs=None, url=None, failIfRunning=True):
+        """
+        Convenience method to launch Fennec on Android with various debugging
+        arguments
+
+        :param appName: Name of fennec application (e.g. `org.mozilla.fennec`)
+        :param intent: Intent to launch application with
+        :param mozEnv: Mozilla specific environment to pass into application
+        :param extraArgs: Extra arguments to be parsed by fennec
+        :param url: URL to open
+        :param failIfRunning: Raise an exception if instance of application is already running
+        """
+        extras = {}
+
+        if mozEnv:
+            # mozEnv is expected to be a dictionary of environment variables: Fennec
+            # itself will set them when launched
+            for (envCnt, (envkey, envval)) in enumerate(mozEnv.iteritems()):
+                extras["env" + str(envCnt)] = envkey + "=" + envval
+
+        # Additional command line arguments that fennec will read and use (e.g.
+        # with a custom profile)
+        if extraArgs:
+            extras['args'] = " ".join(extraArgs)
+
+        self.launchApplication(appName, ".App", intent, url=url, extras=extras,
+                               failIfRunning=failIfRunning)
 
 class DroidADB(DeviceManagerADB, DroidMixin):
-  pass
+    pass
 
 class DroidSUT(DeviceManagerSUT, DroidMixin):
-  pass
+
+    def _getExtraAmStartArgs(self):
+        # in versions of android in jellybean and beyond, the agent may run as
+        # a different process than the one that started the app. In this case,
+        # we need to get back the original user serial number and then pass
+        # that to the 'am start' command line
+        if not hasattr(self, '_userSerial'):
+            infoDict = self.getInfo(directive="sutuserinfo")
+            if infoDict.get('sutuserinfo') and \
+                    len(infoDict['sutuserinfo']) > 0:
+               userSerialString = infoDict['sutuserinfo'][0]
+               # user serial always an integer, see: http://developer.android.com/reference/android/os/UserManager.html#getSerialNumberForUser%28android.os.UserHandle%29
+               m = re.match('User Serial:([0-9]+)', userSerialString)
+               if m:
+                   self._userSerial = m.group(1)
+               else:
+                   self._userSerial = None
+            else:
+                self._userSerial = None
+
+        if self._userSerial is not None:
+            return [ "--user", self._userSerial ]
+
+        return []
 
 def DroidConnectByHWID(hwid, timeout=30, **kwargs):
-  """Try to connect to the given device by waiting for it to show up using mDNS with the given timeout."""
+    """Try to connect to the given device by waiting for it to show up using mDNS with the given timeout."""
+    if re.match('[0-9]+.[0-9]+.[0-9]+.[0-9]+', hwid):
+        print "Connected via SUT to %s" % (hwid)
+        return DroidSUT(hwid, **kwargs)
 
-  import re
-  if re.match('[0-9]+.[0-9]+.[0-9]+.[0-9]+', hwid):
-    print "Connected via SUT to %s" % (hwid)
-    return DroidSUT(hwid, **kwargs)
+    nt = NetworkTools()
+    local_ip = nt.getLanIp()
 
-  nt = NetworkTools()
-  local_ip = nt.getLanIp()
+    zc = Zeroconf(local_ip)
 
-  zc = Zeroconf(local_ip)
-
-  evt = threading.Event()
-  listener = ZeroconfListener(hwid, evt)
-  sb = ServiceBrowser(zc, "_sutagent._tcp.local.", listener)
-  foundIP = None
-  if evt.wait(timeout):
-    # we found the hwid 
-    foundIP = listener.ip
+    evt = threading.Event()
+    listener = ZeroconfListener(hwid, evt)
+    sb = ServiceBrowser(zc, "_sutagent._tcp.local.", listener)
+    foundIP = None
+    if evt.wait(timeout):
+        # we found the hwid 
+        foundIP = listener.ip
     sb.cancel()
     zc.close()
 
-  if foundIP is not None:
-    return DroidSUT(foundIP, **kwargs)
+    if foundIP is not None:
+        return DroidSUT(foundIP, **kwargs)
     print "Connected via SUT to %s [at %s]" % (hwid, foundIP)
 
-  # try connecting via adb
-  try:
-    sut = DroidADB(deviceSerial=hwid, **kwargs)
-  except:
-    return None
+    # try connecting via adb
+    try:
+        sut = DroidADB(deviceSerial=hwid, **kwargs)
+    except:
+        return None
 
-  print "Connected via ADB to %s" % (hwid)
-  return sut
+    print "Connected via ADB to %s" % (hwid)
+    return sut
