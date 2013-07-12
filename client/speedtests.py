@@ -224,6 +224,7 @@ def main():
     config.nap_after = config.get_int(config.platform, 'nap_after', 0)
     config.nap_time = config.get_int(config.platform, 'nap_time', 0)
     config.reboot_after = config.get_int(config.platform, 'reboot_after', 0)
+    config.reboot_sleep = config.get_int(config.platform, 'reboot_sleep', 180)
 
     if options.nap_after:
         config.nap_after = options.nap_after
@@ -332,7 +333,9 @@ def main():
                 print "Rebooting..."
                 createDeviceManager().reboot()
                 # Wait for the network to come back up!
-                time.sleep(45)
+                print " Sleping %s seconds to allow device to reboot and get on the network" % config.reboot_sleep
+                time.sleep(config.reboot_sleep)
+                print " Done sleeping, continue with the next cycle"
         except KeyboardInterrupt:
             print "Interrupted!"
             os._exit(1)
@@ -345,7 +348,9 @@ def main():
                 if not ok:
                     print "WARNING: Reboot failed!"
                 # Wait for the network to come back up!
-                time.sleep(45)
+                print " Sleping %s seconds to allow device to reboot and get on the network" % config.reboot_sleep
+                time.sleep(config.reboot_sleep)
+                print " Done sleeping, continue with the next test"
         finally:
             runner.reset()
             trs.reset()
