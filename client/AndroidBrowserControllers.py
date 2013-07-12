@@ -1,5 +1,7 @@
 import traceback
 import re
+import subprocess
+import tempfile
 	
 from Config import config
 from BrowserController import *
@@ -53,12 +55,42 @@ class AndroidBrowserController(BrowserController):
             return False
         return True
 
+    def get_git_revision(self):
+        gitrev = subprocess.check_output("git show HEAD | grep '^commit'",
+                                         shell=True)
+        rev = gitrev.strip().split(' ')
+        return rev[1]
+
+    def device_has_tests(self):
+        htmlRev = self.get_git_revision()
+        print "Local REV: %s" % (htmlRev,)
+        remoteRev = None
+        if 'html.rev' in self.dm.listFiles('/mnt/sdcard'):
+            data = self.dm.pullFile('/mnt/sdcard/html.rev')
+            dataLines = [line.strip() for line in data.split('\n')]
+            if len(dataLines) > 0:
+                remoteRev = dataLines[0]
+                print "Remote REV: %s" % (remoteRev,)
+        return htmlRev == remoteRev
+
+    def mark_device_has_tests(self):
+        htmlRev = self.get_git_revision()
+        f = tempfile.NamedTemporaryFile()
+        localName = f.name
+        f.write(htmlRev)
+        f.flush()
+        self.dm.pushFile(localName, "/mnt/sdcard/html.rev")
+        f.close()
+
     def copy_tests(self):
         if re.match('file:\/\/\/.*', config.test_base_url):
-            try:
-                self.dm.pushDir(os.path.join('..', 'html'), '/mnt/sdcard/html')
-            except:
-                return False
+            if not self.device_has_tests():
+                try:
+                    self.dm.pushDir(os.path.join('..', 'html'),
+                                    '/mnt/sdcard/html')
+                    self.mark_device_has_tests()
+                except:
+                    return False
         return True
 
     def launch(self, url=None):
