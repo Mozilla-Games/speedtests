@@ -1,5 +1,8 @@
 import traceback
-
+import re
+import subprocess
+import tempfile
+	
 from Config import config
 from BrowserController import *
 from mozdevice import DroidADB, DroidSUT, DroidConnectByHWID
@@ -25,6 +28,10 @@ class AndroidBrowserController(BrowserController):
         self.browserActivity = config.get_str('android', browser_name + '_activity', activity)
         self.dm = createDeviceManager(packageName=package)
 
+        self.remoteProfile = "%s/profile" % self.dm.getDeviceRoot()
+        #TODO: pull this in from the conf file, we might want to specify something custom
+        self.localProfile = "android_profile"
+
     def cmd_line(self, url):
         pass
 
@@ -42,10 +49,59 @@ class AndroidBrowserController(BrowserController):
         raise Exception("Can't get profile archive for Android fennec browser")
 
     def copy_profiles(self):
-        print "Skipping profile copy on Android"
+        try:
+            self.dm.pushDir(self.localProfile, self.remoteProfile)
+        except:
+            return False
+        return True
+
+    def get_git_revision(self):
+        gitrev = subprocess.check_output("git show HEAD | grep '^commit'",
+                                         shell=True)
+        rev = gitrev.strip().split(' ')
+        return rev[1]
+
+    def device_has_tests(self):
+        htmlRev = self.get_git_revision()
+        print "Local REV: %s" % (htmlRev,)
+        remoteRev = None
+        if 'html.rev' in self.dm.listFiles('/mnt/sdcard'):
+            data = self.dm.pullFile('/mnt/sdcard/html.rev')
+            dataLines = [line.strip() for line in data.split('\n')]
+            if len(dataLines) > 0:
+                remoteRev = dataLines[0]
+                print "Remote REV: %s" % (remoteRev,)
+        return htmlRev == remoteRev
+
+    def mark_device_has_tests(self):
+        htmlRev = self.get_git_revision()
+        f = tempfile.NamedTemporaryFile()
+        localName = f.name
+        f.write(htmlRev)
+        f.flush()
+        self.dm.pushFile(localName, "/mnt/sdcard/html.rev")
+        f.close()
+
+    def copy_tests(self):
+        if re.match('file:\/\/\/.*', config.test_base_url):
+            if not self.device_has_tests():
+                try:
+                    self.dm.pushDir(os.path.join('..', 'html'),
+                                    '/mnt/sdcard/html')
+                    self.mark_device_has_tests()
+                except:
+                    return False
         return True
 
     def launch(self, url=None):
+        if not self.copy_profiles():
+            print "ERROR: unable to copy profile, terminating test"
+            return False
+
+        if not self.copy_tests():
+            print "ERROR: unable to copy the tests to the local device, terminating test"
+            return False
+
         try:
             # simulate a press of the HOME button, to wake screen up if necessary
             self.dm.shell(["input", "keyevent", "3"], None)
@@ -55,7 +111,9 @@ class AndroidBrowserController(BrowserController):
             
             #print "ADB Launch command line: %s" % (cmdline)
             self.launch_time = datetime.datetime.now()
-            return self.dm.launchApplication(self.browserPackage, self.browserActivity, "android.intent.action.VIEW", url=url)
+            extras = {}
+            extras['args'] = ' '.join(['-profile', self.remoteProfile])
+            return self.dm.launchApplication(self.browserPackage, self.browserActivity, "android.intent.action.VIEW", extras=extras, url=url)
         except:
             traceback.print_exc()
             return False
@@ -78,10 +136,7 @@ class AndroidBrowserController(BrowserController):
             return
 
         # the killProcess implementaiton is not ideal; requires root or run-as
-        #self.dm.killProcess(self.browserPackage, forceKill=True)
-        #print "Trying killPackageProcess"
-
-        self.dm.killPackageProcess(self.browserPackage)
+        self.dm.killProcess(self.browserPackage, forceKill=True)
         if self.getBrowserPid() > 0:
             self.dm.killProcess(self.browserPackage)
         if self.getBrowserPid() > 0:

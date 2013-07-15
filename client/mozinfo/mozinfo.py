@@ -4,19 +4,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this file,
 # You can obtain one at http://mozilla.org/MPL/2.0/.
 
-"""
-file for interface to transform introspected system information to a format
-pallatable to Mozilla
-
-Information:
-- os : what operating system ['win', 'mac', 'linux', ...]
-- bits : 32 or 64
-- processor : processor architecture ['x86', 'x86_64', 'ppc', ...]
-- version : operating system version string
-
-For windows, the service pack information is also included
-"""
-
 # TODO: it might be a good idea of adding a system name (e.g. 'Ubuntu' for
 # linux) to the information; I certainly wouldn't want anyone parsing this
 # information and having behaviour depend on it
@@ -58,11 +45,17 @@ if system in ["Microsoft", "Windows"]:
         service_pack = os.sys.getwindowsversion()[4]
         info['service_pack'] = service_pack
 elif system == "Linux":
-    (distro, version, codename) = platform.dist()
+    if hasattr(platform, "linux_distribution"):
+        (distro, version, codename) = platform.linux_distribution()
+    else:
+        (distro, version, codename) = platform.dist()
     version = "%s %s" % (distro, version)
     if not processor:
         processor = machine
     info['os'] = 'linux'
+elif system in ['DragonFly', 'FreeBSD', 'NetBSD', 'OpenBSD']:
+    info['os'] = 'bsd'
+    version = sys.platform
 elif system == "Darwin":
     (release, versioninfo, machine) = platform.mac_ver()
     version = "OS X %s" % release
@@ -78,7 +71,7 @@ if processor in ["i386", "i686"]:
         processor = "x86"
     elif bits == "64bit":
         processor = "x86_64"
-elif processor == "AMD64":
+elif processor.upper() == "AMD64":
     bits = "64bit"
     processor = "x86_64"
 elif processor == "Power Macintosh":
@@ -89,7 +82,7 @@ info.update({'processor': processor,
             })
 
 # standard value of choices, for easy inspection
-choices = {'os': ['linux', 'win', 'mac', 'unix'],
+choices = {'os': ['linux', 'bsd', 'win', 'mac', 'unix'],
            'bits': [32, 64],
            'processor': ['x86', 'x86_64', 'ppc']}
 
@@ -117,7 +110,7 @@ def update(new_info):
     for os_name in choices['os']:
         globals()['is' + os_name.title()] = info['os'] == os_name
     # unix is special
-    if isLinux:
+    if isLinux or isBsd:
         globals()['isUnix'] = True
 
 update({})
@@ -144,12 +137,7 @@ def main(args=None):
         try:
             from json import loads
         except ImportError:
-            try:
-                from simplejson import loads
-            except ImportError:
-                def loads(string):
-                    """*really* simple json; will not work with unicode"""
-                    return eval(string, {'true': True, 'false': False, 'null': None})
+            from simplejson import loads
         for arg in args:
             if _os.path.exists(arg):
                 string = file(arg).read()

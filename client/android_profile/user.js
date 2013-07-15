@@ -1,0 +1,26 @@
+user_pref("app.update.enabled", false);
+user_pref("browser.dom.window.dump.enabled", true);
+user_pref("browser.EULA.override", true);
+user_pref("browser.shell.checkDefaultBrowser", false);
+user_pref("browser.warnOnQuit", false);
+user_pref("dom.allow_scripts_to_close_windows", true);
+user_pref("dom.disable_open_during_load", false);
+user_pref("dom.max_chrome_script_run_time", 0);
+user_pref("dom.max_script_run_time", 0);
+user_pref("extensions.autoDisableScopes", 10);
+user_pref("extensions.checkCompatibility", false);
+user_pref("extensions.enabledScopes", 5);
+user_pref("extensions.update.notifyUser", false);
+user_pref("hangmonitor.timeout", 0);
+user_pref("security.fileuri.strict_origin_policy", false);
+user_pref("toolkit.telemetry.prompted", 999);
+user_pref("toolkit.telemetry.notifiedOptOut", 999);
+user_pref("browser.safebrowsing.gethashURL", "http://127.0.0.1/safebrowsing-dummy/gethash");
+user_pref("browser.safebrowsing.keyURL", "http://127.0.0.1/safebrowsing-dummy/newkey");
+user_pref("browser.safebrowsing.updateURL", "http://127.0.0.1/safebrowsing-dummy/update");
+user_pref("extensions.update.url", "http://127.0.0.1/extensions-dummy/updateURL");
+user_pref("extensions.update.background.url", "http://127.0.0.1/extensions-dummy/updateBackgroundURL");
+user_pref("extensions.blocklist.url", "http://127.0.0.1/extensions-dummy/blocklistURL");
+user_pref("extensions.hotfix.url", "http://127.0.0.1/extensions-dummy/hotfixURL");
+user_pref("extensions.update.enabled", false);
+
