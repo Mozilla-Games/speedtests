@@ -66,7 +66,7 @@ except:
 platform = 'Android'
 client = 'GalaxyNexus'
 benchmarks = ['octane']
-browser_ids = [5, 6]
+browser_ids = [5, 6, 7]
 
 benchmark_data = {}
 browser_data = {}
