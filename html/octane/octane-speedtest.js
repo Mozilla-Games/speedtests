@@ -2,7 +2,7 @@
 var OctaneSpeedtest = {
   startTime: 0,
   iteration: 0,
-  numIterations: 2
+  numIterations: 10
 };
 
 OctaneSpeedtest.parseIteration = function (url) {
