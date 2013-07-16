@@ -1,12 +1,16 @@
 #!/usr/bin/env python
 
 import sys
+import sets
 
 import numpy as np
 import matplotlib.pyplot as plt
 
 import ConfigParser
 import web
+
+from matplotlib import rcParams
+rcParams.update({'figure.autolayout': True})
 
 def pretty(d, indent=0):
   for key, value in d.iteritems():
@@ -122,61 +126,62 @@ processed_benchmark_data = {}
 for bid in benchmark_data.keys():
   processed_benchmark_data[bid] = {}
   for bench in benchmark_data[bid].keys():
-    processed_benchmark_data[bid][bench] = {}
     tests = benchmark_data[bid][bench]['scores']
     for test_name, test_results in tests.items():
-      processed_benchmark_data[bid][bench][test_name] = {}
+      key = '%s/%s' % (bench, test_name)
+      processed_benchmark_data[bid][key] = {}
       sum_scores = 0
       for result in test_results.values():
         sum_scores += result['score']
       avg_score = sum_scores / len(test_results)
-      processed_benchmark_data[bid][bench][test_name]['score'] = avg_score
+      processed_benchmark_data[bid][key]['score'] = avg_score
       # TODO: compute error, if possible
 
 print pretty(processed_benchmark_data)
 
-sys.exit(0);
+def get_browser_name(id, data):
+  return '%s %s' % (data[id]['name'], data[id]['version'].split('.')[0])
 
-scores = {
-  'firefox': [21, 10, 32],
-  'nightly': [33, 11, 22]
-}
-
-browsers = scores.keys()
-
-N = len(benchmarks);
+benchmark_test_names = processed_benchmark_data[processed_benchmark_data.keys()[0]].keys()
+N = len(benchmark_test_names);
 
 ind = np.arange(N)  # the x locations for the groups
 width = 0.2        # the width of the bars
+nbrowsers = len(processed_benchmark_data.keys())
 
 fig = plt.figure()
 ax = fig.add_subplot(111)
 
-rects = dict.fromkeys(scores);
 offset = 0;
 cm = plt.get_cmap('gist_rainbow')
-ax.set_color_cycle([cm(1.*i/N) for i in range(N)])
-for browser in rects.keys():
-  this_color = color = cm(1.*offset/N)
-  rects[browser] = ax.bar(ind+width*offset, scores[browser], width, color=this_color)
+ax.set_color_cycle([cm(1.*i/nbrowsers) for i in range(nbrowsers)])
+for bid in processed_benchmark_data.keys():
+  this_color = color = cm(1.*offset/nbrowsers)
+  this_values = [x['score'] for x in processed_benchmark_data[bid].values()]
+  processed_benchmark_data[bid]['rect'] = ax.bar(ind+width*offset, this_values, width, color=this_color)
   offset += 1
 
 # add some
 ax.set_ylabel('scores')
-ax.set_title('benchmarks: %s' % (platform))
+ax.set_title('client: %s' % (client))
 ax.set_xticks(ind+width)
-ax.set_xticklabels( benchmarks )
+ax.set_xticklabels(benchmark_test_names)
 
-ax.legend( [rect[0] for rect in rects.values()], browsers, loc='upper center', bbox_to_anchor=(0.5, -0.05), ncol=len(browsers) )
+rects = []
+for bid in processed_benchmark_data:
+  rects.append(processed_benchmark_data[bid]['rect'])
+
+ax.legend( [rect[0] for rect in rects], [get_browser_name(bid, browser_data) for bid in processed_benchmark_data.keys()], loc='upper right', ncol=len(processed_benchmark_data) )
 
 def autolabel(rects):
     # attach some text labels
     for rect in rects:
         height = rect.get_height()
         ax.text(rect.get_x()+rect.get_width()/2., 1.05*height, '%d'%int(height),
-                ha='center', va='bottom')
+                ha='center', va='bottom', rotation=90)
 
-for rect in rects.values():
-  autolabel(rect)
+for bid in processed_benchmark_data:
+    autolabel(processed_benchmark_data[bid]['rect'])
 
-# plt.show()
+plt.setp(ax.get_xticklabels(), fontsize=10, rotation=50)
+plt.show()
