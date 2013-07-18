@@ -2,6 +2,7 @@
 
 import sys
 import sets
+import math
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -66,7 +67,7 @@ except:
 platform = 'Android'
 client = 'GalaxyNexus'
 benchmarks = ['octane']
-browser_ids = [5, 6, 7]
+browser_ids = [1, 2, 3]
 
 benchmark_data = {}
 browser_data = {}
@@ -129,13 +130,15 @@ for bid in benchmark_data.keys():
     tests = benchmark_data[bid][bench]['scores']
     for test_name, test_results in tests.items():
       key = '%s/%s' % (bench, test_name)
+      n_results = len(test_results)
       processed_benchmark_data[bid][key] = {}
-      sum_scores = 0
-      for result in test_results.values():
-        sum_scores += result['score']
-      avg_score = sum_scores / len(test_results)
-      processed_benchmark_data[bid][key]['score'] = avg_score
-      # TODO: compute error, if possible
+      values = [v['score'] for v in test_results.values()]
+
+      avg = np.average(values)
+      processed_benchmark_data[bid][key]['score'] = avg
+
+      std = np.std(values)
+      processed_benchmark_data[bid][key]['std'] = std
 
 print pretty(processed_benchmark_data)
 
@@ -155,10 +158,17 @@ ax = fig.add_subplot(111)
 offset = 0;
 cm = plt.get_cmap('gist_rainbow')
 ax.set_color_cycle([cm(1.*i/nbrowsers) for i in range(nbrowsers)])
+colors = {
+  1: 'orange',
+  3: 'red',
+  2: 'blue'
+}
 for bid in processed_benchmark_data.keys():
-  this_color = color = cm(1.*offset/nbrowsers)
+  # this_color = color = cm(1.*offset/nbrowsers)
+  this_color = colors[bid]
   this_values = [x['score'] for x in processed_benchmark_data[bid].values()]
-  processed_benchmark_data[bid]['rect'] = ax.bar(ind+width*offset, this_values, width, color=this_color)
+  this_err = [x['std'] for x in processed_benchmark_data[bid].values()]
+  processed_benchmark_data[bid]['rect'] = ax.bar(ind+width*offset, this_values, width, yerr=this_err, color=this_color)
   offset += 1
 
 # add some
@@ -167,21 +177,25 @@ ax.set_title('client: %s' % (client))
 ax.set_xticks(ind+width)
 ax.set_xticklabels(benchmark_test_names)
 
+ylim = np.diff(ax.yaxis.get_data_interval())[0]
+ax.set_ylim(0, ylim + 500)
+
 rects = []
 for bid in processed_benchmark_data:
   rects.append(processed_benchmark_data[bid]['rect'])
 
-ax.legend( [rect[0] for rect in rects], [get_browser_name(bid, browser_data) for bid in processed_benchmark_data.keys()], loc='upper right', ncol=len(processed_benchmark_data) )
+ax.legend( [rect[0] for rect in rects], [get_browser_name(bid, browser_data) for bid in processed_benchmark_data.keys()], loc='upper right', ncol=len(processed_benchmark_data), prop={'size':8} )
 
 def autolabel(rects):
     # attach some text labels
     for rect in rects:
         height = rect.get_height()
         ax.text(rect.get_x()+rect.get_width()/2., 1.05*height, '%d'%int(height),
-                ha='center', va='bottom', rotation=90)
+                ha='center', va='bottom', rotation='vertical', size='xx-small')
 
 for bid in processed_benchmark_data:
     autolabel(processed_benchmark_data[bid]['rect'])
 
-plt.setp(ax.get_xticklabels(), fontsize=10, rotation=50)
-plt.show()
+plt.setp(ax.get_xticklabels(), fontsize=8, rotation='vertical', ha='center')
+#plt.show()
+plt.savefig('plot.png', orientation='landscape', pad_inches=0.2, papertype='legal', bbox_inches='tight')
