@@ -93,7 +93,7 @@ class AndroidBrowserController(BrowserController):
                     return False
         return True
 
-    def launch(self, url=None):
+    def launch(self, url=None, extras=None):
         if not self.copy_profiles():
             print "ERROR: unable to copy profile, terminating test"
             return False
@@ -111,8 +111,6 @@ class AndroidBrowserController(BrowserController):
             
             #print "ADB Launch command line: %s" % (cmdline)
             self.launch_time = datetime.datetime.now()
-            extras = {}
-            extras['args'] = ' '.join(['-profile', self.remoteProfile])
             return self.dm.launchApplication(self.browserPackage, self.browserActivity, "android.intent.action.VIEW", extras=extras, url=url)
         except:
             traceback.print_exc()
@@ -126,23 +124,40 @@ class AndroidBrowserController(BrowserController):
         return -1
 
     def running(self):
-        return self.getBrowserPid() > 0
+        try:
+            pid = self.getBrowserPid()
+        except:
+            return False
+
+        return pid > 0
 
     def terminate(self):
         if config.verbose:
             print "controller.terminate(), trying.."
-        pid = self.getBrowserPid()
+
+        try:
+            pid = self.getBrowserPid()
+        except:
+            return
+
         if pid < 0:
             return
 
-        # the killProcess implementaiton is not ideal; requires root or run-as
-        self.dm.killProcess(self.browserPackage, forceKill=True)
-        if self.getBrowserPid() > 0:
-            self.dm.killProcess(self.browserPackage)
-        if self.getBrowserPid() > 0:
-            self.dm.shell(["kill", pid], None, root=True)
-        if self.getBrowserPid() > 0:
-            self.dm.shell(["kill", "-9", pid], None, root=True)
+        try:
+            # the killProcess implementaiton is not ideal; requires root or run-as
+            if self.getBrowserPid() > 0:
+                self.dm.shell(['su', '-c', "kill %s" % pid], None)
+            if self.getBrowserPid() > 0:
+                self.dm.killProcess(self.browserPackage, forceKill=True)
+            if self.getBrowserPid() > 0:
+                self.dm.killProcess(self.browserPackage)
+            if self.getBrowserPid() > 0:
+                self.dm.shell(['exec', 'su', '-c "kill %s"' % pid], None, root=True)
+            if self.getBrowserPid() > 0:
+                self.dm.shell(["kill", "-9", pid], None, root=True)
+        except:
+            print "unable to kill browser"
+            return
 
         if False:
             needRoot = False
@@ -171,6 +186,11 @@ class AndroidFirefoxBrowserController(AndroidBrowserController):
     def __init__(self, os_name, browser_name, package='org.mozilla.firefox', activity='.App'):
         super(AndroidFirefoxBrowserController, self).__init__(os_name, browser_name, package, activity)
 
+    def launch(self, url):
+        extras = {}
+        extras['args'] = ' '.join(['-profile', self.remoteProfile])
+        super(AndroidFirefoxBrowserController, self).launch(url, extras)
+
     def clean_up(self):
         self.dm.shell(["rm", "/data/data/" + self.browserPackage + "/files/mozilla/*.default/session*"], None, root=True)
 
@@ -180,3 +200,11 @@ class AndroidChromeBrowserController(AndroidBrowserController):
 
     def clean_up(self):
         self.dm.shell(["rm", "/data/data/" + self.browserPackage + "/files/tab*"], None, root=True)
+
+class AndroidOperaBrowserController(AndroidBrowserController):
+    def __init__(self, os_name, browser_name, package='com.opera.browser', activity='com.opera.Opera'):
+        super(AndroidOperaBrowserController, self).__init__(os_name, browser_name, package, activity)
+
+    def clean_up(self):
+        self.dm.shell(["rm", "/data/data/" + self.browserPackage + "/files/"], None, root=True)
+

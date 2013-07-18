@@ -17,7 +17,6 @@ def find_local_port():
 
 class Config(object):
     DEFAULT_CONF_FILE = 'speedtests.conf'
-    MAX_TEST_TIME = datetime.timedelta(seconds=60*15)
 
     @classmethod
     def GetLocalIP(cls):
@@ -35,7 +34,7 @@ class Config(object):
         self.cfg = None
 
         defaults = dict()
-	defaults['local_ip'] = self.GetLocalIP()
+        defaults['local_ip'] = self.GetLocalIP()
         defaults['64bit'] = "False"
         defaults['local_port'] = 0
         defaults['client'] = defaults['local_ip']
@@ -69,6 +68,12 @@ class Config(object):
         self.results_server = self.cfg.get('speedtests', 'results_server')
         self.cube_results_server = self.cfg.get('speedtests', 'cube_results_server')
         self.include_dev_builds = self.cfg.getboolean('speedtests', 'include_dev_builds')
+
+        try:
+            self.MAX_TEST_TIME = self.cfg.getint('speedtests', 'max_test_time')
+        except:
+            self.MAX_TEST_TIME = 60*60
+        self.MAX_TEST_TIME = datetime.timedelta(seconds=self.MAX_TEST_TIME)
 
         try:
             self.test_base_url = self.cfg.get('speedtests', 'test_base_url').rstrip('/')
