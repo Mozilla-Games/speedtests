@@ -72,7 +72,7 @@ class Config(object):
         try:
             self.MAX_TEST_TIME = self.cfg.getint('speedtests', 'max_test_time')
         except:
-            self.MAX_TEST_TIME = 60*15
+            self.MAX_TEST_TIME = 60*60
         self.MAX_TEST_TIME = datetime.timedelta(seconds=self.MAX_TEST_TIME)
 
         try:
