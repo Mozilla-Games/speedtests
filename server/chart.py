@@ -67,7 +67,7 @@ except:
 platform = 'Android'
 client = 'GalaxyNexus'
 benchmarks = ['octane']
-browser_ids = [3, 5, 6]
+browser_ids = [1, 2, 3]
 
 benchmark_data = {}
 browser_data = {}
@@ -159,9 +159,9 @@ offset = 0;
 cm = plt.get_cmap('gist_rainbow')
 ax.set_color_cycle([cm(1.*i/nbrowsers) for i in range(nbrowsers)])
 colors = {
-  3: 'orange',
-  5: 'red',
-  6: 'blue'
+  1: 'orange',
+  3: 'red',
+  2: 'blue'
 }
 for bid in processed_benchmark_data.keys():
   # this_color = color = cm(1.*offset/nbrowsers)
@@ -196,6 +196,6 @@ def autolabel(rects):
 for bid in processed_benchmark_data:
     autolabel(processed_benchmark_data[bid]['rect'])
 
-plt.setp(ax.get_xticklabels(), fontsize=10, rotation=50)
+plt.setp(ax.get_xticklabels(), fontsize=8, rotation='vertical', ha='center')
 #plt.show()
-plt.savefig('plot.png', orientation='landscape', pad_inches=0.2, papertype='legal')
+plt.savefig('plot.png', orientation='landscape', pad_inches=0.2, papertype='legal', bbox_inches='tight')
