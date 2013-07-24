@@ -3,6 +3,7 @@
 import sys
 import sets
 import math
+import getopt
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -12,6 +13,9 @@ import web
 
 from matplotlib import rcParams
 rcParams.update({'figure.autolayout': True})
+
+def usage():
+    print "Usage: chart.py -p <platform> -c <client> -b <browserid>,... <benchmark> ..."
 
 def pretty(d, indent=0):
   for key, value in d.iteritems():
@@ -64,10 +68,34 @@ except:
     raise
 
 # TODO: load these from options, scores from db
-platform = 'Android'
-client = 'GalaxyNexus'
-benchmarks = ['octane']
-browser_ids = [1, 2, 3]
+platform = None
+client = None
+benchmarks = None
+browser_ids = None
+
+def get_options(args):
+    global platform
+    global client
+    global benchmarks
+    global browser_ids
+    optlist, args = getopt.getopt(args, "p:c:b:")
+    print "%s, %s" % (optlist, args)
+    for optpair in optlist:
+        if optpair[0] == '-p':
+            platform = optpair[1]
+        if optpair[0] == '-c':
+            client = optpair[1]
+        if optpair[0] == '-b':
+            try:
+                browser_ids = [int(x) for x in optpair[1].split(',')]
+            except:
+                pass
+    benchmarks = args
+
+get_options(sys.argv[1:])
+if not platform or not client or not benchmarks or not browser_ids:
+    usage()
+    exit(1)
 
 benchmark_data = {}
 browser_data = {}
