@@ -94,6 +94,8 @@ class AndroidBrowserController(BrowserController):
         return True
 
     def launch(self, url=None, extras=None):
+        self.clean_up()
+
         if not self.copy_profiles():
             print "ERROR: unable to copy profile, terminating test"
             return False
@@ -199,12 +201,12 @@ class AndroidChromeBrowserController(AndroidBrowserController):
         super(AndroidChromeBrowserController, self).__init__(os_name, browser_name, package, activity)
 
     def clean_up(self):
-        self.dm.shell(["rm", "/data/data/" + self.browserPackage + "/files/tab*"], None, root=True)
+        self.dm.shell(["su", "-c", "rm /data/data/%s/files/tab*" % self.browserPackage], None, root=False)
 
 class AndroidOperaBrowserController(AndroidBrowserController):
     def __init__(self, os_name, browser_name, package='com.opera.browser', activity='com.opera.Opera'):
         super(AndroidOperaBrowserController, self).__init__(os_name, browser_name, package, activity)
 
     def clean_up(self):
-        self.dm.shell(["rm", "/data/data/" + self.browserPackage + "/files/"], None, root=True)
+        self.dm.shell(["su", "-c", "rm /data/data/%s/files/appstate.bin" % self.browserPackage], None, root=False)
 
