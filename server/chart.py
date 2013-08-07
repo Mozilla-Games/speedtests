@@ -4,6 +4,7 @@ import sys
 import sets
 import math
 import getopt
+import datetime
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -15,7 +16,15 @@ from matplotlib import rcParams
 rcParams.update({'figure.autolayout': True})
 
 def usage():
-    print "Usage: chart.py -p <platform> -c <client> -b <browserid>,... <benchmark> ..."
+    print "Usage: chart.py [-o <out>] [-e] -p <platform> -c <client> "
+    print "                -b <browserid>,... <benchmark> ..."
+    print ""
+    print " -o <out>            The output file."
+    print " -e                  Whether to include error bars or not."
+    print " -p <platform>       Which platform to construct plot for."
+    print " -c <client>         Which client to construct plot for."
+    print " -b ...              Comma separated list of browser ids to plot scores for."
+    print " <benchmark> ...     The list of benchmarks to plot."
 
 def pretty(d, indent=0):
   for key, value in d.iteritems():
@@ -68,19 +77,27 @@ except:
     raise
 
 # TODO: load these from options, scores from db
+outfile = None
 platform = None
 client = None
 benchmarks = None
 browser_ids = None
+show_error = None
 
 def get_options(args):
     global platform
     global client
     global benchmarks
     global browser_ids
-    optlist, args = getopt.getopt(args, "p:c:b:")
+    global outfile
+    global show_error
+    optlist, args = getopt.getopt(args, "o:p:c:b:e")
     print "%s, %s" % (optlist, args)
     for optpair in optlist:
+        if optpair[0] == '-e':
+            show_error = True
+        if optpair[0] == '-o':
+            outfile = optpair[1]
         if optpair[0] == '-p':
             platform = optpair[1]
         if optpair[0] == '-c':
@@ -92,10 +109,18 @@ def get_options(args):
                 pass
     benchmarks = args
 
+def annotate_datetime(filename):
+    dt = datetime.datetime.now()
+    return '%04d-%02d-%02d-%s' % (dt.year, dt.month, dt.day, filename)
+
 get_options(sys.argv[1:])
 if not platform or not client or not benchmarks or not browser_ids:
     usage()
     exit(1)
+
+if not outfile:
+    outfile = "plot.png"
+outfile = annotate_datetime(outfile)
 
 benchmark_data = {}
 browser_data = {}
@@ -176,8 +201,8 @@ def get_browser_name(id, data):
 benchmark_test_names = processed_benchmark_data[processed_benchmark_data.keys()[0]].keys()
 N = len(benchmark_test_names);
 
-ind = np.arange(N)  # the x locations for the groups
-width = 0.2        # the width of the bars
+width = 1.0        # the width of the bars
+ind = np.arange(N) * (width * 5)  # the x locations for the groups
 nbrowsers = len(processed_benchmark_data.keys())
 
 fig = plt.figure()
@@ -196,7 +221,11 @@ for bid in processed_benchmark_data.keys():
   this_color = colors[bid]
   this_values = [x['score'] for x in processed_benchmark_data[bid].values()]
   this_err = [x['std'] for x in processed_benchmark_data[bid].values()]
-  processed_benchmark_data[bid]['rect'] = ax.bar(ind+width*offset, this_values, width, yerr=this_err, color=this_color)
+  params = {}
+  params['color'] = this_color
+  if show_error:
+    params['yerr'] = this_err
+  processed_benchmark_data[bid]['rect'] = ax.bar(ind+width*offset, this_values, width, **params)
   offset += 1
 
 # add some
@@ -221,9 +250,9 @@ def autolabel(rects):
         ax.text(rect.get_x()+rect.get_width()/2., 1.05*height, '%d'%int(height),
                 ha='center', va='bottom', rotation='vertical', size='xx-small')
 
-for bid in processed_benchmark_data:
-    autolabel(processed_benchmark_data[bid]['rect'])
+#for bid in processed_benchmark_data:
+#    autolabel(processed_benchmark_data[bid]['rect'])
 
 plt.setp(ax.get_xticklabels(), fontsize=8, rotation='vertical', ha='center')
 #plt.show()
-plt.savefig('plot.png', orientation='landscape', pad_inches=0.2, papertype='legal', bbox_inches='tight')
+plt.savefig(outfile, orientation='landscape', pad_inches=0.2, papertype='legal', bbox_inches='tight')
