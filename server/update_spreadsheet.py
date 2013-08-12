@@ -8,7 +8,7 @@ import math
 import sys
 
 SPREADSHEET_TITLE = 'Auto-updated Results'
-WORKSHEET_NAME = {'octane':'Octane'}
+WORKSHEET_NAME = {'octane':'Octane', 'sunspider-1.0':'SunSpider'}
 EMAIL = 'GOOGLE_EMAIL_ADDRESS'
 PASSWORD = 'GOOGLE_PASSWORD'
 
@@ -124,13 +124,15 @@ def add_scores(client, spreadsheet, time, platform, browser, benchmark, results)
     worksheet = find_worksheet(client, spreadsheet, str(benchmark))
     if not worksheet:
         raise Exception("Failed to find worksheet")
-    print worksheet
 
     s_id = get_spreadsheet_id(spreadsheet)
     w_id = get_worksheet_id(worksheet)
     r = {}
     for (key, score) in results.items():
-        r[str(key).lower()] = score
+        s = str(key).lower()
+        if s[0].isdigit():
+            s = 'x' + s
+        r[s] = score
     r['time'] = time
     r['platform'] = platform
     r['browser'] = browser
