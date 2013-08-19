@@ -90,7 +90,7 @@ def get_browser_info(ua, extra_data):
     geckover = 'n/a'
     buildid = 'unknown'
     browserid = 0
-    
+
     if 'firefox' in ua:
         bname = 'Firefox'
         m = re.match('[^\(]*\((.*) rv:([^\)]*)\) gecko/([^ ]+) firefox/(.*)',
@@ -98,17 +98,17 @@ def get_browser_info(ua, extra_data):
         platform = m.group(1).replace(';', '').strip()
         geckover = m.group(2)
         buildid = m.group(3)
-        bver = m.group(4)
+        bver = m.group(4).split('.')[0]
     elif 'msie' in ua:
         bname = 'Internet Explorer'
         m = re.search('msie ([^;]*);([^\)]*)\)', ua)
-        bver = m.group(1)
+        bver = m.group(1).split('.')[0]
         platform = m.group(2).replace(';', '').strip()
     elif 'chrome' in ua:
         bname = 'Chrome'
         m = re.match('mozilla/[^ ]* \(([^\)]*)\).*chrome/([^ ]*)', ua)
         platform = m.group(1).strip()
-        bver = m.group(2)
+        bver = m.group(2).split('.')[0]
     elif 'safari' in ua:
         bname = 'Safari'
         m = re.match('[^\(]*\(([^\)]*)\).*safari/(.*)', ua)
@@ -118,15 +118,15 @@ def get_browser_info(ua, extra_data):
         delim = platform.find(';')
         if delim != -1:
             platform = platform[:delim]
-        bver = m.group(2)
+        bver = m.group(2).split('.')[0]
     elif 'opera' in ua:
         bname = 'Opera'
         m = re.match('[^\(]*\(([^;]*);[^\)]*\).*version/(.*)', ua)
         platform = m.group(1).strip()
         if platform == 'x11':
             platform = 'linux'
-        bver = m.group(2).strip()
-    
+        bver = m.group(2).strip().split('.')[0]
+
     browserinfo = {
         'name': bname,
         'version': bver,
@@ -211,7 +211,7 @@ class SubmitResult(object):
 
         target = args['target'][0]
         data = json.loads(base64.b64decode(args['data'][0]))
-        
+
         # the data object contains (see speedtests.js for 100% accurate info):
         #   browserInfo: {ua, screenWidth, screenHeight}
         #   config: the full config object that was passed to each test; this has details
