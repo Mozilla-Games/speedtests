@@ -138,7 +138,7 @@ def get_browser_info(ua_string, extra_data):
     return browserinfo
 
 def get_browser_id(data):
-    browserinfo = get_browser_info(data['ua_string'], data)
+    browserinfo = get_browser_info(data['ua'], data)
     browser = db.select('browsers', where=web.db.sqlwhere(browserinfo))
     # work around some kind of stupid web.py bug or something.
     # checking if browser causes browser[0] to fail afterwards
@@ -199,14 +199,14 @@ class SubmitResult(object):
         data = json.loads(base64.b64decode(args['data'][0]))
 
         # the data object contains (see speedtests.js for 100% accurate info):
-        #   browserInfo: {ua_string, screenWidth, screenHeight}
+        #   browserInfo: {ua, screenWidth, screenHeight}
         #   config: the full config object that was passed to each test; this has details
         #     like clientName and platform, which we'll need
         #   loadTime: time to load the test
         #   startTime: time that init() was called
         #   finishTime: time that finish() was called
         #   results: array of objects, each containing:
-        #     value: the actua_stringl final value of the test
+        #     value: the actual final value of the test
         #     raw: [optionally] the full set of periodic values
         #     width: window.innerWidth at the time the result was recorded
         #     height: window.innerHeight at the time the result was recorded
