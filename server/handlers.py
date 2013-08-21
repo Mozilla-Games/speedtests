@@ -15,6 +15,17 @@ import base64
 import traceback
 import logging
 from collections import defaultdict
+from ua_parser import user_agent_parser
+
+def parse_ua(ua_string):
+    result = user_agent_parser.Parse(ua_string)
+
+    if('x86_64' in result['string']):
+        result['os']['arch'] = '64bit'
+    else:
+        result['os']['arch'] = ''
+
+    return result
 
 class DefaultConfigParser(ConfigParser.ConfigParser):
 
@@ -84,48 +95,23 @@ def test_names():
     tests.sort()
     return tests
 
-def get_browser_info(ua, extra_data):
-    ua = ua.lower()
-    platform = 'unknown'
+def get_browser_info(ua_string, extra_data):
+    ua_string = ua_string.lower()
+    ua = parse_ua(ua_string)
+
+    bname = ua['user_agent']['family']
+    bver = ua['user_agent']['major']
+    platform = ua['os']['family'] + '' if len(ua['os']['arch']) > 0 else ' ' + ua['os']['arch']
+
     geckover = 'n/a'
     buildid = 'unknown'
     browserid = 0
 
-    if 'firefox' in ua:
-        bname = 'Firefox'
+    if 'Firefox' == bname:
         m = re.match('[^\(]*\((.*) rv:([^\)]*)\) gecko/([^ ]+) firefox/(.*)',
-                     ua)
-        platform = m.group(1).replace(';', '').strip()
+                     ua_string)
         geckover = m.group(2)
         buildid = m.group(3)
-        bver = m.group(4).split('.')[0]
-    elif 'msie' in ua:
-        bname = 'Internet Explorer'
-        m = re.search('msie ([^;]*);([^\)]*)\)', ua)
-        bver = m.group(1).split('.')[0]
-        platform = m.group(2).replace(';', '').strip()
-    elif 'chrome' in ua:
-        bname = 'Chrome'
-        m = re.match('mozilla/[^ ]* \(([^\)]*)\).*chrome/([^ ]*)', ua)
-        platform = m.group(1).strip()
-        bver = m.group(2).split('.')[0]
-    elif 'safari' in ua:
-        bname = 'Safari'
-        m = re.match('[^\(]*\(([^\)]*)\).*safari/(.*)', ua)
-        platform = m.group(1)
-        # 64-bit builds have an extra part separated by a semicolon.
-        # Strip it off here rather than making the re much more complicated.
-        delim = platform.find(';')
-        if delim != -1:
-            platform = platform[:delim]
-        bver = m.group(2).split('.')[0]
-    elif 'opera' in ua:
-        bname = 'Opera'
-        m = re.match('[^\(]*\(([^;]*);[^\)]*\).*version/(.*)', ua)
-        platform = m.group(1).strip()
-        if platform == 'x11':
-            platform = 'linux'
-        bver = m.group(2).strip().split('.')[0]
 
     browserinfo = {
         'name': bname,
@@ -152,7 +138,7 @@ def get_browser_info(ua, extra_data):
     return browserinfo
 
 def get_browser_id(data):
-    browserinfo = get_browser_info(data['ua'], data)
+    browserinfo = get_browser_info(data['ua_string'], data)
     browser = db.select('browsers', where=web.db.sqlwhere(browserinfo))
     # work around some kind of stupid web.py bug or something.
     # checking if browser causes browser[0] to fail afterwards
@@ -213,14 +199,14 @@ class SubmitResult(object):
         data = json.loads(base64.b64decode(args['data'][0]))
 
         # the data object contains (see speedtests.js for 100% accurate info):
-        #   browserInfo: {ua, screenWidth, screenHeight}
+        #   browserInfo: {ua_string, screenWidth, screenHeight}
         #   config: the full config object that was passed to each test; this has details
         #     like clientName and platform, which we'll need
         #   loadTime: time to load the test
         #   startTime: time that init() was called
         #   finishTime: time that finish() was called
         #   results: array of objects, each containing:
-        #     value: the actual final value of the test
+        #     value: the actua_stringl final value of the test
         #     raw: [optionally] the full set of periodic values
         #     width: window.innerWidth at the time the result was recorded
         #     height: window.innerHeight at the time the result was recorded
