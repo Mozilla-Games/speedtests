@@ -331,7 +331,11 @@ def main():
     
             if config.reboot_after > 0 and cycle_count % config.reboot_after == 0:
                 print "Rebooting..."
-                createDeviceManager().reboot()
+                if config.platform == "ffos":
+                    time.sleep(10)
+                    runner.current_controller.dm.restart_b2g()
+                else:
+                    createDeviceManager().reboot()
                 # Wait for the network to come back up!
                 print " Sleping %s seconds to allow device to reboot and get on the network" % config.reboot_sleep
                 time.sleep(config.reboot_sleep)
@@ -342,11 +346,15 @@ def main():
         except:
             print "Cycle failed! Exception:"
             traceback.print_exc()
-            if False and config.platform == "android":
-                print "(Android) rebooting if we can..."
-                ok = createDeviceManager().reboot()
-                if not ok:
-                    print "WARNING: Reboot failed!"
+            if False and (config.platform == "android" or config.platform == "ffos"):
+                if config.platform == "ffos":
+                    print "Attempting to reboot Firefox OS..."
+                    runner.current_controller.dm.restart_b2g()
+                else:
+                    print "(Android) rebooting if we can..."
+                    ok = createDeviceManager().reboot()
+                    if not ok:
+                        print "WARNING: Reboot failed!"
                 # Wait for the network to come back up!
                 print " Sleping %s seconds to allow device to reboot and get on the network" % config.reboot_sleep
                 time.sleep(config.reboot_sleep)

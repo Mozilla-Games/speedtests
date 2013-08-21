@@ -12,6 +12,7 @@ from BrowserController import *
 from AndroidBrowserControllers import *
 from FirefoxBrowserControllers import *
 from OtherBrowserControllers import *
+from B2GBrowserControllers import *
 
 class BrowserRunner(object):
     @classmethod
@@ -118,6 +119,14 @@ class BrowserRunner(object):
         return browsers
 
     @classmethod
+    def browsers_B2G(cls):
+        os_name = 'ffos'
+        browsers = [
+            B2GFirefoxBrowserController(os_name, 'firefox', package=None)
+            ]
+        return browsers
+
+    @classmethod
     def browsers_by_os(cls, os_str):
         if os_str == 'Darwin':
             return BrowserRunner.browsers_Darwin()
@@ -130,6 +139,9 @@ class BrowserRunner(object):
 
         if os_str == 'android':
             return BrowserRunner.browsers_Android()
+
+        if os_str == 'ffos':
+            return BrowserRunner.browsers_B2G()
 
         raise Exception("Unrecognized platform '%s'" % (os_str))
 
