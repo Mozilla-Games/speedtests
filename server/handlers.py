@@ -19,12 +19,11 @@ from ua_parser import user_agent_parser
 
 def parse_ua(ua_string):
     result = user_agent_parser.Parse(ua_string)
-    print result
 
     if('x86_64' in result['string']):
         result['os']['arch'] = '64bit'
     else:
-        result['os']['arch'] = ''
+        result['os']['arch'] = None
 
     return result
 
@@ -101,7 +100,7 @@ def get_browser_info(ua_string, extra_data):
 
     bname = ua['user_agent']['family']
     bver = ua['user_agent']['major']
-    platform = ua['os']['family'] + '' if len(ua['os']['arch']) > 0 else ' ' + ua['os']['arch']
+    platform = ua['os']['family']
 
     geckover = None
     browserid = 0

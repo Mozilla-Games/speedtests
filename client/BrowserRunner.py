@@ -34,12 +34,12 @@ class BrowserRunner(object):
                BrowserControllerRedirFile(os_name, 'safari',
                                           os.path.join(lib_path, 'Safari'),
                                           '/Applications/Safari.app/Contents/MacOS/Safari'),
-               BrowserController(os_name, 'opera', 
+               BrowserController(os_name, 'opera',
                                  [{'path': os.path.join(app_supp_path, 'Opera'), 'archive': 'osx_app_supp.zip'},
                                   {'path': os.path.join(lib_path, 'Opera'), 'archive': 'osx_lib.zip'}],
                                  '/Applications/Opera.app/Contents/MacOS/Opera'),
                BrowserController(os_name, 'chrome',
-                                 os.path.join(app_supp_path, 'Google', 
+                                 os.path.join(app_supp_path, 'Google',
                                               'Chrome'),
                                '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome')
                ]
@@ -107,6 +107,7 @@ class BrowserRunner(object):
         browsers = [
             AndroidFirefoxBrowserController(os_name, 'firefox', package='org.mozilla.firefox'),
             AndroidFirefoxBrowserController(os_name, 'nightly', package='org.mozilla.fennec'),
+            AndroidFirefoxBrowserController(os_name, 'aurora', package='org.mozilla.fennec'),
             #AndroidLatestFxAdbBrowserController(os_name, 'nightly'),
             AndroidTinderboxFxBrowserController(os_name, 'tinderbox'),
             AndroidBrowserController(os_name, 'browser', 'com.google.android.browser'),
@@ -138,10 +139,10 @@ class BrowserRunner(object):
             self.controllers = controllers
             self.browser_names = browser_names
             self.iter = iter(self.controllers)
-        
+
         def __iter__(self):
             return self
-        
+
         def next(self):
             while True:
                 try:
@@ -224,7 +225,7 @@ class BrowserRunner(object):
                 return b
         print 'Unknown browser "%s".' % browsername
         return None
-        
+
     def archive_current_profiles(self, browsername):
         b = self.find_browser(browsername)
         if b:
@@ -234,13 +235,13 @@ class BrowserRunner(object):
         b = self.find_browser(browsername)
         if b:
             b.launch(url)
-            
+
     def browser_running(self):
         self.lock.acquire()
         running = self.current_controller.running()
         self.lock.release()
         return running
-    
+
     def execution_time(self):
         self.lock.acquire()
         t = self.current_controller.execution_time()
@@ -255,7 +256,7 @@ class BrowserRunner(object):
 
     def get_current_test(self):
         return self.current_test_url
-    
+
     def get_current_test_token(self):
         return self.current_test_token
 
