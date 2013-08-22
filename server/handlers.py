@@ -19,6 +19,7 @@ from ua_parser import user_agent_parser
 
 def parse_ua(ua_string):
     result = user_agent_parser.Parse(ua_string)
+    print result
 
     if('x86_64' in result['string']):
         result['os']['arch'] = '64bit'
@@ -96,20 +97,18 @@ def test_names():
     return tests
 
 def get_browser_info(ua_string, extra_data):
-    ua_string = ua_string.lower()
     ua = parse_ua(ua_string)
 
     bname = ua['user_agent']['family']
     bver = ua['user_agent']['major']
     platform = ua['os']['family'] + '' if len(ua['os']['arch']) > 0 else ' ' + ua['os']['arch']
 
-    geckover = 'n/a'
-    buildid = 'unknown'
+    geckover = None
     browserid = 0
 
     if 'Firefox' == bname:
         m = re.match('[^\(]*\((.*) rv:([^\)]*)\) gecko/([^ ]+) firefox/(.*)',
-                     ua_string)
+                     ua_string.lower())
         geckover = m.group(2)
         buildid = m.group(3)
 
@@ -118,7 +117,6 @@ def get_browser_info(ua_string, extra_data):
         'version': bver,
         'platform': platform,
         'geckoversion': geckover,
-        'buildid': buildid
         }
 
     # add some extra info bits

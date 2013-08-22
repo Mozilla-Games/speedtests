@@ -6,9 +6,7 @@ CREATE TABLE browsers (
     name VARCHAR(128) NOT NULL,
     version VARCHAR(128) NOT NULL,
     platform VARCHAR(128) NOT NULL,
-    geckoversion VARCHAR(128) NOT NULL,
-    buildid VARCHAR(128) NOT NULL,
-    sourcestamp VARCHAR(128),
+    geckoversion VARCHAR(128),
 
     screenwidth INTEGER NOT NULL,
     screenheight INTEGER NOT NULL
