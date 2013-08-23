@@ -23,7 +23,7 @@ def parse_ua(ua_string):
     if('x86_64' in result['string']):
         result['os']['arch'] = 'x86_64'
     else:
-        result['os']['arch'] = None
+        result['os']['arch'] = ''
 
     return result
 
@@ -110,7 +110,7 @@ def get_browser_info(ua_string, extra_data):
         'arch': arch
         }
 
-    if 'Firefox' != bname:
+    if not 'Firefox' in bname:
         browserinfo['buildID'] = '%s.%s.%s' % (ua['user_agent']['major'], ua['user_agent']['patch'], ua['user_agent']['patch'])
 
     # add some extra info bits

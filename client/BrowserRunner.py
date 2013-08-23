@@ -108,13 +108,14 @@ class BrowserRunner(object):
         os_name = 'android'
         browsers = [
             AndroidFirefoxBrowserController(os_name, 'firefox', package='org.mozilla.firefox'),
-            AndroidFirefoxBrowserController(os_name, 'nightly', package='org.mozilla.fennec'),
-            AndroidFirefoxBrowserController(os_name, 'aurora', package='org.mozilla.fennec'),
+            AndroidFirefoxBrowserController(os_name, 'firefox-beta', package='org.mozilla.firefox_beta'),
+            AndroidFirefoxBrowserController(os_name, 'firefox-aurora', package='org.mozilla.fennec_aurora'),
+            AndroidFirefoxBrowserController(os_name, 'firefox-nightly', package='org.mozilla.fennec'),
             #AndroidLatestFxAdbBrowserController(os_name, 'nightly'),
-            AndroidTinderboxFxBrowserController(os_name, 'tinderbox'),
-            AndroidBrowserController(os_name, 'browser', 'com.google.android.browser'),
+            #AndroidTinderboxFxBrowserController(os_name, 'tinderbox'),
+            #AndroidBrowserController(os_name, 'browser', 'com.google.android.browser'),
             AndroidChromeBrowserController(os_name, 'chrome'),
-            AndroidOperaBrowserController(os_name, 'opera')
+            #AndroidOperaBrowserController(os_name, 'opera')
             ]
         if config.include_dev_builds:
             browsers.append(AndroidFirefoxBrowserController(os_name, 'fennec_' + os.getenv('USER'), package='org.mozilla.fennec_' + os.getenv('USER')))
