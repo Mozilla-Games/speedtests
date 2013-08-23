@@ -21,7 +21,7 @@ def parse_ua(ua_string):
     result = user_agent_parser.Parse(ua_string)
 
     if('x86_64' in result['string']):
-        result['os']['arch'] = '64bit'
+        result['os']['arch'] = 'x86_64'
     else:
         result['os']['arch'] = None
 
@@ -101,22 +101,17 @@ def get_browser_info(ua_string, extra_data):
     bname = ua['user_agent']['family']
     bver = ua['user_agent']['major']
     platform = ua['os']['family']
-
-    geckover = None
-    browserid = 0
-
-    if 'Firefox' == bname:
-        m = re.match('[^\(]*\((.*) rv:([^\)]*)\) gecko/([^ ]+) firefox/(.*)',
-                     ua_string.lower())
-        geckover = m.group(2)
-        buildid = m.group(3)
+    arch = ua['os']['arch']
 
     browserinfo = {
         'name': bname,
         'version': bver,
         'platform': platform,
-        'geckoversion': geckover,
+        'arch': arch
         }
+
+    if 'Firefox' != bname:
+        browserinfo['buildID'] = '%s.%s.%s' % (ua['user_agent']['major'], ua['user_agent']['patch'], ua['user_agent']['patch'])
 
     # add some extra info bits
     for token in ['screenWidth', 'screenHeight']:
@@ -136,6 +131,8 @@ def get_browser_info(ua_string, extra_data):
 
 def get_browser_id(data):
     browserinfo = get_browser_info(data['ua'], data)
+    if not 'buildID' in browserinfo:
+        browserinfo['buildID'] = data['buildID']
     browser = db.select('browsers', where=web.db.sqlwhere(browserinfo))
     # work around some kind of stupid web.py bug or something.
     # checking if browser causes browser[0] to fail afterwards

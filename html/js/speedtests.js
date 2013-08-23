@@ -247,6 +247,7 @@ var SpeedTests = function() {
       var resultServerObject = {
         browserInfo: {
           ua: navigator.userAgent,
+          buildID: navigator.buildID || 0,
           screenWidth: window.screen.width,
           screenHeight: window.screen.height
         },
@@ -340,7 +341,7 @@ var SpeedTests = function() {
               cubeResult.data = resultServerObject;
 
               ws.send(JSON.stringify(cubeResult));
-              
+
               for (var prop in r)
                 delete resultServerObject[prop];
             }

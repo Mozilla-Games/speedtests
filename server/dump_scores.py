@@ -13,6 +13,9 @@ import json
 from matplotlib import rcParams
 rcParams.update({'figure.autolayout': True})
 
+import numpy
+import scipy.stats
+
 def usage():
     print "Usage: dump_scores.py -p <platform> -c <client> -b <browserid>,... <benchmark> ..."
     print ""
@@ -107,6 +110,7 @@ def main():
                                 where='client=$c AND bench_name=$b AND browser_id=$i',
                                 order='start_time desc',
                                 limit=1)
+
             try:
                 result = dict(entries[0])
             except:
@@ -134,6 +138,15 @@ def main():
             benchmark_data[bid][benchmark] = result
 
     data = {'scores':benchmark_data, 'browsers':browser_data}
+
+    #for bid, benches in data['scores'].items():
+    #    for bench, results in benches.items():
+    #        for subbench, iters in results['scores'].items():
+    #            values = [i['score'] for i in iters.values()]
+    #            avg = numpy.average(values)
+    #            err = scipy.stats.sem(values)
+    #            print subbench, 'avg:', avg, 'err:', err
+
     print json.dumps(data, indent=4)
 
 main()
