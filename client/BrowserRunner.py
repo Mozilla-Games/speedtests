@@ -50,14 +50,16 @@ class BrowserRunner(object):
         return [
                BrowserController(os_name, 'firefox', os.path.join(os.getenv('HOME'), '.mozilla', 'firefox'),
                                '/usr/bin/firefox'),
-               LinuxLatestFxBrowserController(os_name, 'nightly', os.path.join(os.getenv('HOME'), '.mozilla', 'firefox'), '/tmp'),
-               BrowserController(os_name, 'opera', os.path.join(os.getenv('HOME'), '.opera'),
-                               '/usr/bin/opera'),
+               BrowserController(os_name, 'firefox-beta', os.path.join(os.getenv('HOME'), '.mozilla', 'firefox'),
+                               '/usr/bin/firefox'),
+               BrowserController(os_name, 'firefox-aurora', os.path.join(os.getenv('HOME'), '.mozilla', 'firefox'),
+                               '/usr/bin/firefox'),
+               BrowserController(os_name, 'firefox-nightly', os.path.join(os.getenv('HOME'), '.mozilla', 'firefox'),
+                               '/usr/bin/firefox'),
                BrowserController(os_name, 'chrome', os.path.join(os.getenv('HOME'), '.config', 'google-chrome'),
                                '/usr/bin/google-chrome'),
-               LinuxLatestTinderboxFxBrowserController(os_name, 'tinderbox',
-                                                       os.path.join(os.getenv('HOME'), '.mozilla'),
-                                                       "/tmp", "mozilla-central")
+               #LinuxLatestTinderboxFxBrowserController(os_name, 'tinderbox', os.path.join(os.getenv('HOME'), '.mozilla'), "/tmp", "mozilla-central")
+               #LinuxLatestFxBrowserController(os_name, 'nightly', os.path.join(os.getenv('HOME'), '.mozilla', 'firefox'), '/tmp'),
                ]
 
     @classmethod
