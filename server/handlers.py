@@ -111,7 +111,7 @@ def get_browser_info(ua_string, extra_data):
         }
 
     if not 'Firefox' in bname:
-        browserinfo['buildID'] = '%s.%s.%s' % (ua['user_agent']['major'], ua['user_agent']['patch'], ua['user_agent']['patch'])
+        browserinfo['buildID'] = '%s.%s.%s' % (ua['user_agent']['major'], ua['user_agent']['minor'], ua['user_agent']['patch'])
 
     # add some extra info bits
     for token in ['screenWidth', 'screenHeight']:

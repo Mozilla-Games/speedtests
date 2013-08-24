@@ -114,7 +114,8 @@ class BrowserRunner(object):
             #AndroidLatestFxAdbBrowserController(os_name, 'nightly'),
             #AndroidTinderboxFxBrowserController(os_name, 'tinderbox'),
             #AndroidBrowserController(os_name, 'browser', 'com.google.android.browser'),
-            AndroidChromeBrowserController(os_name, 'chrome'),
+            AndroidChromeBrowserController(os_name, 'chrome', 'com.android.chrome'),
+            AndroidChromeBrowserController(os_name, 'chrome-beta', 'com.chrome.beta'),
             #AndroidOperaBrowserController(os_name, 'opera')
             ]
         if config.include_dev_builds:
