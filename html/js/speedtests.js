@@ -247,7 +247,7 @@ var SpeedTests = function() {
       var resultServerObject = {
         browserInfo: {
           ua: navigator.userAgent,
-          buildID: navigator.buildID || 0,
+          build: navigator.buildID || 0,
           screenWidth: window.screen.width,
           screenHeight: window.screen.height
         },
