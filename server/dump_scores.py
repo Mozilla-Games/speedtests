@@ -67,8 +67,8 @@ def main():
     browser_data = {}
 
     for benchmark in benchmarks:
+        benchmark_data[benchmark] = {}
         for bid in browsers:
-            benchmark_data[bid] = {}
             entries = db.select(['browsers'], {'i':bid},
                                 what='name, version, platform, arch',
                                 where='id=$i')
@@ -110,7 +110,7 @@ def main():
                         result['scores'][sname] = {}
                     result['scores'][sname][sid] = dict(score)
 
-            benchmark_data[bid][benchmark] = result
+            benchmark_data[benchmark][bid] = result
 
     data = {'scores':benchmark_data, 'browsers':browser_data}
 
