@@ -7,7 +7,7 @@ CREATE TABLE browsers (
     version VARCHAR(128) NOT NULL,
     platform VARCHAR(128) NOT NULL,
     arch VARCHAR(128),
-    buildID VARCHAR(128),
+    build VARCHAR(128),
 
     screenwidth INTEGER NOT NULL,
     screenheight INTEGER NOT NULL

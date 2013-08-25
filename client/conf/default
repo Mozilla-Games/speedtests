@@ -2,7 +2,7 @@
 ;; Required: the base URL where the tests can be found.
 ;; If you need a quick local thing, consider running
 ;; 'python -m SimpleHTTPServer 8080' in the html dir.
-test_base_url = file:///mnt/sdcard/html/
+test_base_url = http://192.168.1.3:8080/
 
 ;; Only specify the results_server if you have a server to send results
 ;; to; otherwise leave it commented out.  You can run 'python server.py 8080'
@@ -13,7 +13,20 @@ local_ip = 192.168.1.3
 
 client = dash
 
+[linux]
+firefox = /usr/bin/firefox
+firefox_args = -no-remote -P speedtest
+firefox-beta = /home/ack/lib/firefox-beta/firefox
+firefox-beta_args = -no-remote -P speedtest
+firefox-aurora = /home/ack/lib/firefox-aurora/firefox
+firefox-aurora_args = -no-remote -P speedtest
+firefox-nightly = /home/ack/lib/firefox-nightly/firefox
+firefox-nightly_args = -no-remote -P speedtest
+chrome = /usr/bin/google-chrome
+
 [android]
+test_base_url = file:///mnt/sdcard/html/
+
 reboot_after = 20
 nap_after = 15
 nap_time = 900
@@ -26,12 +39,3 @@ firefox-nightly_package = org.mozilla.fennec
 ;; firefox-beta_suffix = beta
 ;; firefox-aurora_suffix = aurora
 ;; firefox-nightly_suffix = nightly
-
-[linux]
-firefox = /usr/bin/firefox
-firefox_args = -no-remote -P speedtest
-tinderbox_args = -no-remote -P speedtest
-nightly_args = -no-remote -P speedtest
-tinderbox_suffix = tinderbox
-nightly_suffix = nightly
-chrome = /usr/bin/google-chrome

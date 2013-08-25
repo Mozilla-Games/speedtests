@@ -111,7 +111,7 @@ def get_browser_info(ua_string, extra_data):
         }
 
     if not 'Firefox' in bname:
-        browserinfo['buildID'] = '%s.%s.%s' % (ua['user_agent']['major'], ua['user_agent']['minor'], ua['user_agent']['patch'])
+        browserinfo['build'] = '%s.%s.%s' % (ua['user_agent']['major'], ua['user_agent']['minor'], ua['user_agent']['patch'])
 
     # add some extra info bits
     for token in ['screenWidth', 'screenHeight']:
@@ -131,8 +131,8 @@ def get_browser_info(ua_string, extra_data):
 
 def get_browser_id(data):
     browserinfo = get_browser_info(data['ua'], data)
-    if not 'buildID' in browserinfo:
-        browserinfo['buildID'] = data['buildID']
+    if not 'build' in browserinfo:
+        browserinfo['build'] = data['build']
     browser = db.select('browsers', where=web.db.sqlwhere(browserinfo))
     # work around some kind of stupid web.py bug or something.
     # checking if browser causes browser[0] to fail afterwards

@@ -141,7 +141,7 @@ class TestRunnerRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
 
 class TestRunnerHTTPServer(SocketServer.ThreadingMixIn, BaseHTTPServer.HTTPServer):
-    
+
     def __init__(self, server_address, browser_runner):
         BaseHTTPServer.HTTPServer.__init__(self, server_address, TestRunnerRequestHandler)
 
@@ -226,6 +226,10 @@ def main():
     config.reboot_after = config.get_int(config.platform, 'reboot_after', 0)
     config.reboot_sleep = config.get_int(config.platform, 'reboot_sleep', 180)
 
+    # Allow override from platform subsections
+    if config.get_str(config.platform, 'test_base_url'):
+        config.test_base_url = config.get_str(config.platform, 'test_base_url')
+
     if options.nap_after:
         config.nap_after = options.nap_after
     if options.nap_time:
@@ -246,7 +250,7 @@ def main():
         browser = get_browser_arg()
         BrowserRunner(evt).archive_current_profiles(browser)
         sys.exit(0)
-    
+
     # start tests in specified browsers.  if none given, run all.
 
     # create a configuration object to pass to the tests
@@ -320,15 +324,15 @@ def main():
             print 'Client: %s' % config.client
             print
             report.show()
-    
+
             print '==== Cycle done! ===='
-    
+
             cycle_count = cycle_count + 1
-    
+
             if config.nap_after > 0 and cycle_count % config.nap_after == 0:
                 print "Napping for %d seconds..." % (config.nap_time)
                 time.sleep(config.nap_time)
-    
+
             if config.reboot_after > 0 and cycle_count % config.reboot_after == 0:
                 print "Rebooting..."
                 createDeviceManager().reboot()
