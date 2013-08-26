@@ -14,7 +14,7 @@ DECIMAL_FMT = '0.00'
 class Sheet:
     def __init__(self, wb, bench):
         self.bench = bench
-        self.headers = ['time', 'platform', 'arch', 'browser']
+        self.headers = ['time', 'client', 'platform', 'arch', 'browser', 'version', 'build']
         self.rows = []
         self.ws = wb.add_sheet(bench)
 
@@ -34,9 +34,9 @@ class Sheet:
         for i in range(0, len(self.headers)):
             self.ws.write(0, i, self.headers[i])
 
-        for i in range(1, len(self.rows)):
+        for i in range(0, len(self.rows)):
             for j in range(0, len(self.rows[i])):
-                self.ws.write(i, j, self.rows[i][j], style)
+                self.ws.write(i+1, j, self.rows[i][j], style)
 
 def create_spreadsheet(data, out):
     wb = xlwt.Workbook()
@@ -58,7 +58,7 @@ def create_spreadsheet(data, out):
                 ws.extend_headers(headers)
                 doheaders = False
 
-            row = [time, browser_data[bid]['platform'], browser_data[bid]['arch'], browser_data[bid]['name']]
+            row = [time, data['client'], browser_data[bid]['platform'], browser_data[bid]['arch'], browser_data[bid]['name'], browser_data[bid]['version'], browser_data[bid]['build']]
             i = len(row)
             for subbench, iters in results['scores'].items():
                 values = [it['score'] for it in iters.values()]

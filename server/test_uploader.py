@@ -44,7 +44,7 @@ def upload_file(local_file, remote_folder, type):
   )
   results = client.GetResources(q=q).entry
   if len(results) < 1:
-    col = gdata.docs.data.Resource(type='folder', title=remote_folde00r)
+    col = gdata.docs.data.Resource(type='folder', title=remote_folder)
     col = client.CreateResource(col)
   else:
     col = results[0]
@@ -59,13 +59,13 @@ def upload_file(local_file, remote_folder, type):
   print 'Uploaded:', doc.title.text, doc.resource_id.text
 
 def main():
-  parser = argparse.ArgumentParser(description='Upload file to Google Drive (previously known as \'Google Docs\').')
+  parser = argparse.ArgumentParser(description='Upload file to Google Drive')
   parser.add_argument('file', help='file to upload')
-  parser.add_argument('collection', help='collection for the uploaded document')
+  #parser.add_argument('collection', help='collection for the uploaded document')
   parser.add_argument('type', nargs='?', default='text/plain', help='type of file to upload, default is text/plain')
   args = parser.parse_args()
   local_file = args.file
-  remote_folder = args.collection
+  remote_folder = "SpeedTest Results"
   type = args.type
   upload_file(local_file, remote_folder, type)
   os._exit(0)
