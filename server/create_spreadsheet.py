@@ -41,7 +41,6 @@ class Sheet:
 def create_spreadsheet(data, out):
     wb = xlwt.Workbook()
     browser_data = {}
-    time = str(datetime.datetime.now())
 
     for (id, info) in data['browsers'].items():
         browser_data[id] = info
@@ -57,8 +56,7 @@ def create_spreadsheet(data, out):
                 headers.extend(error_headers)
                 ws.extend_headers(headers)
                 doheaders = False
-
-            row = [time, data['client'], browser_data[bid]['platform'], browser_data[bid]['arch'], browser_data[bid]['name'], browser_data[bid]['version'], browser_data[bid]['build']]
+            row = [results['start_time'], data['client'], browser_data[bid]['platform'], browser_data[bid]['arch'], browser_data[bid]['name'], browser_data[bid]['version'], browser_data[bid]['build']]
             i = len(row)
             for subbench, iters in results['scores'].items():
                 values = [it['score'] for it in iters.values()]

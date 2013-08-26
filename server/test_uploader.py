@@ -65,7 +65,7 @@ def main():
   parser.add_argument('type', nargs='?', default='text/plain', help='type of file to upload, default is text/plain')
   args = parser.parse_args()
   local_file = args.file
-  remote_folder = "SpeedTest Results"
+  remote_folder = "Performance Reports"
   type = args.type
   upload_file(local_file, remote_folder, type)
   os._exit(0)

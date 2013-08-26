@@ -54,7 +54,7 @@ def main():
                       help='target platform to export', required=True)
     parser.add_argument('-b', '--browser', dest='browsers', action='append', default=None,
                       help='browser name and (optional) version to export', required=True)
-    parser.add_argument('benchmarks', action='append', default=None,
+    parser.add_argument('benchmarks', nargs='+', action='store', default=None,
                       help='benchmarks to export')
     options = parser.parse_args()
 
@@ -81,16 +81,17 @@ def main():
             result = None;
 
             entries = db.select(['runs'], {'c':client, 'b':benchmark, 'i':bid},
-                                what='uuid',
+                                what='uuid, start_time',
                                 where='client=$c AND bench_name=$b AND browser_id=$i',
                                 order='start_time desc',
                                 limit=1)
 
             try:
                 result = dict(entries[0])
+                result['start_time'] = str(result['start_time'])
             except:
-                print "No entries found!"
-                raise
+                # print "No entries found!"
+                continue
 
             iterations = db.select(['iterations'], {'u': result['uuid']},
                                    what='id',
