@@ -11,6 +11,13 @@ import xlwt
 
 DECIMAL_FMT = '0.00'
 
+def mean_confidence_interval(data, confidence=0.95):
+    a = 1.0*numpy.array(data)
+    n = len(a)
+    m, se = numpy.mean(a), scipy.stats.sem(a)
+    h = se * scipy.stats.t._ppf((1+confidence)/2., n-1)
+    return m-h, m+h
+
 class Sheet:
     def __init__(self, wb, bench):
         self.bench = bench
@@ -52,8 +59,9 @@ def create_spreadsheet(data, out):
         for bid, results in browsers.items():
             if doheaders:
                 headers = results['scores'].keys()
-                error_headers = [x + '_stderr' for x in headers]
-                headers.extend(error_headers)
+                #error_headers = [x + '_stderr' for x in headers]
+                ci_headers = [y + '_ci' for y in headers]
+                headers.extend(ci_headers)
                 ws.extend_headers(headers)
                 doheaders = False
             row = [results['start_time'], data['client'], browser_data[bid]['platform'], browser_data[bid]['arch'], browser_data[bid]['name'], browser_data[bid]['version'], browser_data[bid]['build']]
@@ -63,11 +71,14 @@ def create_spreadsheet(data, out):
                 if len(values) > 1:
                     avg = numpy.average(values)
                     err = scipy.stats.sem(values)
+                    ci = mean_confidence_interval(values)
                 else:
                     avg = values[0]
                     err = '?'
+                    ci = ('?', '?')
                 row.insert(i, avg)
-                row.append(err)
+                #row.append(err)
+                row.append("%s, %s" % ci)
                 i += 1
 
             ws.insert_row(row)

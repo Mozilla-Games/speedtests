@@ -11,8 +11,6 @@ import gdata.docs.data
 import gdata.docs.service
 import gdata.sample_util
 
-import google_auth
-
 class SampleConfig(object):
   APP_NAME = 'GDataDocumentsListAPISample-v1.0'
   DEBUG = False
@@ -20,14 +18,14 @@ class SampleConfig(object):
 def create_client():
   client = gdata.docs.client.DocsClient(source=SampleConfig.APP_NAME)
   try:
-    #gdata.sample_util.authorize_client(
-    #   client,
-    #   1,
-    #   service=client.auth_service,
-    #   source=client.source,
-    #   scopes=client.auth_scopes
-    #)
-    client.client_login(google_auth.username, google_auth.password, source=client.source, service=client.auth_service)
+    gdata.sample_util.authorize_client(
+       client,
+       1,
+       service=client.auth_service,
+       source=client.source,
+       scopes=client.auth_scopes
+    )
+    #client.client_login(google_auth.username, google_auth.password, source=client.source, service=client.auth_service)
   except gdata.client.BadAuthentication:
     exit('Invalid user credentials given.')
   except gdata.client.Error:
@@ -65,7 +63,7 @@ def main():
   parser.add_argument('type', nargs='?', default='text/plain', help='type of file to upload, default is text/plain')
   args = parser.parse_args()
   local_file = args.file
-  remote_folder = "Performance Reports"
+  remote_folder = "Private"
   type = args.type
   upload_file(local_file, remote_folder, type)
   os._exit(0)
