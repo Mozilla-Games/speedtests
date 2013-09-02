@@ -255,7 +255,8 @@ var SpeedTests = function() {
         browser: obj.config.browser,
         loadTime: obj.loadTime.getTime(),
         startTime: obj.startTime.getTime(),
-        finishTime: obj.finishTime.getTime()
+        finishTime: obj.finishTime.getTime(),
+        complete: isFinal
       };
 
       var extraBrowserInfo = ["browserNameExtra", "browserSourceStamp", "browserBuildID"];

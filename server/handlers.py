@@ -166,7 +166,8 @@ def get_bench_run(config, browser_id):
             browser_id=browser_id,
             client=client,
             bench_name=bench_name,
-            start_time=datetime.datetime.now().isoformat().replace("T", " ")
+            start_time=datetime.datetime.now().isoformat().replace("T", " "),
+            complete=0
         )
     return run_uuid
 
@@ -221,6 +222,10 @@ class SubmitResult(object):
 
             # get or create an iteration for this data.
             iter_id = get_bench_iteration(data['config'], run_uuid)
+
+            complete = data['complete']
+            if complete:
+                db.update('runs', where='uuid=%s' % complete=1)
 
             # more than one result could have been submitted; it'll always be an array
             for result in data['results']:
