@@ -34,6 +34,9 @@ CREATE TABLE runs (
     -- when the run was started
     start_time TIMESTAMP,
 
+    -- 1 if test run is complete, 0 otherwise
+    complete INTEGER(1),
+
     -- any extra result data for this run
     extra_data TEXT,
 
