@@ -296,6 +296,7 @@ def main():
     global report
     report = TestReport()
 
+    run_uuid = str(uuid.uuid4())
     while options.cycles == -1 or cycle_count < options.cycles:
         try:
             start = datetime.datetime.now()
@@ -311,7 +312,7 @@ def main():
                         break
                     if runner.execution_time() > config.MAX_TEST_TIME:
                         print 'Test has taken too long; starting next test.'
-                        runner.next_test()
+                        runner.next_test(run_uuid)
                 else:
                     #print 'Browser isn\'t running!'
                     runner.next_test()
