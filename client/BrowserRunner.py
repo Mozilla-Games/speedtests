@@ -188,7 +188,7 @@ class BrowserRunner(object):
         def next(self):
             while True:
                 try:
-                    test = self.test_iter.next()
+                    self.cur_test = test = self.test_iter.next()
                 except StopIteration:
                     raise
 
@@ -210,6 +210,9 @@ class BrowserRunner(object):
         self.tests = tests
         self.testconfig = testconfig
         self.browser_names = browser_names
+        self.uuids = {}
+        for test in self.tests:
+          self.uuids[test] = str(uuid.uuid4())
 
         platform = testconfig['platform']
 
@@ -272,7 +275,7 @@ class BrowserRunner(object):
     def get_current_test_token(self):
         return self.current_test_token
 
-    def next_test(self, run_uuid):
+    def next_test(self):
         if not self.current_controller:
             self.launch_next_browser()
 
@@ -286,7 +289,7 @@ class BrowserRunner(object):
             url = self.test_url_iter.next()
             token = str(uuid.uuid4())
 
-            self.current_test_url = url + "&_benchtoken=" + token + "&_run_uuid=" + run_uuid
+            self.current_test_url = url + "&_benchtoken=" + token + "&_run_uuid=" + self.uuids[self.test_url_iter.cur_test]
             self.current_test_token = token
 
             self.current_controller.launch(self.current_test_url)

@@ -225,7 +225,7 @@ class SubmitResult(object):
 
             complete = data['complete']
             if complete:
-                db.update('runs', where='uuid=%s' % run_uuid, complete=1)
+                db.update('runs', where='uuid="%s"' % run_uuid, complete=1)
 
             # more than one result could have been submitted; it'll always be an array
             for result in data['results']:

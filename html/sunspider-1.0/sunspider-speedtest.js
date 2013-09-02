@@ -33,7 +33,9 @@ SunspiderSpeedtest.init = function () {
     console.log("Initializing sunspider speedtest.");
     SpeedTests.init("sunspider");
     var url = window.document.URL;
-    this.parseIteration(url);
+    if(!this.parseIteration(url)) {
+        window.location = this.nextIterationURL(url);
+    }
     console.log("  test " + this.iteration + " of " + this.numIterations);
     this.startTime = (new Date()).getTime();
     start();
@@ -109,7 +111,7 @@ SunspiderSpeedtest.calculateFinalScores = function () {
 SunspiderSpeedtest.finish = function () {
     this.recordSectionAndTotalScores();
     this.calculateFinalScores();
-    console.log("Finishing iteration " + this.iteration);
+    console.log("Finizshing iteration " + this.iteration);
     var url = this.nextIterationURL(window.document.URL);
     if (!url) {
         SpeedTests.finish(true);
