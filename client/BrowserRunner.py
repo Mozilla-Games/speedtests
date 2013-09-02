@@ -285,7 +285,7 @@ class BrowserRunner(object):
 
             url = self.test_url_iter.next()
             token = str(uuid.uuid4())
-            run_uuid = "RUN-" + str(uuid.uuid4())
+            run_uuid = str(uuid.uuid4())
 
             self.current_test_url = url + "&_benchtoken=" + token + "&_run_uuid=" + run_uuid
             self.current_test_token = token
