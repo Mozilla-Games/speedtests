@@ -6,9 +6,8 @@ CREATE TABLE browsers (
     name VARCHAR(128) NOT NULL,
     version VARCHAR(128) NOT NULL,
     platform VARCHAR(128) NOT NULL,
-    geckoversion VARCHAR(128) NOT NULL,
-    buildid VARCHAR(128) NOT NULL,
-    sourcestamp VARCHAR(128),
+    arch VARCHAR(128),
+    build VARCHAR(128),
 
     screenwidth INTEGER NOT NULL,
     screenheight INTEGER NOT NULL
@@ -34,6 +33,9 @@ CREATE TABLE runs (
 
     -- when the run was started
     start_time TIMESTAMP,
+
+    -- 1 if test run is complete, 0 otherwise
+    complete INTEGER(1),
 
     -- any extra result data for this run
     extra_data TEXT,

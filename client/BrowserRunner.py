@@ -34,12 +34,12 @@ class BrowserRunner(object):
                BrowserControllerRedirFile(os_name, 'safari',
                                           os.path.join(lib_path, 'Safari'),
                                           '/Applications/Safari.app/Contents/MacOS/Safari'),
-               BrowserController(os_name, 'opera', 
+               BrowserController(os_name, 'opera',
                                  [{'path': os.path.join(app_supp_path, 'Opera'), 'archive': 'osx_app_supp.zip'},
                                   {'path': os.path.join(lib_path, 'Opera'), 'archive': 'osx_lib.zip'}],
                                  '/Applications/Opera.app/Contents/MacOS/Opera'),
                BrowserController(os_name, 'chrome',
-                                 os.path.join(app_supp_path, 'Google', 
+                                 os.path.join(app_supp_path, 'Google',
                                               'Chrome'),
                                '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome')
                ]
@@ -50,14 +50,18 @@ class BrowserRunner(object):
         return [
                BrowserController(os_name, 'firefox', os.path.join(os.getenv('HOME'), '.mozilla', 'firefox'),
                                '/usr/bin/firefox'),
-               LinuxLatestFxBrowserController(os_name, 'nightly', os.path.join(os.getenv('HOME'), '.mozilla', 'firefox'), '/tmp'),
-               BrowserController(os_name, 'opera', os.path.join(os.getenv('HOME'), '.opera'),
-                               '/usr/bin/opera'),
+               BrowserController(os_name, 'firefox-beta', os.path.join(os.getenv('HOME'), '.mozilla', 'firefox'),
+                               '/usr/bin/firefox'),
+               BrowserController(os_name, 'firefox-aurora', os.path.join(os.getenv('HOME'), '.mozilla', 'firefox'),
+                               '/usr/bin/firefox'),
+               BrowserController(os_name, 'firefox-nightly', os.path.join(os.getenv('HOME'), '.mozilla', 'firefox'),
+                               '/usr/bin/firefox'),
                BrowserController(os_name, 'chrome', os.path.join(os.getenv('HOME'), '.config', 'google-chrome'),
                                '/usr/bin/google-chrome'),
-               LinuxLatestTinderboxFxBrowserController(os_name, 'tinderbox',
-                                                       os.path.join(os.getenv('HOME'), '.mozilla'),
-                                                       "/tmp", "mozilla-central")
+               BrowserController(os_name, 'chrome-beta', os.path.join(os.getenv('HOME'), '.config', 'google-chrome'),
+                               '/usr/bin/google-chrome'),
+               #LinuxLatestTinderboxFxBrowserController(os_name, 'tinderbox', os.path.join(os.getenv('HOME'), '.mozilla'), "/tmp", "mozilla-central")
+               #LinuxLatestFxBrowserController(os_name, 'nightly', os.path.join(os.getenv('HOME'), '.mozilla', 'firefox'), '/tmp'),
                ]
 
     @classmethod
@@ -80,11 +84,17 @@ class BrowserRunner(object):
                BrowserController(os_name, 'firefox',
                                [{'path': os.path.join(app_data, 'Mozilla\\Firefox'), 'archive': 'windows.zip'}],
                                os.path.join(program_files, 'Mozilla Firefox\\firefox.exe')),
-               WinLatestFxBrowserController(os_name, 'nightly',
-                               [{'path': os.path.join(app_data, 'Mozilla\\Firefox'), 'archive': 'windows.zip'}], user_profile),
-               WinLatestTinderboxFxBrowserController(os_name, 'tinderbox',
-                                                     [{'path': os.path.join(app_data, 'Mozilla\\Firefox'), 'archive': 'windows.zip'}],
-                                                     os.getenv('TEMP'), "mozilla-central"),
+               BrowserController(os_name, 'firefox-aurora',
+                               [{'path': os.path.join(app_data, 'Mozilla\\Firefox'), 'archive': 'windows.zip'}],
+                               os.path.join(program_files, 'Aurora\\firefox.exe')),
+               BrowserController(os_name, 'firefox-nightly',
+                               [{'path': os.path.join(app_data, 'Mozilla\\Firefox'), 'archive': 'windows.zip'}],
+                               os.path.join(program_files, 'Nightly\\firefox.exe')),
+               #WinLatestFxBrowserController(os_name, 'nightly',
+               #                [{'path': os.path.join(app_data, 'Mozilla\\Firefox'), 'archive': 'windows.zip'}], user_profile),
+               #WinLatestTinderboxFxBrowserController(os_name, 'tinderbox',
+               #                                      [{'path': os.path.join(app_data, 'Mozilla\\Firefox'), 'archive': 'windows.zip'}],
+               #                                      os.getenv('TEMP'), "mozilla-central"),
                BrowserController(os_name, 'chrome',
                                  [{'path': os.path.join(local_app_data, 'Google\\Chrome\\User Data'), 'archive': 'windows.zip'}],
                                  chromepath)
@@ -106,12 +116,15 @@ class BrowserRunner(object):
         os_name = 'android'
         browsers = [
             AndroidFirefoxBrowserController(os_name, 'firefox', package='org.mozilla.firefox'),
-            AndroidFirefoxBrowserController(os_name, 'nightly', package='org.mozilla.fennec'),
+            AndroidFirefoxBrowserController(os_name, 'firefox-beta', package='org.mozilla.firefox_beta'),
+            AndroidFirefoxBrowserController(os_name, 'firefox-aurora', package='org.mozilla.fennec_aurora'),
+            AndroidFirefoxBrowserController(os_name, 'firefox-nightly', package='org.mozilla.fennec'),
             #AndroidLatestFxAdbBrowserController(os_name, 'nightly'),
-            AndroidTinderboxFxBrowserController(os_name, 'tinderbox'),
-            AndroidBrowserController(os_name, 'browser', 'com.google.android.browser'),
-            AndroidChromeBrowserController(os_name, 'chrome'),
-            AndroidOperaBrowserController(os_name, 'opera')
+            #AndroidTinderboxFxBrowserController(os_name, 'tinderbox'),
+            #AndroidBrowserController(os_name, 'browser', 'com.google.android.browser'),
+            AndroidChromeBrowserController(os_name, 'chrome', 'com.android.chrome'),
+            AndroidChromeBrowserController(os_name, 'chrome-beta', 'com.chrome.beta'),
+            #AndroidOperaBrowserController(os_name, 'opera')
             ]
         if config.include_dev_builds:
             browsers.append(AndroidFirefoxBrowserController(os_name, 'fennec_' + os.getenv('USER'), package='org.mozilla.fennec_' + os.getenv('USER')))
@@ -138,10 +151,10 @@ class BrowserRunner(object):
             self.controllers = controllers
             self.browser_names = browser_names
             self.iter = iter(self.controllers)
-        
+
         def __iter__(self):
             return self
-        
+
         def next(self):
             while True:
                 try:
@@ -175,7 +188,7 @@ class BrowserRunner(object):
         def next(self):
             while True:
                 try:
-                    test = self.test_iter.next()
+                    self.cur_test = test = self.test_iter.next()
                 except StopIteration:
                     raise
 
@@ -197,6 +210,9 @@ class BrowserRunner(object):
         self.tests = tests
         self.testconfig = testconfig
         self.browser_names = browser_names
+        self.uuids = {}
+        for test in self.tests:
+          self.uuids[test] = str(uuid.uuid4())
 
         platform = testconfig['platform']
 
@@ -224,7 +240,7 @@ class BrowserRunner(object):
                 return b
         print 'Unknown browser "%s".' % browsername
         return None
-        
+
     def archive_current_profiles(self, browsername):
         b = self.find_browser(browsername)
         if b:
@@ -234,13 +250,13 @@ class BrowserRunner(object):
         b = self.find_browser(browsername)
         if b:
             b.launch(url)
-            
+
     def browser_running(self):
         self.lock.acquire()
         running = self.current_controller.running()
         self.lock.release()
         return running
-    
+
     def execution_time(self):
         self.lock.acquire()
         t = self.current_controller.execution_time()
@@ -255,11 +271,11 @@ class BrowserRunner(object):
 
     def get_current_test(self):
         return self.current_test_url
-    
+
     def get_current_test_token(self):
         return self.current_test_token
 
-    def next_test(self):
+    def next_test(self, isFinal=False):
         if not self.current_controller:
             self.launch_next_browser()
 
@@ -272,9 +288,8 @@ class BrowserRunner(object):
 
             url = self.test_url_iter.next()
             token = str(uuid.uuid4())
-            run_uuid = "RUN-" + str(uuid.uuid4())
 
-            self.current_test_url = url + "&_benchtoken=" + token + "&_run_uuid=" + run_uuid
+            self.current_test_url = url + "&_benchtoken=" + token + "&_run_uuid=" + self.uuids[self.test_url_iter.cur_test] + "&_final=" + str(int(isFinal))
             self.current_test_token = token
 
             self.current_controller.launch(self.current_test_url)

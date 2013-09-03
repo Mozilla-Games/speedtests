@@ -26,7 +26,7 @@
  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
  OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
+ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -->
 
 <title>SunSpider 1.0 JavaScript Benchmark (sunspider-1.0 test suite - In Progress...)</title>
@@ -54,17 +54,17 @@ for (var i = 0; i < output.length; i++) {
     output[i] = {};
 }
 
-function start() 
+function start()
 {
     window.setTimeout(reallyNext, 500);
 }
 
-function next() 
+function next()
 {
     window.setTimeout(reallyNext, 0);
 }
 
-function reallyNext() 
+function reallyNext()
 {
     document.getElementById("frameparent").innerHTML = "";
     document.getElementById("frameparent").innerHTML = "<iframe id='testframe'>";
@@ -83,7 +83,6 @@ function reallyNext()
         testFrame.contentDocument.close();
     } else {
         SunspiderSpeedtest.finish();
-        // finish();
     }
 }
 
@@ -94,28 +93,6 @@ function recordResult(time)
         SunspiderSpeedtest.recordSubScore(tests[testIndex], time);
     }
     next();
-}
-
-function finish()
-{
-    var outputString = "{";
-    outputString += '"v": "sunspider-1.0", ';
-    for (var test in output[0]) {
-        outputString += '"' + test + '":[';
-        for (var i = 0; i < output.length; i++) {
-            var time = output[i][test];
-            if (time != time)
-                time = "\"NaN\"";
-            outputString += time + ",";
-        }
-        outputString = outputString.substring(0, outputString.length - 1);
-        outputString += "],";
-    }
-    outputString = outputString.substring(0, outputString.length - 1);
-    outputString += "}";
-
-    //location = "results.html?" + encodeURI(outputString);
-    SunspiderSpeedtest.finish();
 }
 
 </script>

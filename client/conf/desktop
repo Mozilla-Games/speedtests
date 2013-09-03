@@ -19,7 +19,7 @@ tinderbox_args = -no-remote -P speedtest
 nightly_args = -no-remote -P speedtest
 tinderbox_suffix = tinderbox
 nightly_suffix = nightly
-chrome = /usr/bin/chromium-browser
+chrome = /usr/bin/google-chrome
 
 [android]
 reboot_after = 5

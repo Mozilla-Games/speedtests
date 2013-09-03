@@ -21,7 +21,7 @@ def parse_ua(ua_string):
     result = user_agent_parser.Parse(ua_string)
 
     if('x86_64' in result['string']):
-        result['os']['arch'] = '64bit'
+        result['os']['arch'] = 'x86_64'
     else:
         result['os']['arch'] = ''
 
@@ -96,30 +96,22 @@ def test_names():
     return tests
 
 def get_browser_info(ua_string, extra_data):
-    ua_string = ua_string.lower()
     ua = parse_ua(ua_string)
 
     bname = ua['user_agent']['family']
     bver = ua['user_agent']['major']
-    platform = ua['os']['family'] + '' if len(ua['os']['arch']) > 0 else ' ' + ua['os']['arch']
-
-    geckover = 'n/a'
-    buildid = 'unknown'
-    browserid = 0
-
-    if 'Firefox' == bname:
-        m = re.match('[^\(]*\((.*) rv:([^\)]*)\) gecko/([^ ]+) firefox/(.*)',
-                     ua_string)
-        geckover = m.group(2)
-        buildid = m.group(3)
+    platform = ua['os']['family']
+    arch = ua['os']['arch']
 
     browserinfo = {
         'name': bname,
         'version': bver,
         'platform': platform,
-        'geckoversion': geckover,
-        'buildid': buildid
+        'arch': arch
         }
+
+    if not 'Firefox' in bname:
+        browserinfo['build'] = '%s.%s.%s' % (ua['user_agent']['major'], ua['user_agent']['minor'], ua['user_agent']['patch'])
 
     # add some extra info bits
     for token in ['screenWidth', 'screenHeight']:
@@ -139,6 +131,8 @@ def get_browser_info(ua_string, extra_data):
 
 def get_browser_id(data):
     browserinfo = get_browser_info(data['ua'], data)
+    if not 'build' in browserinfo:
+        browserinfo['build'] = data['build']
     browser = db.select('browsers', where=web.db.sqlwhere(browserinfo))
     # work around some kind of stupid web.py bug or something.
     # checking if browser causes browser[0] to fail afterwards
@@ -172,7 +166,8 @@ def get_bench_run(config, browser_id):
             browser_id=browser_id,
             client=client,
             bench_name=bench_name,
-            start_time=datetime.datetime.now().isoformat().replace("T", " ")
+            start_time=datetime.datetime.now().isoformat().replace("T", " "),
+            complete=0
         )
     return run_uuid
 
@@ -227,6 +222,10 @@ class SubmitResult(object):
 
             # get or create an iteration for this data.
             iter_id = get_bench_iteration(data['config'], run_uuid)
+
+            print "complete: " + data['complete']
+            if 1 == data['complete']:
+                db.update('runs', where='uuid="%s"' % run_uuid, complete=1)
 
             # more than one result could have been submitted; it'll always be an array
             for result in data['results']:
