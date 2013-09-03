@@ -224,7 +224,7 @@ class SubmitResult(object):
             iter_id = get_bench_iteration(data['config'], run_uuid)
 
             print "complete: " + data['complete']
-            if 1 == data['complete']:
+            if 1 == int(data['complete']):
                 db.update('runs', where='uuid="%s"' % run_uuid, complete=1)
 
             # more than one result could have been submitted; it'll always be an array
