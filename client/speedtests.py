@@ -133,7 +133,7 @@ class TestRunnerRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.wfile.write('SpeedTests["%s" + "Done"] = true;' % (target))
 
         # finish up, go on to the next test
-        self.server.browser_runner.next_test()
+        self.server.browser_runner.next_test(self.server.browser_runner.cycle_count + 1 == self.server.browser_runner.cycles)
 
     def log_message(self, format, *args):
         """ Suppress log output. """
@@ -296,6 +296,9 @@ def main():
     global report
     report = TestReport()
 
+    runner.cycle_count = cycle_count
+    runner.cycles = options.cycles
+
     while options.cycles == -1 or cycle_count < options.cycles:
         try:
             start = datetime.datetime.now()
@@ -328,6 +331,7 @@ def main():
             print '==== Cycle done! ===='
 
             cycle_count = cycle_count + 1
+            runner.cycle_count = cycle_count
 
             if config.nap_after > 0 and cycle_count % config.nap_after == 0:
                 print "Napping for %d seconds..." % (config.nap_time)
