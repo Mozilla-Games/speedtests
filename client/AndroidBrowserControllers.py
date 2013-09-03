@@ -94,7 +94,10 @@ class AndroidBrowserController(BrowserController):
         return True
 
     def launch(self, url=None, extras=None):
-        self.clean_up()
+        try:
+            self.clean_up()
+        except:
+            return False
 
         if not self.copy_profiles():
             print "ERROR: unable to copy profile, terminating test"
@@ -182,7 +185,10 @@ class AndroidBrowserController(BrowserController):
             count += 1
             if count == 20:
                 raise Exception("Waited too long for browser to die!")
-        self.clean_up()
+        try:
+            self.clean_up()
+        except:
+            pass
 
 class AndroidFirefoxBrowserController(AndroidBrowserController):
     def __init__(self, os_name, browser_name, package='org.mozilla.firefox', activity='.App'):
@@ -194,7 +200,8 @@ class AndroidFirefoxBrowserController(AndroidBrowserController):
         super(AndroidFirefoxBrowserController, self).launch(url, extras)
 
     def clean_up(self):
-        self.dm.shell(["rm", "/data/data/" + self.browserPackage + "/files/mozilla/*.default/session*"], None, root=True)
+        self.dm.shell(["su", "-c", "rm /data/data/%s/files/mozilla/*.default/session*" % self.browserPackage], None, root=False)
+        self.dm.shell(["su", "-c", "rm -r %s" % self.remoteProfile], None, root=False)
 
 class AndroidChromeBrowserController(AndroidBrowserController):
     def __init__(self, os_name, browser_name, package='com.android.chrome', activity='com.google.android.apps.chrome.Main'):
