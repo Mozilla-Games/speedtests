@@ -223,8 +223,8 @@ class SubmitResult(object):
             # get or create an iteration for this data.
             iter_id = get_bench_iteration(data['config'], run_uuid)
 
-            complete = data['complete']
-            if complete:
+            print "complete: " + data['complete']
+            if 1 == data['complete']:
                 db.update('runs', where='uuid="%s"' % run_uuid, complete=1)
 
             # more than one result could have been submitted; it'll always be an array

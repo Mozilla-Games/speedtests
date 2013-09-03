@@ -311,10 +311,10 @@ def main():
                         break
                     if runner.execution_time() > config.MAX_TEST_TIME:
                         print 'Test has taken too long; starting next test.'
-                        runner.next_test()
+                        runner.next_test(cycle_count + 1 == options.cycles)
                 else:
                     #print 'Browser isn\'t running!'
-                    runner.next_test()
+                    runner.next_test(cycle_count + 1 == options.cycles)
                 evt.wait(20)
             end = datetime.datetime.now()
 
