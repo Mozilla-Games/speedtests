@@ -52,6 +52,7 @@ class AndroidBrowserController(BrowserController):
         try:
             self.dm.pushDir(self.localProfile, self.remoteProfile)
         except:
+            print "Failed to copy profile from %s to %s" % (self.localProfile, self.remoteProfile)
             return False
         return True
 
@@ -96,7 +97,8 @@ class AndroidBrowserController(BrowserController):
     def launch(self, url=None, extras=None):
         try:
             self.clean_up()
-        except:
+        except Exception, e:
+            print "During launch of browser, we failed to cleanup: %s" % e
             return False
 
         if not self.copy_profiles():
@@ -118,6 +120,7 @@ class AndroidBrowserController(BrowserController):
             self.launch_time = datetime.datetime.now()
             return self.dm.launchApplication(self.browserPackage, self.browserActivity, "android.intent.action.VIEW", extras=extras, url=url)
         except:
+            print "Failed to launch application"
             traceback.print_exc()
             return False
 
@@ -132,6 +135,7 @@ class AndroidBrowserController(BrowserController):
         try:
             pid = self.getBrowserPid()
         except:
+            print "Checking if browser is running, received exception while getting pid"
             return False
 
         return pid > 0
