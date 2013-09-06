@@ -147,19 +147,23 @@ class Report:
     stride = 4
     for test_name in test_names:
       sheet = wb.add_sheet(test_name)
+
       dates = list(self.dates[test_name])
       dates.sort()
       dates.reverse()
+
+      browsers = self.tests[test_name].keys()
+      browsers.sort()
 
       row = 0
       for row in range(0, len(dates)):
         sheet.write(2 + row, 0, dates[row])
 
-      i = 0
       col_widths = {
         0: guess_width(10)
       }
       for browser, runs in self.tests[test_name].items():
+        i = browsers.index(browser)
         sheet.write_merge(0, 0, offset + i*stride, offset + (i+1)*stride - 1, browser)
         for j in range(0, len(headers)):
           col = offset + i*stride + j
@@ -173,7 +177,6 @@ class Report:
             val = run[headers[j]]
             sheet.write(row, col, val)
             col_widths[col]= max(col_widths[col], guess_width(len(val)))
-        i += 1
 
       for col, width in col_widths.items():
         sheet.col(col).width = width

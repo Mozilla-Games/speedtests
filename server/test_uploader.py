@@ -75,14 +75,16 @@ def upload_file(local_file, remote_folder, type):
 
 def main():
   parser = argparse.ArgumentParser(description='Upload file to Google Drive')
-  parser.add_argument('file', help='file to upload')
-  #parser.add_argument('collection', help='collection for the uploaded document')
-  parser.add_argument('type', nargs='?', default='text/plain', help='type of file to upload, default is text/plain')
+  parser.add_argument('-c', '--collection', help='collection for the uploaded document', required=False)
+  parser.add_argument('-t', '--type', nargs='?', default='text/plain', help='type of file to upload, default is text/plain', required=False)
+  parser.add_argument('files', help='file to upload', nargs='+')
   args = parser.parse_args()
-  local_file = args.file
+
   remote_folder = "performance_results"
   type = args.type
-  upload_file(local_file, remote_folder, type)
+
+  for local_file in args.files:
+    upload_file(local_file, remote_folder, type)
   os._exit(0)
 
 # Specifies name of main function.
