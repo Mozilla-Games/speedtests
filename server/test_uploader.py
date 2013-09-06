@@ -10,6 +10,21 @@ import gdata.docs.client
 import gdata.docs.data
 import gdata.docs.service
 import gdata.sample_util
+import ConfigParser
+
+class DefaultConfigParser(ConfigParser.ConfigParser):
+    def get_default(self, section, option, default, func='get'):
+        try:
+            return getattr(cfg, func)(section, option)
+        except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
+            return default
+
+DEFAULT_CONF_FILE = 'uploader.conf'
+cfg = DefaultConfigParser()
+
+cfg.read(DEFAULT_CONF_FILE)
+USER=cfg.get_default('google', 'user', None)
+PASS=cfg.get_default('google', 'pass', None)
 
 class SampleConfig(object):
   APP_NAME = 'GDataDocumentsListAPISample-v1.0'
@@ -18,14 +33,16 @@ class SampleConfig(object):
 def create_client():
   client = gdata.docs.client.DocsClient(source=SampleConfig.APP_NAME)
   try:
-    gdata.sample_util.authorize_client(
-       client,
-       1,
-       service=client.auth_service,
-       source=client.source,
-       scopes=client.auth_scopes
-    )
-    #client.client_login(google_auth.username, google_auth.password, source=client.source, service=client.auth_service)
+    if USER is None:
+      gdata.sample_util.authorize_client(
+         client,
+         1,
+         service=client.auth_service,
+         source=client.source,
+         scopes=client.auth_scopes
+      )
+    else:
+      client.client_login(USER, PASS, source=client.source, service=client.auth_service)
   except gdata.client.BadAuthentication:
     exit('Invalid user credentials given.')
   except gdata.client.Error:
@@ -63,7 +80,7 @@ def main():
   parser.add_argument('type', nargs='?', default='text/plain', help='type of file to upload, default is text/plain')
   args = parser.parse_args()
   local_file = args.file
-  remote_folder = "Private"
+  remote_folder = "performance_results"
   type = args.type
   upload_file(local_file, remote_folder, type)
   os._exit(0)
