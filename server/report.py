@@ -8,6 +8,21 @@ from pprint import pprint
 from datetime import datetime
 import numpy
 import scipy.stats
+from versions import current
+
+channel_names = {
+  'Firefox': {
+    0: 'Release',
+    1: 'Beta',
+    2: 'Aurora',
+    3: 'Nightly'
+  },
+  'Chrome': {
+    0: 'Stable',
+    1: 'Beta',
+    2: 'Dev'
+  }
+}
 
 class DefaultConfigParser(ConfigParser.ConfigParser):
     def get_default(self, section, option, default, func='get'):
@@ -115,7 +130,11 @@ class Report:
     self.dates = {}
 
   def add_result(self, timestamp, browser_name, browser_version, browser_build, test_name, mean, mean_z_95, mean_std_err):
-    browser = "%s %s" % (browser_name, browser_version)
+    if 'Firefox' in browser_name:
+      browser_name = 'Firefox'
+    elif 'Chrome' in browser_name:
+      browser_name = 'Chrome'
+    browser = "%s:%s" % (browser_name, browser_version)
     if test_name not in self.tests.keys():
       self.tests[test_name] = {}
       self.dates[test_name] = set()
@@ -150,7 +169,7 @@ class Report:
 
       dates = list(self.dates[test_name])
       dates.sort()
-      dates.reverse()
+      # dates.reverse()
 
       browsers = self.tests[test_name].keys()
       browsers.sort()
@@ -164,7 +183,10 @@ class Report:
       }
       for browser, runs in self.tests[test_name].items():
         i = browsers.index(browser)
-        sheet.write_merge(0, 0, offset + i*stride, offset + (i+1)*stride - 1, browser)
+        name, version = browser.split(':')
+        channel_offset = int(version) - current[name]
+        channel_name = channel_names[name][channel_offset]
+        sheet.write_merge(0, 0, offset + i*stride, offset + (i+1)*stride - 1, "%s %s" % (name, channel_name))
         for j in range(0, len(headers)):
           col = offset + i*stride + j
           hdr = headers[j]
