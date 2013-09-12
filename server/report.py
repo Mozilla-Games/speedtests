@@ -9,6 +9,8 @@ from datetime import datetime
 import numpy
 import scipy.stats
 from versions import current
+import os
+import os.path
 
 channel_names = {
   'Firefox': {
@@ -203,7 +205,9 @@ class Report:
       for col, width in col_widths.items():
         sheet.col(col).width = width
 
-    wb.save(file_name)
+    if not os.path.isdir('reports'):
+      os.mkdir('reports')
+    wb.save('reports/%s' % file_name)
 
 def build_spreadsheet(platform, browser_data, benchmark, data):
   report = Report()
