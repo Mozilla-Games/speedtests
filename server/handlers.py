@@ -16,6 +16,7 @@ import traceback
 import logging
 from collections import defaultdict
 from ua_parser import user_agent_parser
+from versions import current as current_versions
 
 def parse_ua(ua_string):
     result = user_agent_parser.Parse(ua_string)
@@ -99,6 +100,10 @@ def get_browser_info(ua_string, extra_data):
     ua = parse_ua(ua_string)
 
     bname = ua['user_agent']['family']
+    if "Firefox" in bname:
+        bname = "Firefox"
+    elif "Chrome" in bname:
+        bname = "Chrome"
     bver = ua['user_agent']['major']
     platform = ua['os']['family']
     arch = ua['os']['arch']
@@ -113,17 +118,7 @@ def get_browser_info(ua_string, extra_data):
     if not 'Firefox' in bname:
         browserinfo['build'] = '%s.%s.%s' % (ua['user_agent']['major'], ua['user_agent']['minor'], ua['user_agent']['patch'])
 
-    # add some extra info bits
-    for token in ['screenWidth', 'screenHeight']:
-        if token in extra_data:
-            browserinfo[token.lower()] = extra_data[token]
-
-    for token in ['BuildID', 'SourceStamp']:
-        if ("browser" + token) in extra_data:
-            browserinfo[token.lower()] = extra_data["browser" + token]
-
-    if 'browserNameExtra' in extra_data:
-        browserinfo['name'] += "-" + extra_data['browserNameExtra']
+    browserinfo['channel'] = int(bver) - current_versions[bname];
 
     #print json.dumps(browserinfo)
 
