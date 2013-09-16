@@ -242,21 +242,6 @@ def main(options):
 
   build_spreadsheet(options.platform, browser_data, options.benchmark, runs_data)
 
-class BrowserAction(argparse.Action):
-  """
-  Argparse class for handling browser name and version options.
-  """
-
-  def __call__(self, parser, namespace, values, option_string=None):
-    if not getattr(namespace, self.dest):
-      setattr(namespace, self.dest, {})
-    dest = getattr(namespace, self.dest)
-    name = values.pop(0)
-    if name not in dest:
-      dest[name] = []
-    dest[name] = [x for x in set(dest[name]) | set(parse_range(values))]
-    dest[name].sort()
-
 if __name__ == "__main__":
   parser = argparse.ArgumentParser()
   #parser.add_argument('-i', '--in', dest='infile', action='store', default=None,
