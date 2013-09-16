@@ -5,7 +5,7 @@ import sys
 import ConfigParser
 import web
 from pprint import pprint
-from datetime import datetime
+from datetime import datetime, timedelta
 import numpy
 import scipy.stats
 import os
@@ -107,42 +107,49 @@ def main(options):
   db = web.database(**dbargs)
   db.printing = False
 
-  browser_data = get_browser_data(db, options.platform, options.browsers)
-  runs_data = get_runs_data(db, options.benchmark, browser_data, options.client)
+  for platform in options.platforms:
+    print "%s:" % platform
+    for benchmark in options.benchmarks:
+      print "\t%s:" % benchmark
+      browser_data = get_browser_data(db, platform, options.browsers)
+      runs_data = get_runs_data(db, benchmark, browser_data, options.client)
 
-  last_run = {
-  }
-  for browser_id, data in runs_data.items():
-    for run in data['runs']:
-      browser = browser_data[browser_id]
+      last_run = {
+      }
 
-      name = browser['name']
-      channel = str(browser['channel'])
-      if not name in last_run:
-        last_run[name] = {}
-      if not channel in last_run[name]:
-        last_run[name][channel] = None
+      for browser_id, data in runs_data.items():
+        for run in data['runs']:
+          browser = browser_data[browser_id]
 
-      if last_run[name][channel] is None or \
-         run['start_time'] > last_run[name][channel]['start_time']:
-        run['build'] = browser['build']
-        last_run[name][channel] = run
+          name = browser['name']
+          channel = str(browser['channel'])
+          if not name in last_run:
+            last_run[name] = {}
+          if not channel in last_run[name]:
+            last_run[name][channel] = None
 
-  for name, channels in last_run.items():
-    channel_ids = channels.keys()
-    channel_ids.sort()
-    for channel in channel_ids:
-      channel_name = channel_names[name][channel]
-      run = channels[channel]
-      elapsed = datetime.now() - run['start_time']
-      print "%s %s (build %s): %s" % (name, channel_name, run['build'], str(elapsed).split(',')[0])
+          if last_run[name][channel] is None or \
+             run['start_time'] > last_run[name][channel]['start_time']:
+            run['build'] = browser['build']
+            last_run[name][channel] = run
+
+      for name, channels in last_run.items():
+        channel_ids = channels.keys()
+        channel_ids.sort()
+        for channel in channel_ids:
+          channel_name = channel_names[name][channel]
+          run = channels[channel]
+          elapsed = datetime.now() - run['start_time']
+          flag = '*' if (elapsed > timedelta(weeks=1)) else ' '
+          print "\t\t%s %s %s (build %s): %s" % (flag, name, channel_name, run['build'], str(elapsed).split(',')[0])
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser()
-  parser.add_argument('-B', '--benchmark', dest='benchmark', action='store', default=None,
-                      help='benchmark name', required=True)
-  parser.add_argument('-p', '--platform', dest='platform', action='store', default=None,
-                      help='platform name', required=True, choices=['Windows 7', 'OSX', 'Linux', 'Android', 'FirefoxOS'])
+  parser.add_argument('-B', '--benchmark', dest='benchmarks', action='store', default=None,
+                      help='benchmark name', required=True, nargs='+')
+  parser.add_argument('-p', '--platform', dest='platforms', action='store', default=None,
+                      help='platform name', required=True, choices=['Windows 7', 'OSX', 'Linux', 'Android', 'FirefoxOS'],
+                      nargs='+')
   parser.add_argument('-b', '--browser', dest='browsers', action='store', default=None,
                       help='browser name', required=True, nargs='+')
   parser.add_argument('-c', '--client', dest='client', action='store', default=None,
