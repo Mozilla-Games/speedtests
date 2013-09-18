@@ -1,4 +1,4 @@
 current = {
-  'Firefox': 23,
+  'Firefox': 24,
   'Chrome': 29
 }
