@@ -2,7 +2,7 @@
 var CanvasMarkSpeedtest = {
   startTime: 0,
   iteration: 0,
-  numIterations: 2,
+  numIterations: 1,
   subScores: [{}]
 };
 
@@ -33,6 +33,9 @@ CanvasMarkSpeedtest.init = function () {
     console.log("Initializing CanvasMark speedtest.");
     SpeedTests.init("CanvasMark");
     var url = window.document.URL;
+    if(!this.parseIteration(url)) {
+        window.location = this.nextIterationURL(url);
+    }
     this.parseIteration(url);
     console.log("  test " + this.iteration + " of " + this.numIterations);
     this.startTime = (new Date()).getTime();
