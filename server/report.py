@@ -164,7 +164,7 @@ class Report:
     offset = 1
     stride = len(headers)
     for test_name in test_names:
-      sheet = wb.add_sheet(test_name)
+      sheet = wb.add_sheet(test_name[0:31])
 
       dates = list(self.dates[test_name])
       dates.sort()
