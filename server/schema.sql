@@ -2,7 +2,6 @@
 DROP TABLE IF EXISTS browsers;
 CREATE TABLE browsers (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-
     name VARCHAR(128) NOT NULL,
     version VARCHAR(128) NOT NULL,
     channel INTEGER NOT NULL,
@@ -82,33 +81,16 @@ CREATE TABLE scores (
     FOREIGN KEY (iteration_id) REFERENCES iterations (id)
 );
 
-
-DROP TABLE IF EXISTS results;
-CREATE TABLE results (
-    id INTEGER AUTO_INCREMENT PRIMARY KEY,
-
-    -- the id of the browser that ran this, above
-    browser_id INTEGER REFERENCES browser(id),
-    -- the client name that executed this test
-    client VARCHAR(128),
-
-    -- window dimensions (innerWidth & innerHeight)
-    window_width INTEGER,
-    window_height INTEGER,
-
-    -- when the test was started
-    testtime TIMESTAMP,
-
-    -- the test name
-    testname VARCHAR(128),
-
-    -- the final value for this test
-    result_value FLOAT,
-
-    -- any extra result data for this test
-    extra_data TEXT,
-
-    -- did this run report an error, even though
-    -- it reported a value?
-    error BOOLEAN
+DROP TABLE IF EXISTS reports;
+CREATE TABLE reports (
+    run_uuid VARCHAR(128) PRIMARY KEY,
+    start_time TIMESTAMP NOT NULL,
+    browser_name VARCHAR(128) NOT NULL,
+    browser_channel VARCHAR(128) NOT NULL,
+    browser_version VARCHAR(128) NOT NULL,
+    browser_build VARCHAR(128) NOT NULL,
+    mean FLOAT NOT NULL,
+    mean_z_95 FLOAT NOT NULL,
+    mean_std_err FLOAT NOT NULL,
+    published INTEGER(1) DEFAULT 0
 );
