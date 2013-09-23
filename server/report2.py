@@ -99,11 +99,11 @@ DB_USER = cfg.get_default('server', 'db_user', 'speedtests')
 DB_PASSWD = cfg.get_default('server', 'db_passwd', 'speedtests')
 
 cfg.read(DEFAULT_CONF_FILE)
-RDS_TYPE = cfg.get_default('rds', 'db_type', 'mysql')
-RDSB_NAME = cfg.get_default('rds', 'db_name')
-RDS_HOST = cfg.get_default('rds', 'db_host')
-RDS_USER = cfg.get_default('rds', 'db_user')
-RDS_PASSWD = cfg.get_default('rds', 'db_passwd')
+RDS_TYPE = cfg.get('rds', 'db_type', 'mysql')
+RDS_NAME = cfg.get('rds', 'db_name')
+RDS_HOST = cfg.get('rds', 'db_host')
+RDS_USER = cfg.get('rds', 'db_user')
+RDS_PASSWD = cfg.get('rds', 'db_passwd')
 
 def main(options):
   if DB_TYPE == 'sqlite':
