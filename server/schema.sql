@@ -85,12 +85,16 @@ DROP TABLE IF EXISTS reports;
 CREATE TABLE reports (
     run_uuid VARCHAR(128) PRIMARY KEY,
     start_time TIMESTAMP NOT NULL,
+    bench_name VARCHAR(128) NOT NULL,
+    test_name VARCHAR(128) NOT NULL,
     browser_name VARCHAR(128) NOT NULL,
     browser_channel VARCHAR(128) NOT NULL,
     browser_version VARCHAR(128) NOT NULL,
     browser_build VARCHAR(128) NOT NULL,
+    browser_platform VARCHAR(128) NOT NULL,
     mean FLOAT NOT NULL,
     mean_z_95 FLOAT NOT NULL,
     mean_std_err FLOAT NOT NULL,
-    published INTEGER(1) DEFAULT 0
+    published INTEGER(1) DEFAULT 0,
+    primary key(run_uuid, bench_name, test_name)
 );
