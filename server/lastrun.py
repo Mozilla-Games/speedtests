@@ -99,7 +99,7 @@ def get_runs_data(db, benchmark, browsers, client=None):
   return runs_data;
 
 def main(options):
-  if DB_TYPE is 'sqlite':
+  if DB_TYPE == 'sqlite':
       dbargs = { 'dbn': DB_TYPE, 'db': DB_NAME }
   else:
       dbargs = { 'dbn': DB_TYPE, 'db': DB_NAME, 'db': DB_NAME,
