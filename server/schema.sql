@@ -83,7 +83,7 @@ CREATE TABLE scores (
 
 DROP TABLE IF EXISTS reports;
 CREATE TABLE reports (
-    run_uuid VARCHAR(128) PRIMARY KEY,
+    run_uuid VARCHAR(128) NOT NULL,
     start_time TIMESTAMP NOT NULL,
     bench_name VARCHAR(128) NOT NULL,
     test_name VARCHAR(128) NOT NULL,
