@@ -148,7 +148,7 @@ if __name__ == "__main__":
   parser.add_argument('-B', '--benchmark', dest='benchmarks', action='store', default=None,
                       help='benchmark name', required=True, nargs='+')
   parser.add_argument('-p', '--platform', dest='platforms', action='store', default=None,
-                      help='platform name', required=True, choices=['Windows 7', 'OSX', 'Linux', 'Android', 'FirefoxOS'],
+                      help='platform name', required=True, choices=['Windows 7', 'OSX', 'Linux', 'Android', 'Firefox OS'],
                       nargs='+')
   parser.add_argument('-b', '--browser', dest='browsers', action='store', default=None,
                       help='browser name', required=True, nargs='+')
