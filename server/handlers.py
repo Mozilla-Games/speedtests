@@ -48,7 +48,7 @@ DB_HOST = cfg.get_default('server', 'db_host', 'localhost')
 DB_USER = cfg.get_default('server', 'db_user', 'speedtests')
 DB_PASSWD = cfg.get_default('server', 'db_passwd', 'speedtests')
 
-if DB_TYPE is 'sqlite':
+if DB_TYPE == 'sqlite':
     dbargs = { 'dbn': DB_TYPE, 'db': DB_NAME }
 else:
     dbargs = { 'dbn': DB_TYPE, 'db': DB_NAME, 'db': DB_NAME, 'host': DB_HOST, 'user': DB_USER, 'pw': DB_PASSWD }
