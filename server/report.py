@@ -224,7 +224,7 @@ def build_spreadsheet(platform, browser_data, benchmark, runs_data):
   report.write(wb, file_name)
 
 def main(options):
-  if DB_TYPE is 'sqlite':
+  if DB_TYPE == 'sqlite':
       dbargs = { 'dbn': DB_TYPE, 'db': DB_NAME }
   else:
       dbargs = { 'dbn': DB_TYPE, 'db': DB_NAME, 'db': DB_NAME,
@@ -251,7 +251,7 @@ if __name__ == "__main__":
   parser.add_argument('-B', '--benchmark', dest='benchmark', action='store', default=None,
                       help='benchmark name', required=True)
   parser.add_argument('-p', '--platform', dest='platform', action='store', default=None,
-                      help='platform name', required=True, choices=['Windows 7', 'OSX', 'Linux', 'Android', 'FirefoxOS'])
+                      help='platform name', required=True, choices=['Windows 7', 'OSX', 'Linux', 'Android', 'Firefox OS'])
   parser.add_argument('-b', '--browser', dest='browsers', action='store', default=None,
                       help='browser name', required=True, nargs='+')
   parser.add_argument('-c', '--client', dest='client', action='store', default=None,
