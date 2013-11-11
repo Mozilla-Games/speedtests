@@ -49,9 +49,7 @@ def create_client():
     exit('Login Error')
   return client
 
-def upload_file(local_file, remote_folder, type):
-  client = create_client()
-
+def upload_file(client, local_file, remote_folder, type):
   q = gdata.docs.client.DocsQuery(
       title=remote_folder,
       title_exact='true',
@@ -83,8 +81,9 @@ def main():
   remote_folder = "performance_results"
   type = args.type
 
+  client = create_client()
   for local_file in args.files:
-    upload_file(local_file, remote_folder, type)
+    upload_file(client, local_file, remote_folder, type)
   os._exit(0)
 
 # Specifies name of main function.
