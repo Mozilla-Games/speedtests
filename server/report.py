@@ -136,7 +136,7 @@ class Report:
     if test_name not in self.tests.keys():
       self.tests[test_name] = {}
       self.dates[test_name] = set()
-    if browser not in self.tests[test_name].keys():
+    if browser_string not in self.tests[test_name].keys():
       self.tests[test_name][browser_string] = {}
 
     date = timestamp.strftime('%Y-%m-%d')
