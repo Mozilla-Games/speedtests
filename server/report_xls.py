@@ -25,6 +25,9 @@ channel_names = {
   }
 }
 
+date_style = xlwt.XFStyle()
+date_style.num_format_str = 'YYY-MM-DD'
+
 class DefaultConfigParser(ConfigParser.ConfigParser):
     def get_default(self, section, option, default, func='get'):
         try:
@@ -139,7 +142,8 @@ class Report:
     if browser_string not in self.tests[test_name].keys():
       self.tests[test_name][browser_string] = {}
 
-    date = timestamp.strftime('%Y-%m-%d')
+    # date = timestamp.strftime('%Y-%m-%d')
+    date = timestamp
     self.dates[test_name].add(date)
 
     if date in self.tests[test_name][browser_string]:
@@ -175,7 +179,7 @@ class Report:
 
       row = 0
       for row in range(0, len(dates)):
-        sheet.write(2 + row, 0, dates[row])
+        sheet.write(2 + row, 0, dates[row], date_style)
 
       col_widths = {
         0: guess_width(10)
