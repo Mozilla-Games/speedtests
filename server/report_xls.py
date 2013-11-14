@@ -130,7 +130,8 @@ def compute_z_value(data, confidence=0.95):
     return z
 
 class Report:
-  def __init__(self):
+  def __init__(self, platform):
+    self.platform = platform
     self.tests = {}
     self.dates = {}
 
@@ -163,10 +164,14 @@ class Report:
   def write(self, wb, file_name):
     test_names = self.tests.keys()
     test_names.sort()
-    headers = ['version', 'mean', 'mean_z_95', 'mean_std_err', 'build']
+    HEADERS = ['version', 'mean', 'mean_z_95', 'mean_std_err', 'build']
+    PLATFORM_ROW = 0
+    CHANNEL_ROW = 1
+    HEADER_ROW = 2
+    DATE_START_ROW = HEADER_ROW + 1
 
     offset = 1
-    stride = len(headers)
+    stride = len(HEADERS)
     for test_name in test_names:
       sheet = wb.add_sheet(test_name[0:31])
 
@@ -179,26 +184,27 @@ class Report:
 
       row = 0
       for row in range(0, len(dates)):
-        sheet.write(2 + row, 0, dates[row], date_style)
+        sheet.write(DATE_START_ROW + row, 0, dates[row], date_style)
 
       col_widths = {
         0: guess_width(10)
       }
+      sheet.write_merge(PLATFORM_ROW, PLATFORM_ROW, 1, len(self.tests[test_name].keys()) * len(HEADERS), self.platform)
       for browser, runs in self.tests[test_name].items():
         i = browsers.index(browser)
         name, channel = browser.split(':')
         channel_name = channel_names[name][channel]
-        sheet.write_merge(0, 0, offset + i*stride, offset + (i+1)*stride - 1, "%s %s" % (name, channel_name))
-        for j in range(0, len(headers)):
+        sheet.write_merge(CHANNEL_ROW, CHANNEL_ROW, offset + i*stride, offset + (i+1)*stride - 1, "%s %s" % (name, channel_name))
+        for j in range(0, len(HEADERS)):
           col = offset + i*stride + j
-          hdr = headers[j]
-          sheet.write(1, offset + i*stride + j, hdr)
+          hdr = HEADERS[j]
+          sheet.write(HEADER_ROW, offset + i*stride + j, hdr)
           col_widths[col] = guess_width(len(hdr))
         for date, run in runs.items():
-          row = 2 + dates.index(date)
-          for j in range(0, len(headers)):
+          row = DATE_START_ROW + dates.index(date)
+          for j in range(0, len(HEADERS)):
             col = offset + i*stride + j
-            val = run[headers[j]]
+            val = run[HEADERS[j]]
             sheet.write(row, col, val)
             col_widths[col]= max(col_widths[col], guess_width(len(val)))
 
@@ -210,7 +216,7 @@ class Report:
     wb.save('reports/%s' % file_name)
 
 def build_spreadsheet(platform, browser_data, benchmark, runs_data):
-  report = Report()
+  report = Report(platform)
 
   for browser_id, run_data in runs_data.items():
     browser = browser_data[browser_id]
