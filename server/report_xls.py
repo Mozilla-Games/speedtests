@@ -56,24 +56,25 @@ DB_HOST = cfg.get_default('server', 'db_host', 'localhost')
 DB_USER = cfg.get_default('server', 'db_user', 'speedtests')
 DB_PASSWD = cfg.get_default('server', 'db_passwd', 'speedtests')
 
-def get_browser_data(db, platform, browsers):
+def get_browser_data(db, platforms, browsers):
   """
   Read browser ids from the database, along with some other data.
   """
 
   browser_data = {}
-  for name in browsers:
-    qvars = {'platform': platform, 'name': name}
-    result = list(db.select(['browsers'], qvars,
-      what='name, version, channel, id, build',
-      where='platform=$platform AND name=$name',
-      order='build desc'
-      ))
-    for i in range(0, len(result)):
-      data = dict(result[i])
-      id = data['id']
-      del data['id']
-      browser_data[id] = data
+  for platform in platforms:
+    for name in browsers:
+      qvars = {'platform': platform, 'name': name}
+      result = list(db.select(['browsers'], qvars,
+        what='name, version, channel, id, build, platform',
+        where='platform=$platform AND name=$name',
+        order='build desc'
+        ))
+      for i in range(0, len(result)):
+        data = dict(result[i])
+        id = data['id']
+        del data['id']
+        browser_data[id] = data
 
   return browser_data
 
@@ -136,7 +137,7 @@ class Report:
     self.dates = {}
 
   def add_result(self, timestamp, browser, test_name, mean, mean_z_95, mean_std_err):
-    browser_string = "%s:%s" % (browser['name'], browser['channel'])
+    browser_string = "%s:%s:%s" % (browser['platform'], browser['name'], browser['channel'])
     if test_name not in self.tests.keys():
       self.tests[test_name] = {}
       self.dates[test_name] = set()
@@ -166,8 +167,8 @@ class Report:
     test_names.sort()
     HEADERS = ['version', 'mean', 'mean_z_95', 'mean_std_err', 'build']
     PLATFORM_ROW = 0
-    CHANNEL_ROW = 1
-    HEADER_ROW = 2
+    CHANNEL_ROW = 0
+    HEADER_ROW = CHANNEL_ROW + 1
     DATE_START_ROW = HEADER_ROW + 1
 
     offset = 1
@@ -189,12 +190,12 @@ class Report:
       col_widths = {
         0: guess_width(10)
       }
-      sheet.write_merge(PLATFORM_ROW, PLATFORM_ROW, 1, len(self.tests[test_name].keys()) * len(HEADERS), self.platform)
+      # sheet.write_merge(PLATFORM_ROW, PLATFORM_ROW, 1, len(self.tests[test_name].keys()) * len(HEADERS), self.platform)
       for browser, runs in self.tests[test_name].items():
         i = browsers.index(browser)
-        name, channel = browser.split(':')
+        platform, name, channel = browser.split(':')
         channel_name = channel_names[name][channel]
-        sheet.write_merge(CHANNEL_ROW, CHANNEL_ROW, offset + i*stride, offset + (i+1)*stride - 1, "%s %s" % (name, channel_name))
+        sheet.write_merge(CHANNEL_ROW, CHANNEL_ROW, offset + i*stride, offset + (i+1)*stride - 1, "%s/%s/%s" % (platform, name, channel_name))
         for j in range(0, len(HEADERS)):
           col = offset + i*stride + j
           hdr = HEADERS[j]
@@ -215,8 +216,8 @@ class Report:
       os.mkdir('reports')
     wb.save('reports/%s' % file_name)
 
-def build_spreadsheet(platform, browser_data, benchmark, runs_data):
-  report = Report(platform)
+def build_spreadsheet(platforms, browser_data, benchmark, runs_data):
+  report = Report(platforms)
 
   for browser_id, run_data in runs_data.items():
     browser = browser_data[browser_id]
@@ -230,7 +231,7 @@ def build_spreadsheet(platform, browser_data, benchmark, runs_data):
         report.add_result(run['start_time'], browser, test_name, mean, mean_z_95, mean_std_err)
 
   wb = xlwt.Workbook()
-  file_name = '%s-%s-%s.xls' % (platform, benchmark, datetime.now().strftime('%Y%m%d'))
+  file_name = '[%s]-%s-%s.xls' % (','.join(platforms), benchmark, datetime.now().strftime('%Y%m%d'))
   report.write(wb, file_name)
 
 def main(options):
@@ -242,7 +243,7 @@ def main(options):
   db = web.database(**dbargs)
   db.printing = False
 
-  browser_data = get_browser_data(db, options.platform, options.browsers)
+  browser_data = get_browser_data(db, options.platforms, options.browsers)
   runs_data = get_runs_data(db, options.benchmark, browser_data, options.client)
 
   for browser_id, data in runs_data.items():
@@ -250,7 +251,7 @@ def main(options):
       run['scores'] = get_run_scores(db, run['uuid'])
       # run['start_time'] = run['start_time'].strftime('%Y-%m-%d')
 
-  build_spreadsheet(options.platform, browser_data, options.benchmark, runs_data)
+  build_spreadsheet(options.platforms, browser_data, options.benchmark, runs_data)
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser()
@@ -260,8 +261,9 @@ if __name__ == "__main__":
   #                    help='output file name', required=False)
   parser.add_argument('-B', '--benchmark', dest='benchmark', action='store', default=None,
                       help='benchmark name', required=True)
-  parser.add_argument('-p', '--platform', dest='platform', action='store', default=None,
-                      help='platform name', required=True, choices=['Windows 7', 'OSX', 'Linux', 'Android', 'Firefox OS'])
+  parser.add_argument('-p', '--platform', dest='platforms', action='store', default=None,
+                      help='platform name', required=True, choices=['Windows 7', 'OSX', 'Linux', 'Android', 'Firefox OS'],
+                      nargs='+')
   parser.add_argument('-b', '--browser', dest='browsers', action='store', default=None,
                       help='browser name', required=True, nargs='+')
   parser.add_argument('-c', '--client', dest='client', action='store', default=None,
