@@ -61,6 +61,7 @@
     console.log(name + ': ' + result);
     var box = document.getElementById("Result-" + name);
     box.innerHTML = result;
+    OctaneSpeedtest.recordSubScore(name, result);
   }
 
   function AddError(name, error) {
