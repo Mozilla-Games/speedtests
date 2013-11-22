@@ -4,6 +4,7 @@ import sys
 import sets
 import math
 import getopt
+import time
 import datetime
 import argparse
 
@@ -13,6 +14,20 @@ import json
 
 import numpy
 import scipy.stats
+
+channel_names = {
+  'Firefox': {
+    0: 'Release',
+    1: 'Beta',
+    2: 'Aurora',
+    3: 'Nightly'
+  },
+  'Chrome': {
+    0: 'Stable',
+    1: 'Beta',
+    2: 'Dev'
+  }
+}
 
 class DefaultConfigParser(ConfigParser.ConfigParser):
     def get_default(self, section, option, default, func='get'):
@@ -66,6 +81,8 @@ def main():
                          what='id, name, version, channel, platform, arch, build')
     browsersById = {}
     for browser in browsers:
+        browser = dict(browser)
+        browser['channel'] = channel_names[browser['name']][browser['channel']]
         browsersById[browser['id']] = dict(browser)
 
     runs = db.select(['runs'],
@@ -73,7 +90,7 @@ def main():
                      where='complete=1')
     for run in runs:
         uuid = run['uuid']
-        run['start_time'] = str(run['start_time'])
+        run['start_time'] = time.mktime(run['start_time'].timetuple())
         run = dict(run)
 
         iterations = db.select(['iterations'], {'u': uuid},
