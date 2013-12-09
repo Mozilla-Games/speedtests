@@ -64,6 +64,8 @@ def main():
     db.printing = False
 
     parser = argparse.ArgumentParser()
+    parser.add_argument('-d', '--date', dest='date', action='store', default=None,
+                        help='export results from this date forward', required=False)
 #    parser.add_argument('-c', '--client', dest='client', action='store', default=None,
 #                      help='target client to export', required=True)
 #    parser.add_argument('-p', '--platform', dest='platform', action='store', default=None,
@@ -90,7 +92,7 @@ def main():
                      where='complete=1')
     for run in runs:
         uuid = run['uuid']
-        run['start_time'] = time.mktime(run['start_time'].timetuple())
+        run['start_time'] = time.mktime(run['start_time'].timetuple()) * 1000.0
         run = dict(run)
 
         iterations = db.select(['iterations'], {'u': uuid},
