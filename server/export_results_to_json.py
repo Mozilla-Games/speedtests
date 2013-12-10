@@ -76,6 +76,9 @@ def main():
 #                      help='benchmarks to export')
     options = parser.parse_args()
 
+    date = time.strptime(options.date, "%Y-%m-%d")
+    date = time.strftime("%Y-%m-%d", date)
+
     action = """{ "index" : { "_index" : "perfy", "_type" : "scores", "_id" : "1" } }"""
     results = []
 
@@ -87,9 +90,9 @@ def main():
         browser['channel'] = channel_names[browser['name']][browser['channel']]
         browsersById[browser['id']] = dict(browser)
 
-    runs = db.select(['runs'],
+    runs = db.select(['runs'], {'d': date},
                      what='uuid, browser_id, client, bench_name, start_time',
-                     where='complete=1')
+                     where='complete=1 AND start_time>=$d')
     for run in runs:
         uuid = run['uuid']
         run['start_time'] = time.mktime(run['start_time'].timetuple()) * 1000.0
