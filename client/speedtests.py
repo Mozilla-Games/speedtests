@@ -345,7 +345,7 @@ def main():
                 else:
                     createDeviceManager().reboot()
                 # Wait for the network to come back up!
-                print " Sleping %s seconds to allow device to reboot and get on the network" % config.reboot_sleep
+                print " Sleeping %s seconds to allow device to reboot and get on the network" % config.reboot_sleep
                 time.sleep(config.reboot_sleep)
                 print " Done sleeping, continue with the next cycle"
         except KeyboardInterrupt:
