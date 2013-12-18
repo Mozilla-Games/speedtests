@@ -5,7 +5,7 @@ import tempfile
 
 from Config import config
 from BrowserController import *
-from mozdevice import DroidADB, DroidSUT, DroidConnectByHWID
+import mozdevice
 
 import gaiatest
 from gaiatest.apps.browser.app import Browser
@@ -22,7 +22,6 @@ def startMarionette():
         raise Exception("Failed to connect to device via ADB; ensure device is attached to USB.")
     # Start Marionette
     marionette = Marionette(host='localhost', port=2828)
-    
     marionette.start_session()
     marionette.set_script_timeout(60000)
     return marionette
@@ -30,18 +29,40 @@ def startMarionette():
 class B2GBrowserController(BrowserController):
 
     _awesome_bar_locator = ('id', 'url-input')
+    _device_manager = None
 
     def __init__(self, os_name, browser_name, package=None, activity=None):
         super(B2GBrowserController, self).__init__(os_name, browser_name, None, None)
         # Start Marionette
         self.marionette = startMarionette()
         self.dm = self.device = gaiatest.GaiaDevice(self.marionette)
+        self.device._manager = self.device_manager
         # Set the required Firefox OS Browser App prefs
         self.set_ffox_browser_prefs()
+        # Gaia apps object
+        self.gaia_apps = gaiatest.GaiaApps(self.marionette)
         # Restart b2g process on device
         print 'Restarting b2g process...'
         self.dm.restart_b2g()
         time.sleep(10)
+
+    def get_device_manager(self, *args, **kwargs):
+        if not self._device_manager:
+            dm_type = os.environ.get('DM_TRANS', 'adb')
+            if dm_type == 'adb':
+                self._device_manager = mozdevice.DeviceManagerADB(**kwargs)
+            elif dm_type == 'sut':
+                host = os.environ.get('TEST_DEVICE')
+                if not host:
+                    raise Exception('Must specify host with SUT!')
+                self._device_manager = mozdevice.DeviceManagerSUT(host=host)
+            else:
+                raise Exception('Unknown device manager type: %s' % dm_type)
+        return self._device_manager
+
+    @property
+    def device_manager(self):
+       return self.get_device_manager()
 
     def set_ffox_browser_prefs(self):
         print "Setting FirefoxOS Browser prefs..."
@@ -171,9 +192,7 @@ class B2GBrowserController(BrowserController):
 
     def running(self):
         self.marionette.switch_to_frame()
-    	apps = gaiatest.GaiaApps(self.marionette).runningApps()
-    	currently_running_apps = ''.join(apps)
-        return "browser" in currently_running_apps
+        return "browser" in [a.name.lower() for a in gaiatest.GaiaApps(self.marionette).running_apps]      
 
     def terminate(self):
         # Kill all apps running on Firefox OS
